@@ -1,0 +1,49 @@
+package com.example.awsMachineLearningExam.model;
+
+import jakarta.persistence.*;
+import com.fasterxml.jackson.annotation.JsonBackReference;
+import com.fasterxml.jackson.annotation.JsonProperty;
+
+@Entity
+@Table(name = "options")
+public class Option {
+
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
+
+    @Column(name = "option_text")
+    private String optionText;
+
+    @Column(name = "is_correct")
+    @JsonProperty("isCorrect") // This forces JSON to use the name Vue is looking for
+    private boolean isCorrect;
+
+    @ManyToOne
+    @JoinColumn(name = "question_id")
+    @JsonBackReference
+    private Question question;
+
+    // Default Constructor
+    public Option() {}
+
+    // --- FIX THESE GETTERS AND SETTERS ---
+
+    public Long getId() { return id; }
+    public void setId(Long id) { this.id = id; }
+
+    public String getOptionText() { return optionText; }
+    public void setOptionText(String optionText) { this.optionText = optionText; }
+
+    // Use this specific naming for the boolean getter
+    public boolean getIsCorrect() {
+        return isCorrect;
+    }
+
+    public void setIsCorrect(boolean isCorrect) {
+        this.isCorrect = isCorrect;
+    }
+
+    public Question getQuestion() { return question; }
+    public void setQuestion(Question question) { this.question = question; }
+}
