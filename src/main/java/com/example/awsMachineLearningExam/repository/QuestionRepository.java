@@ -9,15 +9,23 @@ import org.springframework.stereotype.Repository;
 @Repository
 public interface QuestionRepository extends JpaRepository<Question, Long> {
 
-    // Use Native Query for the random selector (it's more reliable for RANDOM())
+    // 1. Keep this for the Random Question logic
     @Query(value = "SELECT * FROM questions WHERE exam_code = :examCode " +
             "AND (:category = 'All' OR category = :category) " +
             "ORDER BY RANDOM() LIMIT 1", nativeQuery = true)
     Question findRandom(@Param("examCode") String examCode, @Param("category") String category);
 
-    // Use a simpler JPQL count query
-    @Query("SELECT COUNT(q) FROM Question q WHERE q.examCode = :examCode " +
-            "AND (:category = 'All' OR q.category = :category)")
-    long countByExamAndCategory(@Param("examCode") String examCode, @Param("category") String category);
+    // 2. Keep this for Guest Mode
+    @Query(value = "SELECT * FROM (SELECT * FROM questions WHERE exam_code = :examCode " +
+            "AND (:category = 'All' OR category = :category) " +
+            "ORDER BY id ASC LIMIT 10) as sub " +
+            "ORDER BY RANDOM() LIMIT 1", nativeQuery = true)
+    Question findRandomGuest(@Param("examCode") String examCode, @Param("category") String category);
+
+    // 3. Use these standard methods (Spring writes the SQL for you)
+    // These must match exactly what your Controller calls
+    long countByExamCode(String examCode);
+
+    long countByExamCodeAndCategory(String examCode, String category);
 }
 
