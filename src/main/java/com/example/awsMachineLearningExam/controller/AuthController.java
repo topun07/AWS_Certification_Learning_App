@@ -15,36 +15,27 @@ public class AuthController {
 
     @Autowired
     private UserRepository userRepository;
+
     @Autowired
     private PasswordEncoder passwordEncoder;
 
-    @PostMapping("/signup")
-    public ResponseEntity<?> register(@RequestBody AuthRequest request) {
-        if (userRepository.existsByEmail(request.email)) {
-            return ResponseEntity.badRequest().body("Email already in use");
-        }
-        User user = new User();
-        user.setEmail(request.email);
-        user.setFullName(request.fullName);
-
-        // HASH THE PASSWORD before saving
-        user.setPasswordHash(passwordEncoder.encode(request.password));
-
-        userRepository.save(user);
-        return ResponseEntity.ok("User registered successfully");
-    }
-
     @PostMapping("/login")
-    public ResponseEntity<?> login(@RequestBody User loginRequest) {
-        // 1. Manually find the user
-        java.util.Optional<User> userOptional = userRepository.findByEmail(loginRequest.getEmail());
+    public ResponseEntity<?> login(@RequestBody AuthRequest request) {
+        // 1. Find the user by their email
+        User user = userRepository.findByEmail(request.email);
 
-        // 2. Use a standard if-statement instead of .map
-        if (userOptional.isPresent()) {
-            return ResponseEntity.ok(userOptional.get());
+        // 2. If no user is found with that email, reject the request
+        if (user == null) {
+            return ResponseEntity.status(401).body("Error: Email not found.");
+        }
+
+        // 3. Verify the password matches the hashed version in the database
+        if (passwordEncoder.matches(request.passwordhash, user.getPasswordHash())) {
+            // Success! Return the user object to Vue (which saves it in localStorage)
+            return ResponseEntity.ok(user);
         } else {
-            return ResponseEntity.status(401).body("User not found");
+            // Passwords do not match
+            return ResponseEntity.status(401).body("Error: Invalid password.");
         }
     }
-
 }

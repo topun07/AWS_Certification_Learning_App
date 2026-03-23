@@ -8,7 +8,10 @@ import java.util.Optional; // This import is key!
 @Repository
 public interface UserRepository extends JpaRepository<User, Long> {
     // Change this to return Optional so the .isPresent() logic works
-    boolean existsByEmail(String email);
+    boolean existsByEmail(String username);
 
-    Optional<User> findByEmail(String email);
+    boolean existsByUsername(String username);
+    User findByUsername(String username);
+
+    User findByEmail(String email);
 }

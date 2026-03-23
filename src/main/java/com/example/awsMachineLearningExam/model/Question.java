@@ -12,10 +12,12 @@ public class Question {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(name = "question_text")
+    // Set to TEXT to handle long AWS questions (Fixes the 255 char error)
+    @Column(columnDefinition = "TEXT")
     private String questionText;
 
-    @Column(name = "explanation")
+    // FIXED: Only define explanation ONCE
+    @Column(columnDefinition = "TEXT")
     private String explanation;
 
     @Column(name = "category")
@@ -31,8 +33,15 @@ public class Question {
     @JsonManagedReference
     private List<Option> options;
 
-    // Default Constructor
+    // --- NEW: This links the Question to the Exam History for the PDF Review ---
+    // If your DB doesn't have this relationship yet, Hibernate will try to create it.
+    @ManyToOne
+    @JoinColumn(name = "exam_history_id")
+    private ExamHistory examHistory;
+
     public Question() {}
+
+    private Integer correctAnswerCount = 1;
 
     // --- GETTERS AND SETTERS (The "Keys") ---
 
@@ -56,4 +65,16 @@ public class Question {
 
     public String getExamCode() { return examCode; }
     public void setExamCode(String examCode) { this.examCode = examCode; }
+
+    public ExamHistory getExamHistory() { return examHistory; }
+    public void setExamHistory(ExamHistory examHistory) { this.examHistory = examHistory; }
+
+    public Integer getCorrectAnswerCount() {
+        return correctAnswerCount;
+    }
+
+    public void setCorrectAnswerCount(Integer correctAnswerCount) {
+        this.correctAnswerCount = correctAnswerCount;
+    }
+
 }

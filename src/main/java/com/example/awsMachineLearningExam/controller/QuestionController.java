@@ -9,13 +9,18 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.testng.annotations.Test;
 
 import java.time.LocalDateTime;
 import java.util.*;
 import java.util.stream.Collectors;
 
+import static org.testng.AssertJUnit.assertEquals;
+import static org.testng.AssertJUnit.assertNotNull;
+
 @RestController
 @RequestMapping("/api/questions")
+@CrossOrigin(origins = "http://localhost:5173")
 public class QuestionController {
 
     @Autowired
@@ -24,7 +29,7 @@ public class QuestionController {
     @Autowired
     private ExamHistoryRepository examHistoryRepository;
 
-    // --- 1. Question Retrieval ---
+        // --- 1. Question Retrieval ---
 
     @GetMapping
     public List<Question> getAllQuestions() {
@@ -62,20 +67,6 @@ public class QuestionController {
 
     // --- 2. Exam History & Leaderboard ---
 
-    @PostMapping("/history/save")
-    public ResponseEntity<?> saveHistory(@RequestBody ExamHistory history) {
-        try {
-            if (history.getCompletedAt() == null) {
-                history.setCompletedAt(LocalDateTime.now());
-            }
-            examHistoryRepository.save(history);
-            return ResponseEntity.ok("History saved successfully");
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body("Error saving history: " + e.getMessage());
-        }
-    }
-
     @DeleteMapping("/history/{id}")
     public ResponseEntity<?> deleteHistory(@PathVariable Long id) {
         examHistoryRepository.deleteById(id);
@@ -89,14 +80,18 @@ public class QuestionController {
 
     @GetMapping("/leaderboard")
     public List<Map<String, Object>> getLeaderboard() {
-        List<Object[]> rawData = examHistoryRepository.findTopScores();
 
-        // CHECK YOUR INTELLIJ/VS CODE TERMINAL FOR THIS LOG:
+        // 1. One single database call enforcing the 65-question minimum
+        List<Object[]> rawData = examHistoryRepository.findTopScores(65);
+
+        // 2. Keep the debug log so you can see it working in the console
         System.out.println("DEBUG: Leaderboard rows found: " + (rawData != null ? rawData.size() : 0));
 
+        // 3. Format the data for the Vue frontend
         List<Map<String, Object>> formattedData = new ArrayList<>();
+
         if (rawData == null || rawData.isEmpty()) {
-            return formattedData;
+            return formattedData; // Return empty list if no one qualifies yet
         }
 
         for (Object[] row : rawData) {
@@ -106,22 +101,22 @@ public class QuestionController {
             map.put("examCode", row[2]);
             formattedData.add(map);
         }
+
         return formattedData;
     }
 
     // --- 3. Review Room Logic ---
 
     @GetMapping("/review/{attemptId}")
-    public List<Question> getReviewQuestions(@PathVariable Long attemptId) {
-        ExamHistory history = examHistoryRepository.findById(attemptId).orElse(null);
-        if (history == null || history.getMissedQuestionIds() == null || history.getMissedQuestionIds().isEmpty()) {
-            return Collections.emptyList();
+    public ResponseEntity<List<Question>> getReviewData(@PathVariable Long attemptId) {
+
+        List<Question> questions = repository.findByExamHistory_Id(attemptId);
+
+        if (questions == null || questions.isEmpty()) {
+            return ResponseEntity.noContent().build();
         }
 
-        List<Long> ids = Arrays.stream(history.getMissedQuestionIds().split(","))
-                .map(Long::valueOf)
-                .collect(Collectors.toList());
-
-        return repository.findAllById(ids);
+        return ResponseEntity.ok(questions);
     }
+
 }

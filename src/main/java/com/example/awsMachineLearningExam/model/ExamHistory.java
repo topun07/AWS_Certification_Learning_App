@@ -1,6 +1,11 @@
 package com.example.awsMachineLearningExam.model;
 
 import jakarta.persistence.*;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import java.util.List;
+
 import java.time.LocalDateTime;
 
 @Entity
@@ -20,10 +25,12 @@ public class ExamHistory {
     @Column(columnDefinition = "TEXT")
     private String missedQuestionIds;
 
+    @Column(name = "total_questions")
+    private int totalQuestions;
+
     private String examCode;
     private int scorePercentage;
     private int correctCount;
-    private int totalQuestions;
     private int timeSpentSeconds;
     private String weakestCategory;
     private LocalDateTime completedAt = LocalDateTime.now();

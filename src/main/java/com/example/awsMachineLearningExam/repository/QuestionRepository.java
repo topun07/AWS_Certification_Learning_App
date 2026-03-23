@@ -6,8 +6,13 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
-@Repository
+import java.util.List;
+
 public interface QuestionRepository extends JpaRepository<Question, Long> {
+
+    // Add this specific line so Spring Data JPA can build the query
+    List<Question> findByExamHistory_Id(Long id);
+
 
     // 1. Keep this for the Random Question logic
     @Query(value = "SELECT * FROM questions WHERE exam_code = :examCode " +

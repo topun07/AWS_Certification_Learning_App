@@ -17,6 +17,9 @@ public class User {
 
     private String fullName;
 
+    @Column(unique = true, nullable = false)
+    private String username;
+
     private LocalDateTime createdAt = LocalDateTime.now();
 
     // GETTERS AND SETTERS
@@ -28,4 +31,10 @@ public class User {
     public void setPasswordHash(String passwordHash) { this.passwordHash = passwordHash; }
     public String getFullName() { return fullName; }
     public void setFullName(String fullName) { this.fullName = fullName; }
+    public String getUsername() {
+        return username;
+    }
+    public void setUsername(String username) {
+        this.username = username;
+    }
 }

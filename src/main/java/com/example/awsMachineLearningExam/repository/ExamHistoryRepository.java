@@ -11,6 +11,8 @@ public interface ExamHistoryRepository extends JpaRepository<ExamHistory, Long> 
     
     // This will allow us to fetch the most recent scores for the dashboard
     List<ExamHistory> findTop10ByOrderByCompletedAtDesc();
+
+    List<ExamHistory> findTop5ByTotalQuestionsGreaterThanEqualOrderByScorePercentageDesc(int minQuestions);
     
     // Optional: Fetch history for a specific exam type
     List<ExamHistory> findByExamCodeOrderByCompletedAtDesc(String examCode);
@@ -21,7 +23,8 @@ public interface ExamHistoryRepository extends JpaRepository<ExamHistory, Long> 
             "COALESCE(eh.exam_code, 'AWS-CERT') as examCode " +
             "FROM exam_history eh " +
             "LEFT JOIN users u ON eh.user_id = u.id " +
+            "WHERE eh.total_questions >= :minQuestions " + // <-- The Anti-Cheat Tripwire
             "GROUP BY u.full_name, eh.exam_code " +
             "ORDER BY topScore DESC LIMIT 5", nativeQuery = true)
-    List<Object[]> findTopScores();
+    List<Object[]> findTopScores(@org.springframework.data.repository.query.Param("minQuestions") int minQuestions);
 }
