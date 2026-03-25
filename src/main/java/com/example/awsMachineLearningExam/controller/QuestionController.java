@@ -1,22 +1,15 @@
 package com.example.awsMachineLearningExam.controller;
 
-import com.example.awsMachineLearningExam.model.Option;
 import com.example.awsMachineLearningExam.model.ExamHistory;
+import com.example.awsMachineLearningExam.model.Option;
 import com.example.awsMachineLearningExam.model.Question;
 import com.example.awsMachineLearningExam.repository.ExamHistoryRepository;
 import com.example.awsMachineLearningExam.repository.QuestionRepository;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-import org.testng.annotations.Test;
 
-import java.time.LocalDateTime;
 import java.util.*;
-import java.util.stream.Collectors;
-
-import static org.testng.AssertJUnit.assertEquals;
-import static org.testng.AssertJUnit.assertNotNull;
 
 @RestController
 @RequestMapping("/api/questions")

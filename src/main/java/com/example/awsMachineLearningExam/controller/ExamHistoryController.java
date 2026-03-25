@@ -122,8 +122,10 @@ public class ExamHistoryController {
 
     @GetMapping("/leaderboard")
     public ResponseEntity<List<Object[]>> getLeaderboard() {
-        // Pass 65 (or your max questions) to enforce the rule
+        // 1. Fetch the data and assign it immediately
         List<Object[]> topScores = historyRepository.findTopScores(65);
+
+        // 2. Send it to the frontend
         return ResponseEntity.ok(topScores);
     }
 }

@@ -29,8 +29,7 @@ public class Question {
     @Column(name = "exam_code")
     private String examCode;
 
-    @OneToMany(mappedBy = "question", cascade = CascadeType.ALL)
-    @JsonManagedReference
+    @OneToMany(mappedBy = "question", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<Option> options;
 
     // --- NEW: This links the Question to the Exam History for the PDF Review ---

@@ -43,16 +43,41 @@
         <p class="text-lg md:text-2xl lg:text-3xl text-gray-600 font-medium">Select your path and master the cloud.</p>
       </div>
 
-      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-16">
-        <div v-for="cert in certifications" :key="cert.code" @click="selectCertification(cert)" class="group cursor-pointer bg-white rounded-3xl p-6 shadow-sm border border-gray-100 hover:shadow-xl hover:-translate-y-2 transition-all">
-          <div class="h-16 w-16 md:h-20 md:w-20 mb-4 flex-shrink-0">
-            <img v-if="cert.image" :src="cert.image" :alt="cert.code" class="w-full h-full object-contain drop-shadow-md group-hover:scale-110 transition-transform duration-300" />
-            <div v-else :class="['w-full h-full rounded-xl flex items-center justify-center text-2xl text-white shadow-md', cert.color]">
-              {{ cert.icon }}
+      <div v-for="(certs, categoryName) in groupedCerts" :key="categoryName">
+
+        <div v-if="certs.length > 0" class="mb-12">
+
+          <div class="flex items-center gap-4 mb-8">
+            <h2 class="text-2xl font-black text-slate-800 uppercase tracking-widest">{{ categoryName }}</h2>
+            <div class="h-px bg-slate-200 flex-grow"></div>
+          </div>
+
+          <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
+            <div
+                v-for="cert in certs"
+                :key="cert.code"
+                @click="selectCertification(cert)"
+                class="group cursor-pointer bg-white rounded-[2.5rem] p-8 shadow-sm border border-slate-100 hover:shadow-2xl hover:-translate-y-2 transition-all flex flex-col items-center text-center"
+            >
+              <div class="h-28 w-28 md:h-40 md:w-40 mb-6 flex items-center justify-center relative">
+                <img
+                    v-if="cert.image"
+                    :src="cert.image"
+                    @error="cert.image = null"
+                    class="w-full h-full object-contain drop-shadow-2xl group-hover:scale-110 transition-transform duration-300"
+                />
+                <div v-else :class="['w-full h-full rounded-3xl flex items-center justify-center text-5xl text-white shadow-lg', cert.color]">
+                  {{ cert.icon }}
+                </div>
+              </div>
+
+              <div class="space-y-2">
+                <h3 class="font-black text-slate-900 text-xl md:text-2xl leading-tight">{{ cert.name }}</h3>
+                <p class="text-blue-600 text-[10px] md:text-xs font-mono font-black uppercase tracking-[0.3em] opacity-60">{{ cert.code }}</p>
+              </div>
             </div>
           </div>
-          <h3 class="font-bold text-gray-800 md:text-xl">{{ cert.name }}</h3>
-          <p class="text-gray-400 text-[10px] md:text-xs font-mono uppercase tracking-widest mt-1 md:mt-2">{{ cert.code }}</p>
+
         </div>
       </div>
 
@@ -142,6 +167,17 @@
             <p class="font-bold">No legends yet.</p>
             <p class="text-sm">Score 100% to claim the top spot!</p>
           </div>
+
+          <div class="bg-slate-900 rounded-3xl p-6 border border-slate-700 shadow-xl mt-8">
+            <h2 class="text-xl font-black text-cyan-400 uppercase tracking-widest mb-4">Admin: Data Uplink</h2>
+            <p class="text-slate-400 text-sm mb-6 font-mono">Select a CSV manifest to populate the Jedi Archives.</p>
+
+            <input type="file" ref="fileInput" class="hidden" @change="handleFileUpload" accept=".csv" />
+
+            <button @click="$refs.fileInput.click()" class="w-full bg-cyan-600/20 border border-cyan-500/50 text-cyan-400 py-4 rounded-2xl font-black hover:bg-cyan-500 hover:text-white transition-all">
+              🚀 Upload Exam CSV
+            </button>
+          </div>
         </div>
       </div>
     </div>
@@ -227,7 +263,7 @@
         <div class="bg-blue-600 p-6 flex justify-between items-center text-white">
           <div>
             <p class="text-[10px] font-black uppercase tracking-widest opacity-70">{{ question.category }}</p>
-            <h2 class="text-lg font-bold">Question {{ Math.max(allQuestionsInSession.length, 1) }} of {{ totalExamQuestions }}</h2>
+            <h2 class="text-lg font-bold">Question {{ sessionCount }} of {{ totalExamQuestions }}</h2>
           </div>
           <div class="flex items-center gap-4">
             <span class="font-mono font-bold bg-blue-500/50 px-3 py-1 rounded-lg">{{ formattedTime }}</span>
@@ -441,6 +477,7 @@ const feedbackClass = ref('');
 const showExplanation = ref(false);
 const currentQuestion = ref(null);
 const questions = ref([]);
+const reviewQuestions = ref([]);
 const missedQuestionIds = ref([]); // Tracks IDs for the Review Room
 
 // --- Exam & Session Logic ---
@@ -479,11 +516,10 @@ const currentUser = ref(null);
 const showAuthModal = ref(true);
 const isSignup = ref(true);
 const authForm = ref({ email: '', username: '', password: '', fullName: '' });
+const userResults = ref({});
 
 // --- Review & Print ---
 const showReviewModal = ref(false);
-
-const reviewQuestions = ref([]);
 
 const allExamQuestions = ref([]);
 
@@ -623,6 +659,10 @@ const stopTimer = () => {
   }
 };
 
+const isUserCorrect = (questionId) => {
+  return userResults.value[questionId] === true;
+};
+
 const formattedTime = computed(() => {
   // Accessing .value here is what tells Vue to update the HTML
   const totalSeconds = timerSeconds.value;
@@ -669,81 +709,112 @@ const fetchTotalCount = async () => {
 };
 
 const fetchQuestion = async () => {
-  if (!selectedCert.value || !selectedCategory.value) return;
+  // We only need the Cert code to fetch!
+  // Removed the !selectedCategory guard which was likely blocking you.
+  if (!selectedCert.value?.code) return;
 
   try {
-    const url = `http://localhost:8080/api/questions/random?examCode=${selectedCert.value.code}&category=${encodeURIComponent(selectedCategory.value)}&userId=${currentUser.value?.id || ''}&t=${Date.now()}`;
+    const response = await fetch(`http://localhost:8080/api/questions/random?examCode=${selectedCert.value.code}`);
 
-    const response = await fetch(url);
-    const data = await response.json();
+    // If the server returns a 204 (No Content) or 404, stop the crash
+    if (response.status === 204 || !response.ok) {
+      console.warn(`No questions found for code: ${selectedCert.value.code}`);
+      alert("Archive Empty: No questions found for this certification yet.");
+      goBackToLanding();
+      return;
+    }
 
-    // 1. Set the current question
+    // Capture the text first to avoid the "Unexpected end of JSON" crash
+    const text = await response.text();
+    if (!text) {
+      console.error("Server returned an empty body.");
+      return;
+    }
+
+    // Manually parse it now that we know it's not empty
+    const data = JSON.parse(text);
     question.value = data;
 
-    // 2. Update the session array FIRST
-    allQuestionsInSession.value.push(data);
+    // Reset state for the new question
+    selectedAnswers.value = [];
+    showExplanation.value = false;
 
-    // 3. NOW check the length. It will be 1, so the timer WILL start.
-    if (allQuestionsInSession.value.length === 1) {
-      startTimer();
-    }
   } catch (error) {
-    console.error("Fetch Error:", error);
+    console.error("Uplink Error:", error);
+    // Fallback so the user isn't stuck on a blank screen
+    alert("Communication error with the Jedi Archives. Please check the console.");
   }
 };
 
 const loadNextQuestion = async () => {
-  // 1. THE GUEST TRIPWIRE
-  // Halts the sequence if no user is authenticated and they hit the 10-question limit
+  if (question.value && !questions.value.some(q => q.id === question.value.id)) {
+    questions.value.push(question.value);
+  }
+
+  // 2. THE GUEST TRIPWIRE
   if (!currentUser.value && sessionCount.value >= 10) {
-    if (timerInterval) clearInterval(timerInterval);
+    if (timerInterval) {
+      clearInterval(timerInterval);
+      timerInterval = null; // Clean up the reference
+    }
+
     showGuestLimitModal.value = true;
-    return;
+    return; // Stop the fetch
   }
 
-  // 2. THE EXAM FINISH CHECK
-  // If they reach the end of the total exam questions
-  if (sessionCount.value >= totalExamQuestions.value) {
-    // Route it through our new, resilient grading engine
-    forceGradeExam();
-    return;
-  }
-
-  // 3. PREPARE THE NEXT CYCLE
-  sessionCount.value++;
+  // 3. THE MEMORY WIPE (Crucial for UI state)
+  // Clears the 'Correct/Incorrect' feedback before the next question hits the screen
   showExplanation.value = false;
-  selectedAnswers.value = [];
-  if (typeof feedback !== 'undefined') feedback.value = '';
+  selectedAnswers.value = []; // Reset checkboxes/radios
+  feedback.value = '';
 
-  // 4. FETCH THE NEW DATA
-  await fetchQuestion();
-  window.scrollTo({ top: 0, behavior: 'smooth' });
+  // 4. INCREMENT & FETCH
+  sessionCount.value++;
+
+  try {
+    await fetchQuestion(); // Hit the Spring Boot backend
+
+    // 5. AUTO-SCROLL
+    // Keeps the user at the top of the new question on mobile/small screens
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+
+  } catch (error) {
+    console.error("Transmission Error from Jedi Archives:", error);
+    alert("Could not load the next trial. Please check your uplink.");
+  }
 };
 
 const checkAnswer = () => {
-  if (!question.value) return;
+  const currentQ = question.value;
 
-  // 1. Record the user's pick immediately
-  selectedAnswersRecord.value[question.value.id] = [...selectedAnswers.value];
-
-  const correctIds = question.value.options
-      .filter(opt => opt.isCorrect === true || String(opt.isCorrect).toLowerCase() === 'true')
-      .map(opt => String(opt.id));
-
-  const selectedIds = selectedAnswers.value.map(id => String(id));
-  const isCorrect = selectedIds.length === correctIds.length &&
-      selectedIds.every(id => correctIds.includes(id));
-
-  // 2. CRITICAL: Update the missed list for the Review Room
-  if (!isCorrect) {
-    if (!missedQuestionIds.value.includes(question.value.id)) {
-      missedQuestionIds.value.push(question.value.id);
-    }
+  if (!currentQ || !currentQ.options) {
+    console.warn("⚠️ Aborting: No active question or options found.");
+    return;
   }
 
+  // 1. Grab the ID of the option they clicked (e.g., 8)
+  const chosenId = selectedAnswers.value[0];
+
+  // 2. Find the option in the database that has that exact ID!
+  const chosenOption = currentQ.options.find(opt => opt.id === chosenId);
+
+  // 3. Grade it
+  const isRight = chosenOption ? (chosenOption.isCorrect === true || chosenOption.correct === true) : false;
+
+  // 4. Save the result for the Final Review Screen
+  userResults.value[currentQ.id] = isRight;
+
+  // 5. Update the UI Banners
+  if (isRight) {
+    feedback.value = "✓ CORRECT";
+    feedbackClass.value = "bg-green-100 text-green-800 border-2 border-green-200";
+  } else {
+    feedback.value = "✗ INCORRECT";
+    feedbackClass.value = "bg-red-100 text-red-800 border-2 border-red-200";
+  }
+
+  // 6. Unhide the explanation banner
   showExplanation.value = true;
-  feedback.value = isCorrect ? "Correct!" : "Incorrect";
-  feedbackClass.value = isCorrect ? "bg-green-50 text-green-700" : "bg-red-50 text-red-700";
 };
 
 const saveResults = async () => {
@@ -826,48 +897,89 @@ const startQuiz = async () => {
 
 // 1. Add the Certifications list
 const certifications = ref([
+  // --- FOUNDATIONAL ---
   {
-    code: 'MLS-C01',
-    name: 'Machine Learning Specialty',
-    image: 'https://d1.awsstatic.com/training-and-certification/certification-badges/AWS-Certified-Machine-Learning-Specialty_badge.png',
-    color: 'bg-purple-500', icon: '🤖'
+    code: 'CLF-C02', name: 'Cloud Practitioner', category: 'Foundational',
+    image: '/badges/clf-badge.png', color: 'bg-orange-400', icon: '☁️'
   },
   {
-    code: 'AIF-C01',
-    name: 'AI Practitioner',
-    image: 'https://images.credly.com/images/154fa414-0683-4a12-a72d-7bb432ecff1c/image.png',
-    color: 'bg-amber-400', icon: '✨'
+    code: 'AIF-C01', name: 'AI Practitioner', category: 'Foundational',
+    image: '/badges/aif-badge.png', color: 'bg-zinc-500', icon: '✨'
+  },
+
+  // --- ASSOCIATE ---
+  {
+    code: 'SAA-C03', name: 'Solutions Architect', category: 'Associate',
+    image: '/badges/saa-badge.png', color: 'bg-blue-600', icon: '🏗️'
   },
   {
-    code: 'SCS-C02',
-    name: 'Security Specialty',
-    image: 'https://d1.awsstatic.com/training-and-certification/certification-badges/AWS-Certified-Security-Specialty_badge.png',
-    color: 'bg-red-500', icon: '🛡️'
+    code: 'DVA-C02', name: 'Developer Associate', category: 'Associate',
+    image: '/badges/dva-badge.png', color: 'bg-blue-500', icon: '💻'
   },
   {
-    code: 'SAA-C03',
-    name: 'Solutions Architect',
-    image: 'https://d1.awsstatic.com/training-and-certification/certification-badges/AWS-Certified-Solutions-Architect-Associate_badge.png',
-    color: 'bg-blue-500', icon: '🏗️'
+    code: 'SOA-C02', name: 'SysOps Admin', category: 'Associate',
+    image: '/badges/soa-badge.png', color: 'bg-blue-400', icon: '⚙️'
   },
   {
-    code: 'DEA-C01',
-    name: 'Data Engineering',
-    image: 'https://images.credly.com/images/ce55938f-5b12-4217-a065-efc4eaf03eb6/image.png',
-    color: 'bg-teal-500', icon: '🗄️'
+    code: 'DEA-C01', name: 'Data Engineering', category: 'Associate',
+    image: '/badges/dea-badge.png', color: 'bg-teal-500', icon: '🗄️'
+  },
+
+  // --- PROFESSIONAL ---
+  {
+    code: 'AIP-C01', name: 'Generative AI Developer', category: 'Professional',
+    image: '/badges/aip-badge.png', color: 'bg-cyan-500', icon: '🧠'
+  },
+  {
+    code: 'SAP-C02', name: 'Solutions Architect Pro', category: 'Professional',
+    image: '/badges/sap-badge.png', color: 'bg-indigo-700', icon: '🏛️'
+  },
+  {
+    code: 'DOP-C02', name: 'DevOps Engineer Pro', category: 'Professional',
+    image: '/badges/dop-badge.png', color: 'bg-indigo-600', icon: '♾️'
+  },
+
+  // --- SPECIALTY ---
+  {
+    code: 'MLS-C01', name: 'Machine Learning', category: 'Specialty',
+    image: '/badges/mls-badge.png', color: 'bg-purple-600', icon: '🤖'
+  },
+  {
+    code: 'SCS-C02', name: 'Security Specialty', category: 'Specialty',
+    image: '/badges/scs-badge.png', color: 'bg-red-600', icon: '🛡️'
+  },
+  {
+    code: 'ANS-C01', name: 'Advanced Networking', category: 'Specialty',
+    image: '/badges/ans-badge.png', color: 'bg-purple-500', icon: '🌐'
   }
 ]);
+
+// This computed property automatically groups them so you don't have to!
+const groupedCerts = computed(() => {
+  const groups = {
+    'Foundational': [],
+    'Associate': [],
+    'Professional': [],
+    'Specialty': []
+  };
+
+  certifications.value.forEach(cert => {
+    if (groups[cert.category]) {
+      groups[cert.category].push(cert);
+    }
+  });
+
+  return groups;
+});
 
 // 2. Add the Leaderboard ref back
 const leaderboard = ref([]);
 
 // --- 2. The Selection Logic ---
 const selectCertification = async (cert) => {
-  // 1. Lock in the selected certification
   selectedCert.value = cert;
-
-  // Choose ONE default category (I'll use 'All' based on your snippet)
   selectedCategory.value = 'All';
+  showResults.value = false;
 
   // 2. Fetch the total count of questions for this cert
   if (typeof fetchTotalCount === 'function') {
@@ -1026,14 +1138,22 @@ const finishExam = async () => {
   // 1. Stop the clock
   if (timerInterval) clearInterval(timerInterval);
 
-  // 2. Switch to results view
+  // 2. SAVE THE FINAL QUESTION!
+  if (question.value && !questions.value.some(q => q.id === question.value.id)) {
+    questions.value.push(question.value);
+  }
+
+  // 3. Switch to results view
   currentView.value = 'quiz'; // We stay in the quiz component container
   showResults.value = true;   // But we trigger the Results overlay
 
-  // 3. Save the data to the database
+  // 4. THE FIX: Pass the downloaded questions to the review array!
+  reviewQuestions.value = questions.value;
+
+  // 5. Save the data to the database
   await saveResults();
 
-  // 4. Scroll to top so they see the score
+  // 6. Scroll to top so they see the score
   window.scrollTo({ top: 0, behavior: 'smooth' });
 };
 
@@ -1166,20 +1286,6 @@ const triggerFirework = () => {
   // ... rest of function ...
 };
 
-const isUserCorrect = (questionId) => {
-  const q = allQuestionsInSession.value.find(quest => quest.id === questionId);
-  if (!q) return false;
-
-  const correctIds = q.options
-      .filter(opt => opt.isCorrect === true || String(opt.isCorrect).toLowerCase() === 'true')
-      .map(opt => String(opt.id));
-
-  const userIds = (selectedAnswersRecord.value[questionId] || []).map(id => String(id));
-
-  return correctIds.length === userIds.length &&
-      correctIds.every(id => userIds.includes(id));
-};
-
 // --- Computed Results ---
 
 // 1. Calculate how many questions were answered perfectly
@@ -1205,6 +1311,29 @@ const correctCount = computed(() => {
 
 // 3. Determine if they passed the AWS standard (72%)
 const isPassing = computed(() => scorePercentage.value >= 72);
+
+const handleFileUpload = async (event) => {
+  const file = event.target.files[0];
+  if (!file) return;
+
+  const formData = new FormData();
+  formData.append('file', file);
+
+  try {
+    const response = await fetch('http://localhost:8080/api/admin/upload-csv', {
+      method: 'POST',
+      body: formData
+    });
+
+    if (response.ok) {
+      alert("Database Updated: New questions have been synced.");
+    } else {
+      alert("Sync Failed: Check CSV format.");
+    }
+  } catch (error) {
+    console.error("Uplink Error:", error);
+  }
+};
 
 onMounted(async () => {
 
