@@ -3,36 +3,146 @@
 
     <!-- Top Navigation Bar -->
     <div class="max-w-5xl mx-auto flex flex-col md:flex-row justify-between items-center gap-4 mb-6 bg-white p-6 md:p-4 rounded-3xl shadow-sm border border-slate-100 mt-6">
-      <div class="flex items-center gap-2 px-4">
-        <span class="text-3xl md:text-2xl font-black text-blue-600 tracking-tighter italic">AWS.Hub</span>
-      </div>
 
-      <div v-if="currentUser" class="flex items-center gap-6 bg-white/80 backdrop-blur-md p-3 px-6 rounded-[1.5rem] border border-slate-200 shadow-xl transition-all hover:shadow-blue-100/50">
-        <div class="flex flex-col items-end">
-          <span class="text-[10px] font-black uppercase tracking-[0.25em] text-blue-600 mb-1">Active Session: ARCHITECT</span>
-          <span class="text-2xl font-black text-slate-900 tracking-tighter leading-none drop-shadow-sm">{{ currentUser.username }}</span>
+    <div class="flex items-center gap-2 px-4 flex-shrink-0">
+      <span class="text-3xl md:text-2xl font-black text-blue-600 tracking-tighter italic">AWS.Hub</span>
+    </div>
+
+    <div v-if="currentUser" class="flex flex-col md:flex-row items-center gap-3">
+
+      <div class="flex items-center gap-2 px-4 py-2.5 bg-slate-50 rounded-xl border border-slate-200 shadow-sm transition-all hover:shadow-md">
+          <span class="text-2xl transition-all duration-500" :class="[streakDisplay.color, streakDisplay.aura]">
+            {{ streakDisplay.icon }}
+          </span>
+        <div class="flex flex-col text-left">
+            <span class="text-[10px] font-black uppercase tracking-wider text-slate-400 leading-none mb-1">
+              Daily Streak
+            </span>
+          <span class="text-sm font-bold text-slate-800 leading-none">
+              {{ userStreak }} Days
+              <span class="text-[10px] font-normal italic opacity-75 ml-1 hidden lg:inline-block">
+                ({{ streakDisplay.label }})
+              </span>
+            </span>
         </div>
-        <div class="h-10 w-px bg-slate-200"></div>
-        <button @click="logout" class="group relative flex flex-col items-center">
-          <span class="text-[10px] font-black text-red-500 uppercase tracking-widest transition-all group-hover:text-red-700">Logout</span>
-          <span class="h-0.5 w-0 bg-red-500 transition-all group-hover:w-full"></span>
+      </div>
+
+      <div class="flex flex-col bg-white/80 backdrop-blur-md p-3 px-5 rounded-[1.5rem] border border-slate-200 shadow-xl transition-all hover:shadow-blue-100/50 w-full md:w-64">
+
+        <div class="flex items-center justify-between gap-4 mb-2">
+          <div class="flex flex-col">
+              <span class="text-[10px] font-black uppercase tracking-[0.2em] mb-0.5" :class="userRank.color">
+                {{ userRank.title }}
+              </span>
+            <span class="text-xl font-black text-slate-900 tracking-tighter leading-none drop-shadow-sm truncate max-w-[120px]">
+                {{ currentUser?.username }}
+              </span>
+          </div>
+
+          <div class="h-8 w-px bg-slate-200 hidden md:block"></div>
+
+          <button @click="logout" class="group relative flex flex-col items-center">
+            <span class="text-[9px] font-black text-red-500 uppercase tracking-widest transition-all group-hover:text-red-700">Logout</span>
+            <span class="h-0.5 w-0 bg-red-500 transition-all group-hover:w-full"></span>
+          </button>
+        </div>
+
+        <div class="w-full">
+          <div class="flex justify-between text-[9px] font-black text-slate-400 mb-1 uppercase tracking-widest">
+            <span>{{ userTotalXp }} XP</span>
+            <span>{{ userRank.max }} XP</span>
+          </div>
+          <div class="h-1.5 w-full bg-slate-100 rounded-full overflow-hidden shadow-inner">
+            <div
+                class="h-full rounded-full transition-all duration-1000 ease-out shadow-[inset_0_1px_3px_rgba(255,255,255,0.3)]"
+                :class="userRank.bar"
+                :style="`width: ${userRank.progress}%`"
+            ></div>
+          </div>
+        </div>
+
+      </div>
+
+      <button @click="toggleMusic" class="p-2 rounded-full hover:bg-slate-100 transition-colors group" :title="isMusicPlaying ? 'Pause Focus Track' : 'Play Focus Track'">
+          <span class="text-lg opacity-70 group-hover:opacity-100 transition-opacity" :class="isMusicPlaying ? 'animate-pulse text-blue-500' : 'grayscale'">
+            🎧
+          </span>
+      </button>
+
+      <button @click="isAudioEnabled = !isAudioEnabled" class="p-2 rounded-full hover:bg-slate-100 transition-colors group" :title="isAudioEnabled ? 'Mute SFX' : 'Enable SFX'">
+          <span class="text-lg opacity-70 group-hover:opacity-100 transition-opacity">
+            {{ isAudioEnabled ? '🔊' : '🔇' }}
+          </span>
+      </button>
+
+    </div>
+
+    <div v-else class="flex items-center gap-4 px-4">
+      <button
+          @click="showAuthModal = true; isSignup = false"
+          class="text-sm font-bold text-slate-500 hover:text-blue-600 transition-colors"
+      >
+        Log In
+      </button>
+
+      <button
+          @click="showAuthModal = true; isSignup = true"
+          class="bg-blue-600 hover:bg-blue-700 text-white text-sm font-black px-6 py-2.5 rounded-xl shadow-md hover:shadow-lg transition-all hover:-translate-y-0.5"
+      >
+        Sign Up
+      </button>
+    </div>
+  </div>
+
+    <div v-if="selectedCert && currentView === 'landing'" id="protocol-menu" class="mt-8 mb-16 bg-white rounded-[2rem] p-6 md:p-8 border border-slate-200 shadow-xl animate-fade-in-up flex flex-col md:flex-row gap-8 max-w-5xl mx-auto">
+
+      <div class="flex-shrink-0 flex flex-col items-center justify-center bg-slate-50 p-8 rounded-[1.5rem] border border-slate-100 md:w-1/3">
+        <div :class="[selectedCert.color, 'w-24 h-24 rounded-2xl shadow-lg flex items-center justify-center text-5xl mb-4 transform transition-transform hover:scale-105']">
+          {{ selectedCert.icon }}
+        </div>
+        <h3 class="text-xl font-black text-slate-900 text-center leading-tight mb-1">{{ selectedCert.name }}</h3>
+        <span class="text-xs font-bold px-3 py-1 bg-slate-200 text-slate-600 rounded-full uppercase tracking-wider mb-6">{{ selectedCert.code }}</span>
+
+        <button @click="selectedCert = null" class="mt-auto text-[10px] font-black text-red-500 hover:text-red-700 transition-colors uppercase tracking-widest flex items-center gap-1 group">
+          <span class="group-hover:-translate-x-1 transition-transform">←</span> Change Target
         </button>
       </div>
 
-      <div v-else class="flex items-center gap-4 px-4">
-        <button
-            @click="showAuthModal = true; isSignup = false"
-            class="text-sm font-bold text-slate-500 hover:text-blue-600 transition-colors"
-        >
-          Log In
+      <div class="flex-grow flex flex-col gap-3">
+        <h4 class="text-xs font-black text-slate-400 uppercase tracking-widest mb-1 px-2">Select Training Protocol</h4>
+
+        <button @click="initiateProtocol('standard')" class="group flex items-center gap-4 bg-white p-4 rounded-2xl border border-slate-200 hover:border-blue-500 hover:shadow-md transition-all text-left w-full">
+          <span class="text-2xl bg-blue-50 text-blue-500 w-12 h-12 flex flex-shrink-0 items-center justify-center rounded-xl group-hover:scale-110 group-hover:bg-blue-500 group-hover:text-white transition-all">🏛️</span>
+          <div>
+            <h5 class="text-sm font-bold text-slate-900 group-hover:text-blue-600 transition-colors">Simulated Exam</h5>
+            <p class="text-[11px] text-slate-500 font-medium leading-tight mt-0.5">Standard assessment. Timed. Real exam conditions.</p>
+          </div>
         </button>
 
-        <button
-            @click="showAuthModal = true; isSignup = true"
-            class="bg-blue-600 hover:bg-blue-700 text-white text-sm font-black px-6 py-2.5 rounded-xl shadow-md hover:shadow-lg transition-all hover:-translate-y-0.5"
-        >
-          Sign Up
+        <button @click="initiateProtocol('amrap')" class="group flex items-center gap-4 bg-white p-4 rounded-2xl border border-slate-200 hover:border-red-500 hover:shadow-md transition-all text-left w-full">
+          <span class="text-2xl bg-red-50 text-red-500 w-12 h-12 flex flex-shrink-0 items-center justify-center rounded-xl group-hover:scale-110 group-hover:bg-red-500 group-hover:text-white transition-all">⏱️</span>
+          <div>
+            <h5 class="text-sm font-bold text-slate-900 group-hover:text-red-600 transition-colors">AMRAP Attack</h5>
+            <p class="text-[11px] text-slate-500 font-medium leading-tight mt-0.5">10 minute clock. Infinite questions. Pure speed and recall.</p>
+          </div>
         </button>
+
+        <button @click="initiateProtocol('sudden_death')" class="group flex items-center gap-4 bg-white p-4 rounded-2xl border border-slate-200 hover:border-purple-500 hover:shadow-md transition-all text-left w-full">
+          <span class="text-2xl bg-purple-50 text-purple-500 w-12 h-12 flex flex-shrink-0 items-center justify-center rounded-xl group-hover:scale-110 group-hover:bg-purple-500 group-hover:text-white transition-all">💀</span>
+          <div>
+            <h5 class="text-sm font-bold text-slate-900 group-hover:text-purple-600 transition-colors">Sudden Death</h5>
+            <p class="text-[11px] text-slate-500 font-medium leading-tight mt-0.5">3 Lives. No timer. One mistake shatters a heart. Survive.</p>
+          </div>
+        </button>
+
+        <button @click="initiateProtocol('learn')" class="group flex items-center gap-4 bg-white p-4 rounded-2xl border border-slate-200 hover:border-emerald-500 hover:shadow-md transition-all text-left w-full">
+          <span class="text-2xl bg-emerald-50 text-emerald-500 w-12 h-12 flex flex-shrink-0 items-center justify-center rounded-xl group-hover:scale-110 group-hover:bg-emerald-500 group-hover:text-white transition-all">🧠</span>
+          <div>
+            <h5 class="text-sm font-bold text-slate-900 group-hover:text-emerald-600 transition-colors">Learn Mode</h5>
+            <p class="text-[11px] text-slate-500 font-medium leading-tight mt-0.5">Untimed study session. Instant answers and explanations.</p>
+          </div>
+        </button>
+
       </div>
     </div>
 
@@ -133,69 +243,179 @@
           </div>
           <div v-else class="text-center py-10 text-gray-400">Complete an exam to see your stats.</div>
         </div>
-        <div class="bg-white rounded-3xl p-6 border border-gray-100 shadow-sm flex flex-col h-full">
-          <h2 class="text-2xl font-bold mb-6">✨ Ascended Masters</h2>
+        <div class="bg-white rounded-[2rem] shadow-xl p-8 border border-slate-100 flex-1">
+          <h3 class="text-2xl font-black text-slate-900 mb-6 flex items-center gap-2">
+            ✨ Ascended Masters
+          </h3>
 
-          <div v-if="hallOfFame.length > 0" class="flex flex-col gap-3 flex-grow">
-            <div v-for="(record, index) in hallOfFame" :key="index" class="flex items-center justify-between p-4 rounded-2xl bg-slate-50 border border-slate-100 hover:border-amber-200 hover:shadow-md transition-all group">
+          <div v-if="leaderboardData.length > 0" class="space-y-3">
+            <div v-for="(master, index) in leaderboardData" :key="index"
+                 class="flex items-center justify-between p-4 bg-slate-50 border border-slate-100 rounded-xl hover:shadow-md transition-all">
 
               <div class="flex items-center gap-4">
-                <div :class="[
-          'w-10 h-10 rounded-full flex items-center justify-center font-black text-lg shadow-sm',
-          index === 0 ? 'bg-amber-400 text-white shadow-amber-200' :
-          index === 1 ? 'bg-slate-300 text-slate-700' :
-          index === 2 ? 'bg-orange-300 text-orange-800' : 'bg-blue-50 text-blue-600'
-        ]">
+                <div class="w-8 h-8 rounded-full flex items-center justify-center font-black text-sm shadow-sm"
+                     :class="index === 0 ? 'bg-gradient-to-br from-amber-200 to-amber-400 text-amber-900' :
+                     index === 1 ? 'bg-gradient-to-br from-slate-200 to-slate-400 text-slate-800' :
+                     index === 2 ? 'bg-gradient-to-br from-orange-200 to-orange-400 text-orange-900' :
+                     'bg-blue-100 text-blue-600'">
                   #{{ index + 1 }}
                 </div>
 
                 <div>
-                  <p class="font-black text-slate-700 group-hover:text-blue-600 transition-colors">{{ record.examCode }}</p>
-                  <p class="text-xs text-slate-400 font-mono tracking-widest uppercase mt-0.5">Operative ID: {{ record.userId }}</p>
+                  <p class="font-black text-slate-800">{{ master.fullName }}</p>
+                  <p class="text-[10px] font-bold text-slate-400 tracking-widest uppercase">{{ master.examCode }}</p>
                 </div>
               </div>
 
-              <div class="text-2xl font-black text-slate-800">
-                {{ record.scorePercentage }}<span class="text-sm text-slate-400">%</span>
+              <div class="text-xl font-black"
+                   :class="master.scorePercentage === 100 ? 'text-emerald-500' : 'text-slate-700'">
+                {{ master.scorePercentage }}%
               </div>
 
             </div>
           </div>
 
-          <div v-else class="flex flex-col items-center justify-center py-12 text-slate-400 flex-grow border-2 border-dashed border-slate-100 rounded-2xl">
-            <span class="text-4xl mb-3 opacity-50">☁️</span>
-            <p class="font-bold">No legends yet.</p>
-            <p class="text-sm">Score 100% to claim the top spot!</p>
-          </div>
-
-          <div class="bg-slate-900 rounded-3xl p-6 border border-slate-700 shadow-xl mt-8">
-            <h2 class="text-xl font-black text-cyan-400 uppercase tracking-widest mb-4">Admin: Data Uplink</h2>
-            <p class="text-slate-400 text-sm mb-6 font-mono">Select a CSV manifest to populate the Jedi Archives.</p>
-
-            <input type="file" ref="fileInput" class="hidden" @change="handleFileUpload" accept=".csv" />
-
-            <button @click="$refs.fileInput.click()" class="w-full bg-cyan-600/20 border border-cyan-500/50 text-cyan-400 py-4 rounded-2xl font-black hover:bg-cyan-500 hover:text-white transition-all">
-              🚀 Upload Exam CSV
-            </button>
+          <div v-else class="text-center py-10">
+            <div class="text-5xl mb-4 opacity-50 animate-pulse">☁️</div>
+            <p class="text-slate-500 font-bold">No legends yet.</p>
+            <p class="text-sm text-slate-400 mt-1">Score 100% to claim the top spot!</p>
           </div>
         </div>
       </div>
+
+      <div class="mt-12 grid grid-cols-1 lg:grid-cols-2 gap-8">
+
+        <div class="bg-white rounded-[2rem] p-8 shadow-sm border border-slate-100 flex flex-col h-full">
+
+          <div class="mb-6 flex justify-between items-start">
+            <div>
+              <h3 class="text-2xl font-black text-slate-800">Skill Radar</h3>
+              <p class="text-slate-500 text-sm mt-1">Your mastery across architectural domains.</p>
+            </div>
+
+            <select v-model="chartViewCode" class="bg-slate-50 border border-slate-200 text-slate-700 text-sm rounded-xl focus:ring-blue-500 focus:border-blue-500 block p-2.5 font-bold outline-none cursor-pointer hover:bg-slate-100 transition-colors">
+              <option value="DEFAULT">Overall AWS</option>
+
+              <optgroup label="Foundational">
+                <option value="CLF-C02">Cloud Practitioner (CLF-C02)</option>
+                <option value="AIF-C01">AI Practitioner (AIF-C01)</option>
+              </optgroup>
+
+              <optgroup label="Associate">
+                <option value="SAA-C03">Solutions Architect (SAA-C03)</option>
+                <option value="DVA-C02">Developer (DVA-C02)</option>
+                <option value="SOA-C02">SysOps Admin (SOA-C02)</option>
+                <option value="DEA-C01">Data Engineering (DEA-C01)</option>
+              </optgroup>
+
+              <optgroup label="Professional">
+                <option value="SAP-C02">Solutions Architect Pro (SAP-C02)</option>
+                <option value="DOP-C02">DevOps Engineer Pro (DOP-C02)</option>
+                <option value="AIP-C01">Generative AI Dev (AIP-C01)</option>
+              </optgroup>
+
+              <optgroup label="Specialty">
+                <option value="MLS-C01">Machine Learning (MLS-C01)</option>
+                <option value="SCS-C02">Security (SCS-C02)</option>
+                <option value="ANS-C01">Advanced Networking (ANS-C01)</option>
+              </optgroup>
+            </select>
+          </div>
+
+          <div class="flex-grow relative min-h-[300px] w-full flex justify-center items-center">
+            <Radar :key="chartViewCode" :data="radarData" :options="radarOptions" />
+          </div>
+        </div>
+
+        <div class="bg-white rounded-[2rem] p-8 shadow-sm border border-slate-100 flex flex-col h-full">
+
+          <div class="mb-6">
+            <h3 class="text-2xl font-black text-slate-800">Target Priorities</h3>
+            <p class="text-slate-500 text-sm mt-1">Recommended focus areas based on recent telemetry.</p>
+          </div>
+
+          <div class="flex-grow flex flex-col justify-center space-y-4">
+            <div v-if="studyPriorities.length > 0" class="flex flex-col gap-3">
+
+              <div
+                  v-for="(priority, index) in studyPriorities"
+                  :key="priority.name"
+                  :class="index === 0 ? 'bg-red-50 border border-red-100 text-red-900' : 'bg-amber-50 border border-amber-100 text-amber-900'"
+                  class="flex items-center justify-between p-4 rounded-xl shadow-sm transition-all hover:shadow-md"
+              >
+                <div class="flex items-center gap-3">
+      <span
+          class="w-6 h-6 rounded-full flex items-center justify-center text-xs font-black"
+          :class="index === 0 ? 'bg-red-200 text-red-700' : 'bg-amber-200 text-amber-700'"
+      >
+        !
+      </span>
+                  <span class="font-bold text-sm">{{ priority.name }}</span>
+                </div>
+                <span
+                    class="font-black text-lg"
+                    :class="index === 0 ? 'text-red-600' : 'text-amber-600'"
+                >
+      {{ priority.percentage }}%
+    </span>
+              </div>
+
+            </div>
+
+            <div v-else class="text-center p-6 text-slate-400 text-sm font-bold">
+              Insufficient telemetry data. Complete a simulation to generate priorities.
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+      <div class="bg-slate-50 rounded-[2rem] p-8 border border-slate-100 border-dashed flex flex-col items-center justify-center text-center opacity-70">
+        <div class="text-4xl mb-4">🎯</div>
+        <h3 class="text-xl font-bold text-slate-400">Study Priorities</h3>
+        <p class="text-sm text-slate-400 mt-2">More analytics incoming...</p>
+      </div>
+
+      <div class="mt-12 bg-white rounded-3xl p-8 border border-slate-100 shadow-sm flex flex-col md:flex-row items-center justify-between gap-6">
+        <div>
+          <h3 class="text-xl font-black text-slate-800">Database Management</h3>
+          <p class="text-slate-500 text-sm mt-1">Expand the Jedi Archives. Upload new AWS question banks via CSV.</p>
+        </div>
+
+        <div>
+          <input
+              type="file"
+              id="csv-upload"
+              accept=".csv"
+              class="hidden"
+              @change="handleFileUpload"
+          />
+          <label
+              for="csv-upload"
+              class="cursor-pointer inline-flex items-center justify-center gap-2 bg-slate-800 hover:bg-slate-950 text-white px-8 py-4 rounded-xl font-black transition-all shadow-lg hover:shadow-xl hover:-translate-y-1"
+          >
+            <svg class="w-5 h-5 text-white/70" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"></path></svg>
+            Upload CSV Database
+          </label>
+        </div>
+      </div>
+
     </div>
 
     <!-- View: Quiz / Results -->
     <div v-else-if="currentView === 'quiz'" class="max-w-5xl mx-auto px-4 md:px-8 lg:px-12">
 
       <!-- Results Screen -->
-      <div v-if="showResults" class="bg-white rounded-[2rem] shadow-2xl p-10 text-center border border-gray-100">
+      <div v-if="showResults && !isHistoricalView" class="bg-white rounded-[2rem] shadow-2xl p-10 text-center border border-gray-100">
         <div class="mb-10 text-center flex flex-col items-center">
-          <div class="mb-8 flex justify-center h-32 md:h-40">
+          <div class="mb-8 flex justify-center w-full px-2">
             <img
-                v-if="examResultMessage.badge"
-                :src="examResultMessage.badge"
-                class="h-full object-contain drop-shadow-[0_15px_25px_rgba(16,185,129,0.3)] animate-[bounce_3s_infinite]"
-                alt="Certification Badge"
+                v-if="examResultMessage.image"
+                :src="examResultMessage.image"
+                class="w-full max-w-sm md:max-w-2xl h-auto object-cover rounded-2xl shadow-2xl border border-slate-100/50"
+                alt="Result Animation"
             />
-            <div v-else class="text-7xl md:text-8xl animate-bounce">{{ examResultMessage.icon }}</div>
+            <div v-else class="text-7xl md:text-8xl">{{ examResultMessage.icon }}</div>
           </div>
 
           <h1 :class="['text-3xl md:text-5xl font-black mb-4 tracking-tight', examResultMessage.color]">
@@ -213,9 +433,16 @@
             <p class="text-blue-600 text-[10px] font-black uppercase tracking-widest mb-1">Score</p>
             <p class="text-4xl md:text-5xl font-black text-blue-900">{{ finalScore }}%</p>
           </div>
-          <div class="bg-amber-50 p-6 rounded-2xl text-center">
-            <p class="text-amber-600 text-[10px] font-black uppercase tracking-widest mb-1">Time</p>
-            <p class="text-2xl font-black text-amber-900">{{ formattedTime }}</p>
+          <div class="bg-amber-50 p-6 rounded-2xl text-center flex flex-col justify-center border border-amber-100 shadow-inner">
+            <div class="mb-3">
+              <p class="text-amber-600 text-[10px] font-black uppercase tracking-widest mb-1">Total Time</p>
+              <p class="text-3xl font-black text-amber-900">{{ formattedTotalTime }}</p>
+            </div>
+            <div class="h-px bg-amber-200/50 w-full mb-3"></div>
+            <div>
+              <p class="text-amber-600 text-[10px] font-black uppercase tracking-widest mb-1">Avg per Question</p>
+              <p class="text-xl font-black text-amber-800">{{ formattedAverageTime }}</p>
+            </div>
           </div>
         </div>
 
@@ -253,23 +480,43 @@
       </div>
 
       <!-- Active Quiz Screen -->
-      <div v-else-if="question" class="bg-white rounded-[2rem] shadow-xl overflow-hidden border border-slate-200 relative">
+      <div v-else-if="question && !showReviewModal" class="bg-white rounded-[2rem] shadow-xl overflow-hidden border border-slate-200 relative">
         <div v-if="isPaused" class="absolute inset-0 bg-white/95 backdrop-blur-md z-50 flex flex-col items-center justify-center text-center p-8">
           <div class="w-16 h-16 bg-orange-100 text-orange-600 rounded-full flex items-center justify-center text-3xl mb-4">⏸️</div>
           <h2 class="text-2xl font-black text-slate-800">Exam Paused</h2>
+
           <button @click="togglePause" class="mt-6 bg-slate-800 text-white px-8 py-3 rounded-2xl font-bold">Resume Exam</button>
         </div>
 
         <div class="bg-blue-600 p-6 flex justify-between items-center text-white">
           <div>
             <p class="text-[10px] font-black uppercase tracking-widest opacity-70">{{ question.category }}</p>
-            <h2 class="text-lg font-bold">Question {{ sessionCount }} of {{ totalExamQuestions }}</h2>
+
+            <h2 v-if="!isAmrapMode" class="text-lg font-bold">Question {{ sessionCount }} of {{ totalExamQuestions }}</h2>
+
+            <h2 v-else class="text-lg font-bold">Reps Completed: {{ amrapCorrectCount }}</h2>
+
           </div>
+
           <div class="flex items-center gap-4">
-            <span class="font-mono font-bold bg-blue-500/50 px-3 py-1 rounded-lg">{{ formattedTime }}</span>
-            <button @click="togglePause" class="bg-white text-blue-600 px-3 py-1 rounded-lg text-xs font-black uppercase tracking-widest shadow-lg">{{ isPaused ? 'Resume' : 'Pause' }}</button>
-            <button @click="forceGradeExam" class="bg-white/20 hover:bg-white/30 text-white px-3 py-1 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all border border-white/30">
-              Grade Now 🏁
+
+            <div v-if="isSuddenDeath" class="flex items-center gap-1.5 bg-slate-900/40 px-3 py-1.5 rounded-xl shadow-inner border border-white/10">
+        <span
+            v-for="n in 3"
+            :key="n"
+            class="text-xl transition-all duration-500 ease-[cubic-bezier(0.34,1.56,0.64,1)]"
+            :class="n <= healthPoints ? 'text-red-500 scale-100 drop-shadow-[0_0_8px_rgba(239,68,68,0.8)]' : 'opacity-20 scale-75 grayscale'"
+        >
+          ❤️
+        </span>
+            </div> <div v-else-if="isAmrapMode" class="flex items-center gap-2 bg-red-600/20 px-4 py-1.5 rounded-xl border border-red-500/50 shadow-[0_0_15px_rgba(220,38,38,0.3)]">
+            <span class="text-red-500 animate-pulse">⏱️</span>
+            <span class="font-mono font-black text-red-100 tracking-widest text-lg">{{ formattedAmrapTime }}</span>
+          </div> <span v-else class="font-mono font-bold bg-blue-500/50 px-3 py-1 rounded-lg border border-blue-400/50">
+      {{ formattedCurrentTime }}
+    </span> <button @click="togglePause" class="bg-white text-blue-600 px-3 py-1 rounded-lg text-xs font-black uppercase tracking-widest shadow-lg">{{ isPaused ? 'Resume' : 'Pause' }}</button>
+            <button @click="showGradeConfirmModal = true" class="bg-slate-900/40 hover:bg-slate-900/60 px-3 py-1 rounded-lg text-xs font-black uppercase tracking-widest shadow-lg transition-colors border border-white/10">
+              🏁 Grade Now
             </button>
           </div>
         </div>
@@ -278,15 +525,18 @@
           <p class="text-xl md:text-3xl lg:text-3xl font-extrabold text-slate-800 mb-8 md:mb-12 leading-relaxed md:leading-tight">
             {{ question.questionText }}
           </p>
-          <button v-for="opt in question.options" :key="opt.id" @click="toggleAnswer(opt.id)"
-                  :class="['w-full text-left p-4 md:p-6 lg:p-8 rounded-2xl md:rounded-[2rem] border-2 transition-all flex items-center gap-4 md:gap-6', selectedAnswers.includes(opt.id) ? 'border-blue-500 bg-blue-50' : 'border-slate-100 bg-slate-50 hover:border-blue-200 hover:shadow-md']">
+                <button v-for="opt in question.options" :key="opt.id" @click="toggleAnswer(opt.id)"
+                        :class="['w-full text-left p-4 md:p-6 lg:p-8 rounded-2xl md:rounded-[2rem] border-2 transition-all flex items-center gap-4 md:gap-6', selectedAnswers.includes(opt.id) ? 'border-blue-500 bg-blue-50' : 'border-slate-100 bg-slate-50 hover:border-blue-200 hover:shadow-md']">
 
-            <div :class="['w-6 h-6 md:w-8 md:h-8 border-2 md:border-4 flex-none flex items-center justify-center transition-all', (question.options.filter(o => o.isCorrect).length > 1) ? 'rounded-md' : 'rounded-full', selectedAnswers.includes(opt.id) ? 'border-blue-500 bg-blue-500' : 'border-slate-300']">
-              <div v-if="selectedAnswers.includes(opt.id)" class="w-2 h-2 md:w-3 md:h-3 bg-white rounded-full"></div>
-            </div>
+                  <div class="w-6 h-6 rounded border-2 flex items-center justify-center flex-shrink-0" :class="selectedAnswers.includes(opt.id) ? 'border-blue-500 bg-blue-500 text-white' : 'border-slate-300 bg-white'">
+                    <span v-if="selectedAnswers.includes(opt.id)">✓</span>
+                  </div>
 
-            <span class="font-medium md:font-bold text-slate-700 md:text-xl lg:text-2xl">{{ opt.optionText }}</span>
-          </button>
+                  <span class="text-base md:text-lg lg:text-xl font-bold text-slate-700">
+              {{ opt.text || opt.optionText || opt.value }}
+          </span>
+
+                </button>
 
           <button
               v-if="!showExplanation"
@@ -389,29 +639,65 @@
       </div>
     </div>
 
-    <div v-if="showReviewModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-md z-[300] flex items-center justify-center p-4">
-      <div class="bg-white rounded-[2rem] w-full max-w-2xl max-h-[80vh] overflow-hidden shadow-2xl relative flex flex-col">
-        <div class="p-6 border-b border-slate-100 flex justify-between items-center bg-slate-50">
-          <div>
-            <h2 class="text-2xl font-black text-slate-800">Exam Review</h2>
-            <p class="text-xs text-slate-500 uppercase tracking-widest font-bold">Analyzing Missed Concepts</p>
-          </div>
-          <button @click="showReviewModal = false" class="text-slate-400 hover:text-slate-600 text-3xl">&times;</button>
+    <div v-if="showReviewModal" class="max-w-7xl mx-auto px-4 md:px-8 relative z-50">
+      <div class="bg-white rounded-[2rem] shadow-2xl overflow-hidden border border-slate-100">
+
+        <div class="bg-slate-50 p-10 border-b border-slate-200">
+          <h1 class="text-4xl md:text-5xl font-black text-slate-950 tracking-tight">Exam Review</h1>
+          <p class="text-slate-600 mt-1 uppercase text-xs font-bold tracking-widest">Analyzing Missed Concepts</p>
         </div>
-        <div class="overflow-y-auto p-6 space-y-8">
-          <div v-for="(q, index) in reviewQuestions" :key="q.id" class="review-question-block p-4 border-b">
-            <div class="flex justify-between items-center mb-2">
-              <h3 class="font-bold">Question {{ index + 1 }}</h3>
-              <span :class="isUserCorrect(q.id) ? 'text-green-600' : 'text-red-600'" class="font-bold uppercase text-sm">{{ isUserCorrect(q.id) ? '✓ Correct' : '✗ Incorrect' }}</span>
+
+        <div class="p-8 md:p-12 max-h-[75vh] overflow-y-auto space-y-12">
+          <div v-for="(q, index) in reviewQuestions" :key="q.id" class="relative pl-12">
+
+            <div class="flex justify-between items-center mb-6">
+              <div class="flex items-center gap-3">
+                <div class="absolute left-0 top-0 w-8 h-8 rounded-full bg-gradient-to-br from-blue-600 to-blue-500 text-white flex items-center justify-center font-black text-sm shadow-md">
+                  {{ index + 1 }}
+                </div>
+                <h3 class="text-xl md:text-2xl font-extrabold text-slate-900 leading-tight">Question Details</h3>
+              </div>
+              <span
+                  :class="userResults[q.id] ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'"
+                  class="font-black uppercase text-xs tracking-wider px-3 py-1 rounded-full flex items-center gap-1.5"
+              >
+            {{ userResults[q.id] ? '✓ Correct' : '✗ Incorrect' }}
+          </span>
             </div>
-            <p class="mb-4">{{ q.questionText }}</p>
-            <div class="bg-blue-50 p-3 rounded text-sm text-blue-800"><strong>Explanation:</strong> {{ q.explanation }}</div>
+
+            <p class="text-slate-800 text-lg leading-relaxed mb-8">{{ q.questionText }}</p>
+
+            <div class="bg-blue-50/50 p-6 md:p-8 rounded-3xl border border-blue-100 shadow-inner relative">
+              <svg class="absolute -top-4 -left-4 w-10 h-10 text-blue-200 opacity-60" fill="currentColor" viewBox="0 0 24 24"><path d="M13 14.725c0-5.141 3.892-10.519 10-11.725l.943 1.956c-3.18 1.018-4.943 3.903-4.943 6.451 0 2.067 1.341 3.067 2.499 3.067 1.366 0 2.501 1.258 2.501 2.91 0 2.228-2.028 4.616-5.123 4.616-3.745 0-5.877-2.926-5.877-7.275zm-12 0c0-5.141 3.892-10.519 10-11.725l.943 1.956c-3.18 1.018-4.943 3.903-4.943 6.451 0 2.067 1.341 3.067 2.499 3.067 1.366 0 2.501 1.258 2.501 2.91 0 2.228-2.028 4.616-5.123 4.616-3.745 0-5.877-2.926-5.877-7.275z"/></svg>
+              <p class="text-blue-600 text-[11px] font-black uppercase tracking-widest mb-1.5">Detailed Explanation</p>
+              <p class="text-sm md:text-base italic leading-relaxed text-blue-900/90">{{ q.explanation }}</p>
+            </div>
+
+            <div class="h-px bg-slate-100 mt-12 w-full"></div>
           </div>
         </div>
-        <div class="p-6 border-t border-slate-100 bg-white flex gap-3">
-          <button @click="handlePrint" class="flex-1 bg-slate-800 text-white py-3 rounded-xl font-bold shadow-lg">📄 Export to PDF</button>
-          <button @click="showReviewModal = false" class="flex-1 bg-blue-600 text-white py-3 rounded-xl font-bold shadow-lg">Got it!</button>
+
+        <div class="bg-slate-50 p-8 border-t border-slate-200 mt-4 rounded-b-[2rem]">
+          <div class="flex flex-col md:flex-row justify-center items-center gap-4">
+
+            <button
+                @click="handlePrint"
+                class="w-full md:w-auto flex items-center justify-center gap-2 bg-slate-800 hover:bg-slate-950 text-white py-4 px-10 rounded-2xl font-black shadow-lg hover:shadow-xl hover:-translate-y-1 transition-all duration-300"
+            >
+              <svg class="w-5 h-5 text-white/70" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
+              Export to PDF
+            </button>
+
+            <button
+                @click="closeReview"
+                class="w-full md:w-auto bg-blue-600 hover:bg-blue-700 text-white py-4 px-12 rounded-2xl font-black shadow-lg hover:shadow-xl hover:-translate-y-1 transition-all duration-300"
+            >
+              ✓ Got it! Close Review
+            </button>
+
+          </div>
         </div>
+
       </div>
     </div>
 
@@ -430,45 +716,69 @@
       </div>
     </div>
 
+    <div v-if="showGradeConfirmModal" class="fixed inset-0 z-[100] flex items-center justify-center bg-black/80 backdrop-blur-md p-4 transition-all">
+      <div class="relative bg-slate-950 rounded-2xl shadow-[0_0_50px_-12px_rgba(220,38,38,0.5)] max-w-lg w-full overflow-hidden border border-slate-800 transform scale-100 animate-[fadeIn_0.2s_ease-out]">
+
+        <div class="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-red-600 via-orange-500 to-red-600 animate-pulse"></div>
+
+        <div class="p-6 md:p-8 flex items-start gap-5 border-b border-slate-800/60 bg-gradient-to-b from-red-950/20 to-transparent">
+          <div class="w-14 h-14 rounded-xl bg-red-500/10 border border-red-500/20 flex items-center justify-center flex-shrink-0 relative overflow-hidden">
+            <div class="absolute inset-0 bg-red-500/20 animate-ping opacity-50"></div>
+            <span class="text-3xl relative z-10">⚠️</span>
+          </div>
+          <div>
+            <h3 class="text-2xl font-black text-slate-100 tracking-tight uppercase">System Override</h3>
+            <div class="flex items-center gap-2 mt-2 text-red-500 font-mono text-[10px] md:text-xs tracking-widest uppercase bg-red-500/10 px-2 py-1 rounded inline-flex">
+              <span class="w-2 h-2 rounded-full bg-red-500 animate-pulse"></span>
+              Warning: Premature Termination
+            </div>
+          </div>
+        </div>
+
+        <div class="p-6 md:p-8 font-mono text-sm">
+          <div class="text-slate-400 mb-6 leading-relaxed space-y-2">
+            <p>> Analyzing current session state...</p>
+            <p>> <span class="text-amber-400">Warning: Unresolved parameters detected.</span></p>
+            <p>> Halting the simulation now will result in all uncommitted queries being flagged as <span class="text-red-400 font-bold bg-red-500/10 px-1">CRITICAL_FAILURES</span>.</p>
+          </div>
+
+          <div class="bg-slate-900 border border-slate-800 p-4 rounded-lg">
+            <p class="text-slate-300 font-bold tracking-wide">
+              Execute final telemetry calculation anyway?
+            </p>
+          </div>
+        </div>
+
+        <div class="bg-slate-950 p-6 md:p-8 border-t border-slate-800 flex flex-col md:flex-row justify-end gap-4">
+          <button
+              @click="showGradeConfirmModal = false"
+              class="px-6 py-3 rounded-xl font-mono text-sm font-bold text-slate-400 hover:text-white hover:bg-slate-800 transition-colors border border-transparent hover:border-slate-700"
+          >
+            [ ESC ] ABORT
+          </button>
+          <button
+              @click="executeGradingSequence"
+              class="group relative px-8 py-3 rounded-xl font-mono text-sm font-black text-red-100 bg-red-600 overflow-hidden shadow-[0_0_20px_rgba(220,38,38,0.4)] hover:shadow-[0_0_30px_rgba(220,38,38,0.6)] transition-all"
+          >
+            <div class="absolute inset-0 bg-white/20 translate-y-full group-hover:translate-y-0 transition-transform duration-300 ease-in-out"></div>
+            <span class="relative z-10">> EXECUTE_GRADE</span>
+          </button>
+        </div>
+
+      </div>
+    </div>
+
   </div>
-
-  <div id="final-pdf-report" class="hidden print:block p-10 font-serif">
-    <div class="flex justify-between items-baseline border-b-2 border-slate-900 pb-2 mb-6">
-      <div class="flex items-baseline gap-4">
-        <span class="text-2xl font-black text-blue-600 italic">AWS.Hub</span>
-        <span class="text-sm font-bold">{{ currentUser?.fullName || 'Exam Candidate' }}</span>
-      </div>
-      <div class="text-[10px] font-bold uppercase tracking-widest">
-        {{ scorePercentage }}% | {{ scorePercentage >= 70 ? 'PASS' : 'FAIL' }}
-      </div>
-    </div>
-
-    <div class="mb-6 text-[10px] text-slate-500 uppercase">
-      Attempted: {{ Math.max(allQuestionsInSession.length, 1) }} Questions | Date: {{ new Date().toLocaleDateString() }}
-    </div>
-
-    <div v-for="(q, index) in reviewQuestions" :key="q.id" class="pdf-question-block mb-8">
-      <div class="flex justify-between items-center mb-2">
-        <h3 class="font-bold text-lg">Question {{ index + 1 }}</h3>
-        <span class="text-[9px] font-bold" :class="isUserCorrect(q.id) ? 'text-green-600' : 'text-red-600'">
-         {{ isUserCorrect(q.id) ? '✓ CORRECT' : '✗ INCORRECT' }}
-       </span>
-      </div>
-      <p class="mb-4 text-slate-800">{{ q.questionText }}</p>
-      <div class="bg-slate-50 p-4 rounded-lg border border-slate-200">
-        <p class="text-[9px] font-black text-blue-600 uppercase mb-1">Detailed Explanation</p>
-        <p class="text-sm italic leading-relaxed text-slate-600">{{ q.explanation }}</p>
-      </div>
-    </div>
-  </div>
-
-</template>
+  </template>
 
 <script setup>
 import confetti from 'canvas-confetti';
 import { ref, onMounted, computed, watch, onUnmounted } from 'vue';
-import {data} from "autoprefixer";
-
+import { jsPDF } from "jspdf";
+import autoTable from 'jspdf-autotable';
+import { Radar } from 'vue-chartjs';
+import { Chart as ChartJS, RadialLinearScale, PointElement, LineElement, Filler, Tooltip, Legend } from 'chart.js';
+ChartJS.register(RadialLinearScale, PointElement, LineElement, Filler, Tooltip, Legend);
 // --- Core State ---
 const question = ref(null);
 const selectedAnswers = ref([]);
@@ -479,6 +789,22 @@ const currentQuestion = ref(null);
 const questions = ref([]);
 const reviewQuestions = ref([]);
 const missedQuestionIds = ref([]); // Tracks IDs for the Review Room
+const showGradeConfirmModal = ref(false);
+const leaderboardData = ref([]);
+const totalExamSeconds = ref(0);
+const timerSeconds = ref(0);
+const currentQuestionSeconds = ref(0);
+let timerInterval = null;
+const userTotalXp = ref(0);
+const isSuddenDeath = ref(true);
+const healthPoints = ref(3);
+const isDead = computed(() => healthPoints.value <= 0);
+// --- AMRAP (TIME ATTACK) MECHANIC ---
+const isAmrapMode = ref(true); // Toggle ON for testing!
+const amrapTimeLeft = ref(600); // 10 minutes (in seconds)
+const amrapCorrectCount = ref(0);
+let amrapInterval = null;
+const activeProtocol = ref('standard');
 
 // --- Exam & Session Logic ---
 const sessionCount = ref(1);
@@ -488,12 +814,15 @@ const allQuestionsInSession = ref([]); // Added this to prevent "undefined" erro
 const selectedAnswersRecord = ref({}); // Added this to prevent "undefined" errors
 const MAX_HISTORY = 30;
 const authError = ref('');
+const userStreak = ref(0);
 
 // --- Performance Tracking ---
 const showResults = ref(false);
+const isHistoricalView = ref(false);
 const startTime = ref(null);
 const totalExamTime = ref(0);
-const categoryScores = ref({});
+const savedScores = localStorage.getItem('aws_radar_scores');
+const categoryScores = ref(savedScores ? JSON.parse(savedScores) : {});
 
 // --- Platform State ---
 const currentView = ref('landing');
@@ -518,66 +847,247 @@ const isSignup = ref(true);
 const authForm = ref({ email: '', username: '', password: '', fullName: '' });
 const userResults = ref({});
 
+const isAudioEnabled = ref(true); // Global mute switch
+const isMusicPlaying = ref(false); // Background lo-fi track
+
 // --- Review & Print ---
 const showReviewModal = ref(false);
 
 const allExamQuestions = ref([]);
 
+// --- The functions start here
+
 const showSuccessHologram = ref(false);
 const welcomeMessage = ref('');
 const lastAttemptId = ref(null);
 
-const timerSeconds = ref(0);
-let timerInterval = null;
+
+// --- Analytics: Radar Chart Configuration ---
+// 1. The Official AWS Domain Dictionary
+// (You can add the exact domains for all 12 certs here later!)
+
+const chartViewCode = ref('DEFAULT');
+
+// The Official AWS Domain Dictionary (Formatted for Radar Charts)
+const examDomains = {
+  // --- FOUNDATIONAL ---
+  'CLF-C02': ['Cloud Concepts', 'Security & Compliance', 'Tech & Services', 'Billing & Pricing'],
+  'AIF-C01': ['AI/ML Fundamentals', 'Generative AI', 'Foundation Models', 'Responsible AI', 'Security'],
+
+  // --- ASSOCIATE ---
+  'SAA-C03': ['Secure Architectures', 'Resilient Architectures', 'High-Performing', 'Cost-Optimized'],
+  'DVA-C02': ['Development', 'Security', 'Deployment', 'Troubleshooting & Optimization'],
+  'SOA-C02': ['Monitoring & Logging', 'Reliability', 'Deployment & Automation', 'Security', 'Networking', 'Optimization'],
+  'DEA-C01': ['Ingestion & Transform', 'Data Stores', 'Operations & Support', 'Security & Governance'],
+
+  // --- PROFESSIONAL ---
+  'SAP-C02': ['Organizational Complexity', 'New Solutions', 'Continuous Improvement', 'Migration & Modernization'],
+  'DOP-C02': ['SDLC Automation', 'IaC & Config', 'Resiliency', 'Monitoring', 'Incident Response', 'Security'],
+  'AIP-C01': ['GenAI Fundamentals', 'LLM Integration', 'Prompt Engineering', 'Security & Ethics'], // Generative AI Dev
+
+  // --- SPECIALTY ---
+  'MLS-C01': ['Data Engineering', 'Exploratory Data Analysis', 'Modeling', 'ML Implementation & Ops'],
+  'SCS-C02': ['Threat Detection', 'Logging & Monitoring', 'Infrastructure Security', 'IAM', 'Data Protection'],
+  'ANS-C01': ['Network Design', 'Implementation', 'Management & Ops', 'Network Security'],
+
+  // --- DEFAULT ---
+  'DEFAULT': ['Compute', 'Storage', 'Database', 'Networking', 'Security', 'Management']
+};
+
+// 2. The Dynamic Radar Engine
+const radarData = computed(() => {
+  // Figure out which cert they are looking at, or use the default
+  const certCode = chartViewCode.value;
+
+  // Grab the specific labels for that exact exam
+  const currentLabels = examDomains[certCode] || examDomains['DEFAULT'];
+
+  const realScores = currentLabels.map(label => {
+    // If we have a real score for this category, use it!
+    if (categoryScores.value && categoryScores.value[label] !== undefined) {
+      return categoryScores.value[label];
+    }
+    // If we haven't tested this category yet, default to 0
+    return 0;
+  });
+
+  // Generate placeholder scores that perfectly match the number of labels
+  // (We randomize them between 40-100 just so the chart looks cool for testing)
+  const mockScores = currentLabels.map(() => Math.floor(Math.random() * 60) + 40);
+
+  return {
+    labels: currentLabels,
+    datasets: [
+      {
+        label: `${certCode === 'DEFAULT' ? 'Overall AWS' : certCode} Mastery`,
+        backgroundColor: 'rgba(59, 130, 246, 0.2)',
+        borderColor: 'rgba(59, 130, 246, 1)',
+        pointBackgroundColor: 'rgba(59, 130, 246, 1)',
+        pointBorderColor: '#fff',
+        pointHoverBackgroundColor: '#fff',
+        pointHoverBorderColor: 'rgba(59, 130, 246, 1)',
+        data: realScores // <-- Feeding the real scores into the chart!
+      }
+    ]
+  };
+});
+
+// --- Analytics: Study Priorities Engine ---
+// --- THE REACTIVE PRIORITIES ENGINE ---
+const studyPriorities = computed(() => {
+  // 1. Safety check: if no data exists yet, return an empty array
+  if (!categoryScores.value || Object.keys(categoryScores.value).length === 0) {
+    return [];
+  }
+
+  // 2. Map over the scores to format them for the UI
+  const priorities = Object.entries(categoryScores.value).map(([cat, score]) => {
+    return {
+      name: cat,
+      percentage: score // No math here, just passing the number through!
+    };
+  });
+
+  // 3. Sort from lowest to highest, grab the bottom 3, and send them to the screen!
+  return priorities.sort((a, b) => a.percentage - b.percentage).slice(0, 3);
+});
+
+const radarOptions = {
+  responsive: true,
+  maintainAspectRatio: false,
+  scales: {
+    r: {
+      // THE SPOKES (The lines coming out from the center)
+      angleLines: {
+        color: 'rgba(0, 0, 0, 5)',
+        lineWidth: 1 // <-- Make the spokes thicker or thinner
+      },
+
+      // THE WEB (The concentric polygon rings)
+      grid: {
+        color: 'rgba(0, 0, 0, 5)',
+        circular: true, // <-- Change to 'true' for a circle instead of a polygon!
+        lineWidth: 1
+      },
+
+      // THE FONTS (The category names around the outside)
+      pointLabels: {
+        font: {
+          size: 13, // <-- Change font size
+          family: "'Inter', 'Helvetica Neue', sans-serif", // <-- Change font family
+          weight: '800' // <-- Make it bolder
+        },
+        color: '#334155' // <-- Change the text color (Tailwind slate-700)
+      },
+
+      // THE RINGS (Locking the scale from 0 to 100)
+      ticks: {
+        display: false, // <-- Change to 'true' to see the numbers (20, 40, 60, 80) on the rings
+        min: 0,
+        max: 100,
+        stepSize: 20 // <-- Creates exactly 5 concentric rings
+      }
+    }
+  },
+  plugins: { legend: { display: false } }
+};
 
 const printReview = () => {
   window.print();
 };
 
 const openReviewRoom = async (attemptId) => {
-  // 1. Immediately clear old data so the user doesn't see previous results
-  reviewQuestions.value = [];
+  // 1. THE SMARTER LOCAL BYPASS (For immediately after an exam ends)
+  const localData = allQuestionsInSession.value.length > 0 ? allQuestionsInSession.value : questions.value;
 
-  if (!attemptId) {
-    console.error("Cannot open review: Attempt ID is missing.");
+  // If we have active questions AND we are currently on the Results screen, use the RAM!
+  if (localData && localData.length > 0 && currentView.value === 'quiz') {
+    reviewQuestions.value = localData;
+    showResults.value = false;
+    showReviewModal.value = true;
     return;
   }
 
+  // 2. THE HISTORICAL FETCH (For clicking the 👁️ on the dashboard)
+  // Check if attemptId is missing or if it's accidentally a mouse click event object
+  if (!attemptId || typeof attemptId === 'object') {
+    alert("Unable to load review. Invalid attempt ID.");
+    return;
+  }
+
+  // --- THE FIX: Wrap both IDs in String() so "15" === "15" works perfectly! ---
+  const targetAttempt = examHistory.value.find(a => String(a.id) === String(attemptId));
+
+  if (!targetAttempt) {
+    alert("Could not find this attempt in your history archives.");
+    return;
+  }
+
+  // Handle Flawless Victories (No missed questions!)
+  if (!targetAttempt.missedQuestionIds || targetAttempt.missedQuestionIds.trim() === "") {
+    alert("Flawless Victory! You didn't miss any questions on this attempt.");
+    return;
+  }
+
+  // Fetch the specific missed questions from Spring Boot
   try {
-    const response = await fetch(`http://localhost:8080/api/questions/history/${attemptId}`);
-    if (response.ok) {
-      const data = await response.json();
-      reviewQuestions.value = Array.isArray(data) ? data : [];
-      showReviewModal.value = true; // This opens the review room modal
+    const response = await fetch(`http://localhost:8080/api/questions/batch?ids=${targetAttempt.missedQuestionIds}`);
+
+    if (!response.ok) throw new Error("Backend refused the batch request.");
+
+    const missedQuestionsData = await response.json();
+
+    // 1. Load the questions into Vue's memory
+    reviewQuestions.value = missedQuestionsData;
+
+    // 2. Force them to 'false' so the UI highlights them as missed
+    userResults.value = {};
+    missedQuestionsData.forEach(q => {
+      userResults.value[q.id] = false;
+    });
+
+    // 3. THE FIX: Explicitly change the Vue state so the HTML actually renders!
+    currentView.value = 'quiz';      // Move off the dashboard!
+    showResults.value = true;        // Trigger the results screen!
+    isHistoricalView.value = true;
+
+    // (If you have a separate boolean for a modal, keep it here just in case)
+    if (typeof showReviewModal !== 'undefined') {
+      showReviewModal.value = true;
     }
+
   } catch (error) {
-    console.error("Review Room Error:", error);
+    console.error("Historical Review Error:", error);
+    alert("The Jedi Archives are offline. Could not retrieve past questions.");
   }
 };
 
 const resetSession = () => {
-  // --- Existing Trackers ---
+  // 1. Aggressively wipe all tracking data arrays/objects clean!
+  sessionCount.value = 1; // Start at 1, not 0!
+  questions.value = [];
   allQuestionsInSession.value = [];
-  missedQuestionIds.value = [];
-  selectedAnswersRecord.value = {};
-
-  // --- Existing UI States ---
   reviewQuestions.value = [];
+  userResults.value = {};
+  selectedAnswersRecord.value = {};
+  selectedAnswers.value = [];
+  missedQuestionIds.value = [];
   lastAttemptId.value = null;
 
-  // --- ADD THESE: Reset the current quiz view ---
-  question.value = null;          // Clears the current question from the screen
-  selectedAnswers.value = [];     // Unchecks any radio buttons/checkboxes
-  showExplanation.value = false;  // Hides the previous explanation
-  feedback.value = "";            // Clears "Correct/Incorrect" text
-  showResults.value = false;      // Closes the results overlay
+  // 2. Turn off all the end-of-quiz UI screens
+  showResults.value = false;
+  showReviewModal.value = false;
+  showExplanation.value = false;
+  feedback.value = '';
 
-  // If you are using a manual counter instead of computed:
-  sessionCount.value = 0;
+  // 3. Route back to the landing dashboard!
+  currentView.value = 'landing';
+
+  // 4. Scroll to the top of the page
+  window.scrollTo({ top: 0, behavior: 'smooth' });
 };
 
 const scorePercentage = computed(() => {
-  // Use Object.keys to count how many questions the user actually SUBMITTED
   const attemptedIds = Object.keys(selectedAnswersRecord.value);
   const attemptedCount = Object.keys(selectedAnswersRecord.value || {}).length;
 
@@ -616,19 +1126,12 @@ const formatTime = (seconds) => {
 };
 
 const goBackToLanding = () => {
-  // 1. Stop any active timers
-  if (timerInterval) clearInterval(timerInterval);
-
-  // 2. Reset the quiz states
   showResults.value = false;
-  showExplanation.value = false;
-  question.value = null;
-
-  // 3. Switch the view back to the dashboard
+  isHistoricalView.value = false;
   currentView.value = 'landing';
 
-  // 4. Refresh the history so the new attempt shows up
-  fetchHistory();
+  if (typeof fetchHistory === 'function') fetchHistory();
+  if (typeof fetchLeaderboard === 'function') fetchLeaderboard();
 };
 
 const isCorrect = (q, userPick) => {
@@ -640,14 +1143,10 @@ const isCorrect = (q, userPick) => {
 };
 
 const startTimer = () => {
-  // Always clear existing intervals first
-  if (timerInterval) clearInterval(timerInterval);
-  timerSeconds.value == 0;
-
+  stopTimer(); // Safety check to prevent double-speed clocks!
   timerInterval = setInterval(() => {
-    // Use .value to ensure Vue sees the change
-    timerSeconds.value++;
-
+    totalExamSeconds.value++;
+    currentQuestionSeconds.value++;
   }, 1000);
 };
 
@@ -658,6 +1157,12 @@ const stopTimer = () => {
     timerInterval = null;
   }
 };
+
+// Watch the current question index. Whenever it changes, reset the per-question clock!
+// (Make sure 'currentQuestionIndex' matches whatever variable you use to track the current question number)
+watch(question, () => {
+  currentQuestionSeconds.value = 0;
+});
 
 const isUserCorrect = (questionId) => {
   return userResults.value[questionId] === true;
@@ -671,25 +1176,54 @@ const formattedTime = computed(() => {
   return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
 });
 
-const finalScore = computed(() => {
-  return Math.round((correctCount.value / Math.max(sessionCount.value, 1)) * 100);
+// 1. The clock shown during the quiz (resets every question)
+const formattedCurrentTime = computed(() => {
+  const m = Math.floor(currentQuestionSeconds.value / 60).toString().padStart(2, '0');
+  const s = (currentQuestionSeconds.value % 60).toString().padStart(2, '0');
+  return `${m}:${s}`;
 });
 
-// The Star Wars message engine
+// 2. The total time shown on the Results screen
+const formattedTotalTime = computed(() => {
+  const m = Math.floor(totalExamSeconds.value / 60).toString().padStart(2, '0');
+  const s = (totalExamSeconds.value % 60).toString().padStart(2, '0');
+  return `${m}:${s}`;
+});
+
+// 3. The average time per question shown on the Results screen
+const formattedAverageTime = computed(() => {
+  // Figure out how many questions were in this specific exam
+  const activeQs = (allQuestionsInSession.value && allQuestionsInSession.value.length > 0)
+      ? allQuestionsInSession.value
+      : questions.value;
+
+  const totalQs = activeQs.length || 1;
+
+  // Calculate average
+  const avgSeconds = Math.round(totalExamSeconds.value / totalQs);
+
+  const m = Math.floor(avgSeconds / 60).toString().padStart(2, '0');
+  const s = (avgSeconds % 60).toString().padStart(2, '0');
+  return `${m}:${s}`;
+});
+
+// The Marvel Cinematic Universe message engine
 const examResultMessage = computed(() => {
   if (finalScore.value >= 72) {
     return {
-      title: "Victory, you have achieved.",
-      text: "The Force is strong with this one. You have successfully navigated the asteroid field of cloud architecture and achieved the rank of Master. The Jedi Archives have permanently recorded your victory.",
+      title: "You are Worthy. ⚡️",
+      text: "The cloud bends to your will. You've summoned the lightning, conquered the architecture, and secured your place among the AWS Pantheon. You are officially God of Thunder tier.",
       color: "text-emerald-500",
-      icon: "🌟"
+      icon: "🌩️",
+      image: "/image/thor.gif" // Thor ascending
     };
   } else {
     return {
-      title: "The greatest teacher, failure is.",
-      text: "Do not be discouraged. Even Luke didn't lift the X-Wing on his first try. Review your missed concepts in the archives below, trust your training, and return when your mind is clear to conquer this trial.",
+      title: "Whatever It Takes. 🛡️",
+      text: "Even Earth's mightiest heroes take a hit. Dust yourself off, review the mission logs in the archives below, and gear up for round two. We don't give up. Get back in the fight.",
       color: "text-blue-500",
-      icon: "🧘‍♂️"
+      icon: "💥",
+      image: "/image/marvel.gif" // Avengers standing tall
     };
   }
 });
@@ -704,83 +1238,123 @@ const fetchTotalCount = async () => {
     const count = await response.json();
     totalExamQuestions.value = Math.min(count, 65);
   } catch (error) {
-    console.error("Count Error:", error);
   }
 };
 
 const fetchQuestion = async () => {
-  // We only need the Cert code to fetch!
-  // Removed the !selectedCategory guard which was likely blocking you.
   if (!selectedCert.value?.code) return;
 
   try {
-    const response = await fetch(`http://localhost:8080/api/questions/random?examCode=${selectedCert.value.code}`);
+    // 1. Build the filter string (e.g., "&excludeIds=4,12,88")
+    const excludeQuery = seenQuestionIds.value.length > 0
+        ? `&excludeIds=${seenQuestionIds.value.join(',')}`
+        : '';
 
-    // If the server returns a 204 (No Content) or 404, stop the crash
+    // 2. Ask the server for a random question, excluding the ones we've seen
+    const response = await fetch(`http://localhost:8080/api/questions/random?examCode=${selectedCert.value.code}${excludeQuery}`);
+
+    // 3. If the server returns 204, the bank is completely empty!
     if (response.status === 204 || !response.ok) {
-      console.warn(`No questions found for code: ${selectedCert.value.code}`);
-      alert("Archive Empty: No questions found for this certification yet.");
-      goBackToLanding();
+      alert("Simulation Complete: You have exhausted the entire question bank for this certification!");
+
+      // If we are in the middle of a quiz and run out of questions, force the grade!
+      if (currentView.value === 'quiz') forceGradeExam();
       return;
     }
 
-    // Capture the text first to avoid the "Unexpected end of JSON" crash
     const text = await response.text();
-    if (!text) {
-      console.error("Server returned an empty body.");
-      return;
-    }
+    if (!text) return;
 
-    // Manually parse it now that we know it's not empty
     const data = JSON.parse(text);
     question.value = data;
+
+    // 4. THE FIX: Log this ID into our memory bank so it never shows up again!
+    seenQuestionIds.value.push(data.id);
 
     // Reset state for the new question
     selectedAnswers.value = [];
     showExplanation.value = false;
 
   } catch (error) {
-    console.error("Uplink Error:", error);
-    // Fallback so the user isn't stuck on a blank screen
-    alert("Communication error with the Jedi Archives. Please check the console.");
+    console.error(error);
+    alert("Communication error with the Jedi Archives.");
   }
 };
 
 const loadNextQuestion = async () => {
-  if (question.value && !questions.value.some(q => q.id === question.value.id)) {
+  if (question.value) {
     questions.value.push(question.value);
   }
 
-  // 2. THE GUEST TRIPWIRE
+  // --- THE GUEST TRIPWIRE (Guests still get kicked out at 10) ---
   if (!currentUser.value && sessionCount.value >= 10) {
-    if (timerInterval) {
-      clearInterval(timerInterval);
-      timerInterval = null; // Clean up the reference
-    }
-
+    if (timerInterval) clearInterval(timerInterval);
+    if (amrapInterval) clearInterval(amrapInterval);
     showGuestLimitModal.value = true;
-    return; // Stop the fetch
+    return;
   }
 
-  // 3. THE MEMORY WIPE (Crucial for UI state)
-  // Clears the 'Correct/Incorrect' feedback before the next question hits the screen
-  showExplanation.value = false;
-  selectedAnswers.value = []; // Reset checkboxes/radios
-  feedback.value = '';
+  if (isAmrapMode.value) {
+    // --- AMRAP INFINITE LOOP ---
+    try {
+      const codeToFetch = selectedCert.value?.code || 'SCS-C02';
 
-  // 4. INCREMENT & FETCH
-  sessionCount.value++;
+      // 1. THE FIX: Build the Memory Filter string for AMRAP!
+      const excludeQuery = seenQuestionIds.value.length > 0
+          ? `&excludeIds=${seenQuestionIds.value.join(',')}`
+          : '';
 
-  try {
-    await fetchQuestion(); // Hit the Spring Boot backend
+      // 2. Fetch using the filter
+      const response = await fetch(`http://localhost:8080/api/questions/random?examCode=${codeToFetch}${excludeQuery}`);
 
-    // 5. AUTO-SCROLL
-    // Keeps the user at the top of the new question on mobile/small screens
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+      // 3. THE SAFETY NET: Check if they are an absolute beast and exhausted the bank!
+      if (response.status === 204 || !response.ok) {
+        alert("Bank Exhausted! You have ripped through every single question available for this certification.");
+        forceGradeExam(); // End the AMRAP session early and score them!
+        return;
+      }
 
-  } catch (error) {
-    console.error("Transmission Error from Jedi Archives:", error);
-    alert("Could not load the next trial. Please check your uplink.");
+      const text = await response.text();
+      if (!text) return;
+      const newQuestion = JSON.parse(text);
+
+      // 4. Log this new question in the memory bank so it doesn't repeat
+      seenQuestionIds.value.push(newQuestion.id);
+
+      question.value = newQuestion;
+      selectedAnswers.value = [];
+      showExplanation.value = false;
+      sessionCount.value++; // Keep track of total reps attempted
+
+      window.scrollTo({top: 0, behavior: 'smooth'});
+
+    } catch (error) {
+      console.error("Failed to fetch AMRAP question:", error);
+    }
+  } else {
+    // --- STANDARD EXAM ENGINE ---
+
+    // THE FINISH LINE TRIPWIRE (Only applies to normal exams!)
+    if (sessionCount.value >= totalExamQuestions.value) {
+      finishExam();
+      return;
+    }
+
+    // THE MEMORY WIPE
+    showExplanation.value = false;
+    selectedAnswers.value = [];
+    feedback.value = '';
+
+    // INCREMENT & FETCH
+    sessionCount.value++;
+
+    try {
+      // Your fetchQuestion function handles the memory filter perfectly for standard mode!
+      await fetchQuestion();
+      window.scrollTo({top: 0, behavior: 'smooth'});
+    } catch (error) {
+      alert("Could not load the next trial. Please check your uplink.");
+    }
   }
 };
 
@@ -788,61 +1362,227 @@ const checkAnswer = () => {
   const currentQ = question.value;
 
   if (!currentQ || !currentQ.options) {
-    console.warn("⚠️ Aborting: No active question or options found.");
     return;
   }
 
-  // 1. Grab the ID of the option they clicked (e.g., 8)
-  const chosenId = selectedAnswers.value[0];
+  // Save their answer
+  selectedAnswersRecord.value[currentQ.id] = [...selectedAnswers.value];
 
-  // 2. Find the option in the database that has that exact ID!
-  const chosenOption = currentQ.options.find(opt => opt.id === chosenId);
+  // --- THE MULTI-SELECT UPGRADE ---
+  const userSelectedIds = selectedAnswers.value.map(id => String(id));
+  const correctOptionIds = currentQ.options
+      .filter(opt => opt.isCorrect === true || opt.correct === true)
+      .map(opt => String(opt.id));
 
-  // 3. Grade it
-  const isRight = chosenOption ? (chosenOption.isCorrect === true || chosenOption.correct === true) : false;
+  const isRight =
+      userSelectedIds.length === correctOptionIds.length &&
+      userSelectedIds.every(id => correctOptionIds.includes(id));
+  // ---------------------------------
 
-  // 4. Save the result for the Final Review Screen
   userResults.value[currentQ.id] = isRight;
 
-  // 5. Update the UI Banners
+  // Set visual feedback for the explanation screen
   if (isRight) {
+    playSound('correct');
     feedback.value = "✓ CORRECT";
     feedbackClass.value = "bg-green-100 text-green-800 border-2 border-green-200";
   } else {
+    playSound('wrong');
     feedback.value = "✗ INCORRECT";
     feedbackClass.value = "bg-red-100 text-red-800 border-2 border-red-200";
   }
 
-  // 6. Unhide the explanation banner
+  // --- THE SUDDEN DEATH ENGINE ---
+  if (isSuddenDeath.value) {
+    if (!isRight) {
+      playSound('shatter');
+      healthPoints.value--;
+      console.warn(`DAMAGE TAKEN! HP remaining: ${healthPoints.value}`);
+
+      // Fatal Blow - Terminate the Exam instantly
+      if (isDead.value) {
+        // Instantly force the grade and boot them to the results screen
+        forceGradeExam();
+        return;
+      }
+    }
+  }
+
+  // Show the explanation if they survived!
   showExplanation.value = true;
 };
 
+// The Countdown Formatter (e.g., "09:42")
+const formattedAmrapTime = computed(() => {
+  const m = Math.floor(amrapTimeLeft.value / 60);
+  const s = amrapTimeLeft.value % 60;
+  return `${m}:${s.toString().padStart(2, '0')}`;
+});
+
+const sfx = {
+  click: new Audio('/sounds/mechanical_click.mp3'),
+  correct: new Audio('/sounds/heavy_thud.mp3'),     // Or a satisfying chime
+  wrong: new Audio('/sounds/error_glitch.mp3'),     // A digital glitch or low buzz
+  shatter: new Audio('/sounds/glass_shatter.mp3'),  // For Sudden Death damage
+  trash: new Audio('/sounds/digital_sweep.mp3')
+};
+
+// Lower the volume on the SFX so they aren't deafening
+Object.values(sfx).forEach(audio => audio.volume = 0.4);
+
+// 2. The Lo-Fi Focus Track
+const bgMusic = new Audio('/sounds/lofi_focus_loop.mp3');
+bgMusic.loop = true;
+bgMusic.volume = 0.05; // Keep this very quiet so it sits in the background!
+
+// 3. The Play Helper Function
+const playSound = (type) => {
+  if (!isAudioEnabled.value) return;
+
+  // Clone the audio node so it can play rapidly overlapping clicks!
+  const sound = sfx[type].cloneNode();
+  sound.volume = sfx[type].volume;
+  sound.play().catch(e => console.warn("Browser blocked audio auto-play"));
+};
+
+const toggleMusic = () => {
+  isMusicPlaying.value = !isMusicPlaying.value;
+  if (isMusicPlaying.value) {
+    bgMusic.play().catch(e => console.warn("Browser blocked audio"));
+  } else {
+    bgMusic.pause();
+  }
+};
+
+// The Strict 10-Minute Clock
+const startAmrapTimer = () => {
+  amrapTimeLeft.value = 600;
+  amrapCorrectCount.value = 0;
+
+  amrapInterval = setInterval(() => {
+    amrapTimeLeft.value--;
+
+    // THE BUZZER!
+    if (amrapTimeLeft.value <= 0) {
+      clearInterval(amrapInterval);
+      console.warn("AMRAP CLOCK EXHAUSTED! Forcing submission...");
+
+      examResultMessage.value = {
+        title: "TIME EXHAUSTED",
+        text: `AMRAP Session Complete. You successfully completed ${amrapCorrectCount.value} reps.`,
+        color: "text-amber-500",
+        icon: "⏱️"
+      };
+
+      forceGradeExam();
+    }
+  }, 1000);
+};
+
+const analyzeCategoryMastery = () => {
+  // 1. Get the active questions
+  const activeQs = (allQuestionsInSession.value && allQuestionsInSession.value.length > 0)
+      ? allQuestionsInSession.value
+      : questions.value;
+
+  // 2. Set up temporary counters
+  const rawStats = {};
+
+  // 3. Loop through every question in the exam
+  activeQs.forEach(q => {
+    const cat = q.category;
+
+    // If we haven't seen this category yet, initialize it
+    if (!rawStats[cat]) {
+      rawStats[cat] = { total: 0, correct: 0 };
+    }
+
+    // Add to the total
+    rawStats[cat].total++;
+
+    // If they got it right, add to the correct count
+    if (userResults.value[q.id] === true) {
+      rawStats[cat].correct++;
+    }
+  });
+
+  // 4. Convert the raw fractions into beautiful percentages
+  const finalPercentages = {};
+  for (const [cat, data] of Object.entries(rawStats)) {
+    finalPercentages[cat] = Math.round((data.correct / data.total) * 100);
+  }
+
+  // 5. Save the real data to our Vue state!
+  categoryScores.value = finalPercentages;
+
+  // 6: Save to LocalStorage so it survives page reloads!
+  localStorage.setItem('aws_radar_scores', JSON.stringify(finalPercentages));
+
+  console.log("Mastery Calculated & Saved to Disk:", categoryScores.value);
+};
+
+const submitExam = async () => {
+  stopTimer();
+  // 1. Close the "Are you sure?" modal
+  showGradeConfirmModal.value = false;
+
+  // 2. Flip the screen to show the grading confetti and missed questions
+  showResults.value = true;
+
+  if (currentUser.value) {
+    await saveResults();
+  } else {
+    console.warn("Ghost user detected! No one is logged in to save this score.");
+  }
+};
+
 const saveResults = async () => {
+  analyzeCategoryMastery();
+
   try {
+    const activeQs = (allQuestionsInSession.value && allQuestionsInSession.value.length > 0)
+        ? allQuestionsInSession.value
+        : questions.value;
+
+    const total = activeQs.length || 1;
+    let correctCount = 0;
+    let missedIds = [];
+
+    // THE FIX: Loop through EVERY question in the exam.
+    // If you didn't explicitly get it right, it is forced to "missed".
+    activeQs.forEach(q => {
+      if (userResults.value[q.id] === true) {
+        correctCount++;
+      } else {
+        missedIds.push(q.id);
+        userResults.value[q.id] = false; // Force the UI to show it as missed too!
+      }
+    });
+
+    const finalScore = Math.round((correctCount / total) * 100);
+
+    // Build the payload
+    // Build the payload inside saveResults
     const historyData = {
-      userId: currentUser.value?.id,
+      userId: currentUser.value.id,
       examCode: selectedCert.value?.code || 'AWS-CERT',
-      scorePercentage: Math.round((correctCount.value / allQuestionsInSession.value.length) * 100),
-      totalQuestions: allQuestionsInSession.value.length,
-      correctCount: correctCount.value,
-      // Convert the array [10, 22] into a string "10,22" for the database
-      missedQuestionIds: missedQuestionIds.value.join(','),
-      attemptDate: new Date().toISOString()
+      scorePercentage: finalScore,
+      totalQuestions: total,
+      correctCount: correctCount,
+      missedQuestionIds: missedIds.join(','),
+
+      // CHANGE THIS FROM 0 to totalExamSeconds.value
+      timeSpentSeconds: totalExamSeconds.value
     };
 
+    // Make sure this URL matches your actual Spring Boot endpoint!
     const response = await fetch('http://localhost:8080/api/questions/history/save', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(historyData)
     });
 
-    if (response.ok) {
-      const data = await response.json();
-      lastAttemptId.value = data.id; // Unlocks the Review button
-      showResults.value = true;
-    }
-  } catch (err) {
-    console.error("Save Failure:", err);
+  } catch (error) {
   }
 };
 
@@ -866,33 +1606,121 @@ const fetchHistory = async () => {
   }
 };
 
-const fetchHallOfFame = async () => {
-  try {
-    const response = await fetch('http://localhost:8080/api/questions/history/leaderboard');
-    if (response.ok) {
-      hallOfFame.value = await response.json();
-    }
-  } catch (error) {
-    console.error("Could not load Hall of Fame:", error);
+const streakDisplay = computed(() => {
+  if (userStreak.value >= 14) {
+    return { color: 'text-slate-900', icon: '🔥', label: 'Domain Expansion', aura: 'drop-shadow-[0_0_8px_rgba(0,0,0,0.8)]' }; // Black Flame
+  } else if (userStreak.value >= 7) {
+    return { color: 'text-blue-500', icon: '🔥', label: 'Blue Hot', aura: 'drop-shadow-[0_0_8px_rgba(59,130,246,0.8)]' }; // Blue Flame
+  } else if (userStreak.value >= 3) {
+    return { color: 'text-orange-500', icon: '🔥', label: 'Ignited', aura: 'drop-shadow-[0_0_8px_rgba(249,115,22,0.8)]' }; // Orange Flame
+  } else if (userStreak.value > 0) {
+    return { color: 'text-amber-400', icon: '🔥', label: 'Spark', aura: '' }; // Standard Flame
+  } else {
+    return { color: 'text-slate-300', icon: '🧊', label: 'Cold', aura: '' }; // Frozen/Zero
   }
-};
+});
 
 const getStudyPriorities = () => {
+  // 1. Safety check: if no data exists yet, return an empty array
+  if (!categoryScores.value || Object.keys(categoryScores.value).length === 0) {
+    return [];
+  }
+
+  // 2. Map over the scores. 'score' is ALREADY the flat percentage number!
   const priorities = Object.entries(categoryScores.value).map(([cat, score]) => {
     return {
       name: cat,
-      percentage: Math.round((score.correct / score.total) * 100),
-      total: score.total
+      percentage: score // <-- THE FIX: No more math here!
     };
   });
+
+  // 3. Sort from lowest to highest score (to find their biggest weaknesses)
   return priorities.sort((a, b) => a.percentage - b.percentage).slice(0, 3);
 };
 
-const startQuiz = async () => {
-  const response = await fetch('http://localhost:8080/api/questions/all');
-  questions.value = await response.json();
-  currentQuestion.value = questions.value[0]; // Now it's defined!
-  currentView.value = 'quiz';
+// --- THE PROTOCOL ROUTER ---
+const initiateProtocol = async (mode) => {
+  activeProtocol.value = mode;
+
+  // --- THE MEMORY WIPE ---
+  // We clear out the old session data right before the new one starts
+  seenQuestionIds.value = [];
+  questions.value = [];
+  allQuestionsInSession.value = [];
+  reviewQuestions.value = [];
+  userResults.value = {};
+  selectedAnswersRecord.value = {};
+  sessionCount.value = 1;
+  showResults.value = false;
+  isPaused.value = false;
+  showExplanation.value = false;
+  selectedAnswers.value = [];
+  totalExamSeconds.value = 0;
+  currentQuestionSeconds.value = 0;
+
+  // --- CONFIGURE THE MODE ---
+  if (mode === 'amrap') {
+    isAmrapMode.value = true;
+    isSuddenDeath.value = false;
+    startAmrapTimer();
+  }
+  else if (mode === 'sudden_death') {
+    isAmrapMode.value = false;
+    isSuddenDeath.value = true;
+    healthPoints.value = 3;
+    startTimer();
+  }
+  else if (mode === 'learn') {
+    isAmrapMode.value = false;
+    isSuddenDeath.value = false;
+    // We intentionally do NOT start the timer here. Zero pressure!
+  }
+  else {
+    // Standard Simulated Exam
+    isAmrapMode.value = false;
+    isSuddenDeath.value = false;
+    startTimer();
+  }
+
+  // --- FETCH THE QUESTIONS ---
+  // --- FETCH THE QUESTIONS ---
+  // --- FETCH THE QUESTIONS ---
+  // --- FETCH THE QUESTIONS ---
+  try {
+    if (mode === 'amrap') {
+      const response = await fetch(`http://localhost:8080/api/questions/random?examCode=${selectedCert.value.code}`);
+
+      if (response.status === 204 || !response.ok) {
+        alert("Archive Empty: No questions found for this certification yet.");
+        return;
+      }
+
+      const text = await response.text();
+      if (!text) return;
+
+      const newQuestion = JSON.parse(text);
+      question.value = newQuestion;
+      questions.value = [newQuestion];
+
+    } else {
+      // For Standard, Sudden Death, and Learn Mode
+      await fetchQuestion();
+    }
+
+    // --- THE ULTIMATE SAFETY NET ---
+    // Only flip the screen IF we successfully loaded a question!
+    if (question.value) {
+      currentView.value = 'quiz';
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    } else {
+      // If it failed, ensure we stay on the landing page
+      currentView.value = 'landing';
+    }
+
+  } catch (error) {
+    console.error("Failed to initiate protocol:", error);
+    alert("Could not load the simulation. Check your connection.");
+  }
 };
 
 // 1. Add the Certifications list
@@ -972,62 +1800,44 @@ const groupedCerts = computed(() => {
   return groups;
 });
 
+const userRank = computed(() => {
+  const xp = userTotalXp.value;
+
+  if (xp >= 5000) {
+    return { title: 'Ascended Master', color: 'text-purple-600', bar: 'bg-gradient-to-r from-purple-500 to-fuchsia-500', min: 5000, max: 'MAX', progress: 100 };
+  } else if (xp >= 1500) {
+    return { title: 'Serverless Sorcerer', color: 'text-indigo-600', bar: 'bg-indigo-500', min: 1500, max: 5000, progress: ((xp - 1500) / 3500) * 100 };
+  } else if (xp >= 500) {
+    return { title: 'EC2 Gladiator', color: 'text-emerald-600', bar: 'bg-emerald-500', min: 500, max: 1500, progress: ((xp - 500) / 1000) * 100 };
+  } else {
+    return { title: 'Cloud Initiate', color: 'text-blue-600', bar: 'bg-blue-500', min: 0, max: 500, progress: (xp / 500) * 100 };
+  }
+});
+
 // 2. Add the Leaderboard ref back
 const leaderboard = ref([]);
 
 // --- 2. The Selection Logic ---
-const selectCertification = async (cert) => {
+// 1. THEY SELECT THE CERTIFICATION
+const selectCertification = (cert) => {
   selectedCert.value = cert;
   selectedCategory.value = 'All';
-  showResults.value = false;
 
-  // 2. Fetch the total count of questions for this cert
-  if (typeof fetchTotalCount === 'function') {
-    await fetchTotalCount();
-  }
-
-  // 3. Swap the HMI screen
-  currentView.value = 'quiz';
-
-  // 4. Wipe the previous session memory cleanly
-  allQuestionsInSession.value = [];
-  sessionCount.value = 1;
-  showResults.value = false;
-  isPaused.value = false;
-  showExplanation.value = false;
-  selectedAnswers.value = [];
-  if (typeof authError !== 'undefined') authError.value = '';
-
-  // 5. Reset and start the clock
-  // 5. Reset and start the clock
-  if (timerInterval) {
-    clearInterval(timerInterval);
-    timerInterval = null;
-  }
-  timerSeconds.value = 0;
-  timerInterval = setInterval(() => { timerSeconds.value++; }, 1000);
-
-  // 6. Fire the sequence! (Call fetchQuestion directly instead of resetSession)
-  try {
-    await fetchQuestion();
-  } catch (error) {
-    console.error("Failed to load first question:", error);
-    // If it fails, kick them back to the landing page safely
-    currentView.value = 'landing';
-    alert("Could not load questions for this certification. Please check your backend connection.");
-  }
+  // We do NOT start the quiz yet! We just scroll down to reveal the menu.
+  setTimeout(() => {
+    const menu = document.getElementById('protocol-menu');
+    if (menu) menu.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  }, 50);
 };
 
 const fetchLeaderboard = async () => {
   try {
     const response = await fetch('http://localhost:8080/api/questions/leaderboard');
     if (response.ok) {
-      const data = await response.json();
-
-      leaderboard.value = data;
+      leaderboardData.value = await response.json();
     }
   } catch (error) {
-    console.error("Leaderboard fetch error:", error);
+    console.error("Failed to contact the Jedi Archives for the leaderboard.", error);
   }
 };
 
@@ -1063,13 +1873,11 @@ const handleAuth = async () => {
     // 3. Success! Log them in and close the modal.
     const userData = await response.json();
     currentUser.value = userData;
+
+    localStorage.setItem('aws_user', JSON.stringify(userData));
     showAuthModal.value = false;
 
-    // (Optional) If you have the Jedi hologram from earlier, uncomment the line below:
-    // showSuccessHologram.value = true;
-
   } catch (error) {
-    console.error("Auth Error:", error);
     authForm.value.passwordhash = ''; // Clear password on server crash too
     authError.value = "Communication disruption can mean only one thing: invasion. (Server offline)";
   }
@@ -1078,6 +1886,8 @@ const handleAuth = async () => {
 const toggleAnswer = (optionId) => {
   // Guard: If no question is loaded or explanation is showing, do nothing
   if (!question.value || showExplanation.value) return;
+
+  playSound('click');
 
   // Identify multi-select questions by counting 'isCorrect' flags
   const correctOptions = question.value.options.filter(o =>
@@ -1107,6 +1917,7 @@ const deleteAttempt = async (attemptId) => {
     });
 
     if (response.ok) {
+      playSound('trash');
       // Refresh the table locally so the row disappears immediately
       examHistory.value = examHistory.value.filter(a => a.id !== attemptId);
 
@@ -1114,7 +1925,6 @@ const deleteAttempt = async (attemptId) => {
       alert("Failed to delete. Check if the backend endpoint exists.");
     }
   } catch (error) {
-    console.error("Delete Error:", error);
   }
 };
 
@@ -1137,11 +1947,6 @@ const logout = () => {
 const finishExam = async () => {
   // 1. Stop the clock
   if (timerInterval) clearInterval(timerInterval);
-
-  // 2. SAVE THE FINAL QUESTION!
-  if (question.value && !questions.value.some(q => q.id === question.value.id)) {
-    questions.value.push(question.value);
-  }
 
   // 3. Switch to results view
   currentView.value = 'quiz'; // We stay in the quiz component container
@@ -1187,84 +1992,121 @@ const exportToPDF = () => {
   window.print();
 };
 
-const forceGradeExam = async () => {
-  // 1. The Confirmation Guard
-  if (!confirm("Are you sure you want to end the exam now and see your grade?")) {
-    return;
-  }
+const handlePrint = async () => { // <-- NOTE THE 'async' HERE!
+  const doc = new jsPDF();
 
-  // 2. Stop the clock
-  if (timerInterval) {
-    clearInterval(timerInterval); // Stops the counting
-    timerInterval = null;         // Destroys the ghost reference
-  }
-  isPaused.value = false;
+  // --- 1. FIND THE ACTIVE DATA ---
+  const sourceQuestions = (allQuestionsInSession.value && allQuestionsInSession.value.length > 0)
+      ? allQuestionsInSession.value
+      : questions.value;
 
-  // --- 3. THE MATH FIX ---
-  // If 'showExplanation' is false, they haven't submitted an answer for the question on screen.
-  // We pop it out of the array so it doesn't count against them!
-  if (!showExplanation.value && allQuestionsInSession.value.length > 0) {
-    allQuestionsInSession.value.pop();
-  }
+  const totalQs = sourceQuestions.length || 1;
+  const score = Math.round((correctCount.value / totalQs) * 100);
 
-  // Now sync the counters to match ONLY the questions they actually submitted
-  sessionCount.value = Math.max(allQuestionsInSession.value.length, 1);
-  totalExamQuestions.value = sessionCount.value;
+  // --- 2. BRANDING & HEADER (THE NEW ANIME BANNER) ---
 
-  // 4. INSTANT UI UPDATE
-  showResults.value = true;
-  window.scrollTo({ top: 0, behavior: 'smooth' });
-
-  // 5. Build the payload (now it only contains the answered questions)
-  const answerPayload = allQuestionsInSession.value.map(q => ({
-    questionId: q.id,
-    category: q.category,
-    correct: isUserCorrect(q.id)
-  }));
-
-  const payload = {
-    userId: currentUser.value?.id,
-    examCode: selectedCert.value?.code || 'UNKNOWN',
-    answers: answerPayload
+  // Helper function to load the image into memory for jsPDF
+  const loadImage = (url) => {
+    return new Promise((resolve) => {
+      const img = new Image();
+      img.src = url;
+      img.onload = () => resolve(img);
+      img.onerror = () => {
+        console.warn("Banner failed to load, falling back to blue.");
+        resolve(null);
+      };
+    });
   };
 
-  // 6. Send to server silently in the background
-  try {
-    const response = await fetch('http://localhost:8080/api/questions/history/grade', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(payload)
+  // Load the image from your public folder
+  const bannerImg = await loadImage('/image/anime_banner.jpg');
+
+  if (bannerImg) {
+    // Draw the image: x=0, y=0, width=210mm (A4 size), height=45mm
+    doc.addImage(bannerImg, 'JPEG', 0, 0, 210, 45);
+  } else {
+    // Fallback just in case the image isn't found
+    doc.setFillColor(37, 99, 235);
+    doc.rect(0, 0, 210, 40, 'F');
+  }
+
+  // Draw the Text (I added a slight drop-shadow effect to make it pop over the image!)
+  doc.setFontSize(22);
+  doc.setFont("helvetica", "bold");
+
+
+
+  // --- 3. METADATA ---
+  doc.setTextColor(15, 23, 42);
+  doc.setFontSize(11);
+  doc.setFont("helvetica", "normal");
+
+  const candidateName = currentUser.value ? currentUser.value.username : 'Guest Candidate';
+  const examName = selectedCert.value?.name || selectedCert.value?.code || 'AWS Practitioner (AIP-C01)';
+  const dateStr = new Date().toLocaleDateString();
+
+  // Shifted the Y-coordinates down slightly to account for the larger image banner
+  doc.text(`Candidate ID: ${candidateName}`, 14, 55);
+  doc.text(`Assessment Module: ${examName}`, 14, 62);
+  doc.text(`Date of Execution: ${dateStr}`, 14, 69);
+
+  doc.setFontSize(16);
+  doc.setFont("helvetica", "bold");
+  if (score >= 72) { // Updated to 72% for AWS standards!
+    doc.setTextColor(22, 163, 74);
+    doc.text(`Final Score: ${score}% (PASSED)`, 120, 62);
+  } else {
+    doc.setTextColor(220, 38, 38);
+    doc.text(`Final Score: ${score}% (FAILED)`, 120, 62);
+  }
+
+  // --- 4. THE MISSED QUESTIONS TABLE ---
+
+  const missedQs = sourceQuestions.filter(q => userResults.value[q.id] !== true);
+
+  if (missedQs.length === 0) {
+    doc.setTextColor(15, 23, 42);
+    doc.text("Flawless Victory. No missed concepts to report.", 14, 90);
+  } else {
+    doc.setTextColor(15, 23, 42);
+    doc.setFontSize(14);
+    doc.text("Missed Concepts Analysis:", 14, 90);
+
+    const tableData = missedQs.map((q, index) => [
+      index + 1,
+      q.questionText || "Question text missing",
+      q.explanation || "No detailed explanation provided."
+    ]);
+
+    autoTable(doc, {
+      startY: 95,
+      head: [['#', 'Question Parameter', 'Detailed Explanation']],
+      body: tableData,
+      theme: 'grid',
+      headStyles: { fillColor: [15, 23, 42], textColor: [255, 255, 255] },
+      styles: { font: 'helvetica', fontSize: 10, cellPadding: 4 },
+      columnStyles: {
+        0: { cellWidth: 10, halign: 'center', fontStyle: 'bold' },
+        1: { cellWidth: 70 },
+        2: { cellWidth: 102 }
+      },
     });
-
-    if (response.ok) {
-      const savedRecord = await response.json();
-      if (savedRecord && savedRecord.id) {
-        lastAttemptId.value = savedRecord.id;
-      }
-    }
-
-    // Refresh the Hall of Fame and Personal History behind the scenes
-    setTimeout(() => {
-      if (typeof fetchHistory === 'function') fetchHistory();
-      if (typeof fetchHallOfFame === 'function') fetchHallOfFame();
-    }, 500);
-
-  } catch (error) {
-    console.warn("Background save process encountered a network quirk:", error);
-  }
-};
-
-const handlePrint = async () => {
-  // If the data isn't loaded yet, go get it using the last ID
-  if (reviewQuestions.value.length === 0 && lastAttemptId.value) {
-    const response = await fetch(`http://localhost:8080/api/questions/history/${lastAttemptId.value}`);
-    reviewQuestions.value = await response.json();
   }
 
-  // Brief timeout to let the HTML render before the print dialog opens
-  setTimeout(() => {
-    window.print();
-  }, 500);
+  // --- 5. FOOTER ---
+  const pageCount = doc.internal.getNumberOfPages();
+  for (let i = 1; i <= pageCount; i++) {
+    doc.setPage(i);
+    doc.setFontSize(8);
+    doc.setTextColor(150);
+    doc.text(
+        `Generated by AWS.Hub Simulation Engine - Page ${i} of ${pageCount}`,
+        14,
+        doc.internal.pageSize.height - 10
+    );
+  }
+
+  doc.save(`AWS_Hub_Report_${candidateName.replace(/\s+/g, '_')}.pdf`);
 };
 
 const getFormattedDate = () => {
@@ -1276,26 +2118,132 @@ const getFormattedDate = () => {
 };
 
 const triggerFirework = () => {
-  // ... existing code ...
-  const defaults = {
-    startVelocity: 30,
-    spread: 360,
-    ticks: 60,
-    zIndex: 9999 // <--- Add this to put fireworks on top of everything!
-  };
-  // ... rest of function ...
+  const duration = 3 * 1000;
+  const animationEnd = Date.now() + duration;
+
+  // zIndex: 9999 ensures the confetti renders ON TOP of your modals/UI
+  const defaults = { startVelocity: 30, spread: 360, ticks: 60, zIndex: 9999 };
+
+  function randomInRange(min, max) {
+    return Math.random() * (max - min) + min;
+  }
+
+  const interval = setInterval(function() {
+    const timeLeft = animationEnd - Date.now();
+
+    if (timeLeft <= 0) {
+      return clearInterval(interval);
+    }
+
+    const particleCount = 50 * (timeLeft / duration);
+
+    // Shoot from the left edge
+    confetti({
+      ...defaults, particleCount,
+      origin: { x: randomInRange(0.1, 0.3), y: Math.random() - 0.2 }
+    });
+
+    // Shoot from the right edge
+    confetti({
+      ...defaults, particleCount,
+      origin: { x: randomInRange(0.7, 0.9), y: Math.random() - 0.2 }
+    });
+  }, 250);
+};
+
+// 1. The API Call (Defined first, so other functions can see it)
+const recordStudySession = async () => {
+  if (!currentUser.value) return; // Don't track guests
+
+  try {
+    const response = await fetch(`http://localhost:8080/api/users/${currentUser.value.username}/record-study`, {
+      method: 'POST',
+      // headers: { 'Content-Type': 'application/json' }
+    });
+
+    if (response.ok) {
+      const data = await response.json();
+      // Update your Vue variable so the flame updates instantly without a page refresh!
+      userStreak.value = data.currentStreak;
+      console.log("Streak updated successfully:", data);
+
+    } else {
+      // 2. Let's force the console to print the EXACT Spring Boot error!
+      const errorText = await response.text();
+      console.error("Backend rejected the request:", errorText);
+    }
+  } catch (error) {
+    console.error("Failed to record study session:", error);
+  }
+};
+
+const awardExperiencePoints = async () => {
+  if (!currentUser.value) return;
+
+  // Calculate how many they got right (assuming you have finalScore and totalExamQuestions variables!)
+  const correctCount = Math.round((finalScore.value / 100) * totalExamQuestions.value);
+
+  try {
+    const response = await fetch(`http://localhost:8080/api/users/${currentUser.value.username}/award-xp`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        correctCount: correctCount,
+        totalQuestions: totalExamQuestions.value
+      })
+    });
+
+    if (response.ok) {
+      const data = await response.json();
+      userTotalXp.value = data.totalXp; // Instantly fills the progress bar!
+      console.log(`Earned ${data.earnedXp} XP! Total is now: ${data.totalXp}`);
+    }
+  } catch (error) {
+    console.error("Failed to award XP:", error);
+  }
+};
+
+// 2. The Grading Sequence (Which now safely calls the function above)
+const executeGradingSequence = async () => {
+  stopTimer();
+
+  // THE FIX: Stop the AMRAP clock ticking in the background!
+  if (amrapInterval) {
+    clearInterval(amrapInterval);
+  }
+
+  showGradeConfirmModal.value = false;
+  showResults.value = true;
+  isHistoricalView.value = false;
+
+  await recordStudySession();
+  await awardExperiencePoints();
+
+  if (currentUser.value && currentUser.value.id) {
+    await saveResults();
+  } else {
+    console.error("CRITICAL FAILURE: No active user ID found in session.");
+  }
+};
+
+// 3. The Force Grade trigger
+const forceGradeExam = () => {
+  executeGradingSequence();
 };
 
 // --- Computed Results ---
 
 // 1. Calculate how many questions were answered perfectly
+// 1. We use 'computed' so Vue knows this is a live math formula!
 const correctCount = computed(() => {
-  // Safety: If these aren't arrays yet, return 0
-  if (!allQuestionsInSession.value || !Array.isArray(allQuestionsInSession.value)) return 0;
-  if (allQuestionsInSession.value.length === 0) return 0;
+  // THE FIX: Point the formula to the array where the questions actually live!
+  const activeQuestions = (allQuestionsInSession.value && allQuestionsInSession.value.length > 0)
+      ? allQuestionsInSession.value
+      : questions.value;
 
-  return allQuestionsInSession.value.filter(q => {
-    // Safety: If user never even clicked this question, it's not correct
+  if (!activeQuestions || !Array.isArray(activeQuestions) || activeQuestions.length === 0) return 0;
+
+  return activeQuestions.filter(q => {
     if (!selectedAnswersRecord.value || !selectedAnswersRecord.value[q.id]) return false;
 
     const correctOptionIds = q.options
@@ -1307,6 +2255,17 @@ const correctCount = computed(() => {
     return correctOptionIds.length === userSelectedIds.length &&
         correctOptionIds.every(id => userSelectedIds.includes(id));
   }).length;
+});
+
+// 2. Automatically calculate the percentage based on the formula above
+const finalScore = computed(() => {
+  // THE FIX: Ensure the percentage math also uses the correct array!
+  const activeQuestions = (allQuestionsInSession.value && allQuestionsInSession.value.length > 0)
+      ? allQuestionsInSession.value
+      : questions.value;
+
+  const totalQs = activeQuestions?.length || 1;
+  return Math.round((correctCount.value / totalQs) * 100);
 });
 
 // 3. Determine if they passed the AWS standard (72%)
@@ -1331,48 +2290,66 @@ const handleFileUpload = async (event) => {
       alert("Sync Failed: Check CSV format.");
     }
   } catch (error) {
-    console.error("Uplink Error:", error);
   }
 };
 
+const closeReview = () => {
+  // 1. Turn off all the Results and Historical screens
+  showResults.value = false;
+  isHistoricalView.value = false;
+
+  // If you are using a separate modal variable, turn it off too
+  if (typeof showReviewModal !== 'undefined') {
+    showReviewModal.value = false;
+  }
+
+  currentView.value = 'landing';
+
+  reviewQuestions.value = [];
+
+  if (typeof fetchHistory === 'function') fetchHistory();
+  if (typeof fetchLeaderboard === 'function') fetchLeaderboard();
+};
+
+clearInterval(amrapInterval);
+
+// --- 1. THE WATCHER ---
+// Watchers must live at the root level of your script, completely outside of onMounted!
+watch(selectedCert, (newCert) => {
+  if (newCert && currentUser.value) {
+    if (typeof fetchQuestion === 'function' && currentView.value === 'quiz') {
+      fetchQuestion();
+    }
+  }
+}, { immediate: true });
+
+// --- 2. THE BOOT SEQUENCE ---
+// Only ONE onMounted block is allowed!
 onMounted(async () => {
+  // A. Always fetch global Hall of Fame for the dashboard
+  if (typeof fetchHallOfFame === 'function') {
+    fetchHallOfFame();
+  }
 
-  // --- 1. THE WATCHER (Must be outside onMounted in Vue 3) ---
-  watch(selectedCert, (newCert) => {
-    if (newCert && currentUser.value) {
-      // Only fetch if we aren't already handling this in selectCertification
-      if (typeof fetchQuestion === 'function' && currentView.value === 'quiz') {
-        fetchQuestion();
-      }
-    }
-  }, { immediate: true });
+  // B. Check the browser's permanent memory for a returning user!
+  const savedUser = localStorage.getItem('aws_user');
 
+  if (savedUser) {
+    currentUser.value = JSON.parse(savedUser);
+    showAuthModal.value = false; // Hide the login screen!
 
-// --- 2. THE MOUNT CYCLE ---
-  onMounted(async () => {
-    // A. Always fetch global Hall of Fame for the dashboard (Everyone sees this)
-    if (typeof fetchHallOfFame === 'function') {
-      fetchHallOfFame();
+    // C. Fetch their personal history now that we know who they are
+    if (typeof fetchHistory === 'function') {
+      await fetchHistory();
     }
 
-    // B. Check local storage for a returning Operative
-    const savedUser = localStorage.getItem('aws_user');
-
-    if (savedUser) {
-      currentUser.value = JSON.parse(savedUser);
-      showAuthModal.value = false;
-
-      // C. Fetch their personal stats now that we know who they are
-      if (typeof fetchHistory === 'function') {
-        await fetchHistory();
-      }
-
-      // D. Resume quiz if they refreshed the page while looking at a cert
-      if (selectedCert.value && typeof fetchQuestion === 'function') {
-        fetchQuestion();
-      }
+    // D. Resume quiz if they refreshed the page while looking at a cert
+    if (selectedCert.value && typeof fetchQuestion === 'function') {
+      fetchQuestion();
     }
-   });
+  }
+
+  fetchLeaderboard();
 });
 
 onUnmounted(() => stopTimer());

@@ -21,6 +21,10 @@ public class UserService {
             throw new RuntimeException("User not found");
         }
 
+        if (user.getCurrentStreak() == null) {
+            user.setCurrentStreak(0);
+        }
+
         LocalDate today = LocalDate.now();
         LocalDate lastDate = user.getLastStudyDate();
 
@@ -37,6 +41,32 @@ public class UserService {
         // SCENARIO 3: They already studied today. Do nothing.
 
         // 4. Save and return the updated user
+        return userRepository.save(user);
+    }
+
+    public User awardXp(String username, int correctCount, int totalQuestions) {
+        User user = userRepository.findByUsername(username);
+
+        if (user == null) {
+            throw new RuntimeException("User not found");
+        }
+
+        // Safety net for old ghost accounts!
+        if (user.getTotalXp() == null) {
+            user.setTotalXp(0);
+        }
+
+        // Calculate the base XP (10 per correct answer)
+        int earnedXp = correctCount * 10;
+
+        // Add the Flawless Victory Bonus!
+        if (correctCount == totalQuestions && totalQuestions > 0) {
+            earnedXp += 500;
+        }
+
+        // Add it to their lifetime total and save
+        user.setTotalXp(user.getTotalXp() + earnedXp);
+
         return userRepository.save(user);
     }
 }

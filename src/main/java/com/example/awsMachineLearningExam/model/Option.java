@@ -16,7 +16,7 @@ public class Option {
     private String optionText;
 
     @Column(name = "is_correct")
-    @JsonProperty("isCorrect") // This forces JSON to use the name Vue is looking for
+    @JsonProperty("isCorrect")
     private boolean isCorrect;
 
     @ManyToOne
@@ -27,27 +27,25 @@ public class Option {
     // Default Constructor
     public Option() {}
 
-    // --- FIX THESE GETTERS AND SETTERS ---
-
     public Long getId() { return id; }
+
     public void setId(Long id) { this.id = id; }
 
     public String getOptionText() { return optionText; }
+
     public void setOptionText(String optionText) { this.optionText = optionText; }
 
-    // Use this specific naming for the boolean getter
+    // Unified Getter for Jackson and Vue
     public boolean getIsCorrect() {
         return isCorrect;
     }
 
-    public void setIsCorrect(boolean isCorrect) {
+    // Unified Setter for the Importer and Hibernate
+    public void setCorrect(boolean isCorrect) {
         this.isCorrect = isCorrect;
     }
 
     public Question getQuestion() { return question; }
+
     public void setQuestion(Question question) { this.question = question; }
-
-    public void setCorrect(boolean b) {
-
-    }
 }

@@ -32,4 +32,28 @@ public class UserController {
             return ResponseEntity.badRequest().body("Failed to update streak: " + e.getMessage());
         }
     }
+
+    @PostMapping("/{username}/award-xp")
+    public ResponseEntity<?> awardXp(@PathVariable String username, @RequestBody java.util.Map<String, Integer> payload) {
+        try {
+            // Extract the quiz data sent from Vue
+            int correctCount = payload.getOrDefault("correctCount", 0);
+            int totalQuestions = payload.getOrDefault("totalQuestions", 1);
+
+            // Calculate the exact XP earned for the frontend pop-up
+            int earnedXp = (correctCount * 10) + (correctCount == totalQuestions && totalQuestions > 0 ? 500 : 0);
+
+            // Tell the brain to save it
+            User updatedUser = userService.awardXp(username, correctCount, totalQuestions);
+
+            // Send the updated stats back to Vue
+            return ResponseEntity.ok(java.util.Map.of(
+                    "message", "XP Awarded!",
+                    "totalXp", updatedUser.getTotalXp(),
+                    "earnedXp", earnedXp
+            ));
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body("Failed to award XP: " + e.getMessage());
+        }
+    }
 }
