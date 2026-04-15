@@ -1,0 +1,3 @@
+certCode,domain,questionText,optionA,optionB,optionC,optionD,correctOption,explanation
+SAA-C03,Design Secure Architectures,Which AWS service should you use to store database credentials securely?,AWS Secrets Manager,AWS IAM,AWS KMS,Amazon S3,A,Secrets Manager natively handles credential rotation and secure storage.
+SOA-C02,Monitoring Logging and Remediation,Which service provides near real-time metrics for EC2?,Amazon CloudWatch,AWS CloudTrail,AWS Config,Amazon EventBridge,A,CloudWatch is the primary monitoring service for AWS resources.

@@ -1,29 +1,25 @@
 package com.example.awsMachineLearningExam.service;
 
-import com.example.awsMachineLearningExam.model.User;
-import com.example.awsMachineLearningExam.repository.UserRepository;
-import org.springframework.beans.factory.annotation.Autowired;
+import com.example.awsMachineLearningExam.model.AppUser;
+import com.example.awsMachineLearningExam.repository.AppUserRepository;
 import org.springframework.stereotype.Service;
+
 import java.time.LocalDate;
 
 @Service
 public class UserService {
 
-    @Autowired
-    private UserRepository userRepository;
+    private final AppUserRepository userRepository;
 
-    public User recordStudySession(String username) {
-        // 1. Find the user (Without Optional)
-        User user = userRepository.findByUsername(username);
+    // Modern Constructor Injection (replaces @Autowired)
+    public UserService(AppUserRepository userRepository) {
+        this.userRepository = userRepository;
+    }
 
-        // Manually check if the user exists
-        if (user == null) {
-            throw new RuntimeException("User not found");
-        }
-
-        if (user.getCurrentStreak() == null) {
-            user.setCurrentStreak(0);
-        }
+    public AppUser recordStudySession(String username) {
+        // 1. Find the user safely using .orElseThrow() instead of manual null checks
+        AppUser user = userRepository.findByUsername(username)
+                .orElseThrow(() -> new RuntimeException("User not found in Jedi Archives: " + username));
 
         LocalDate today = LocalDate.now();
         LocalDate lastDate = user.getLastStudyDate();
@@ -44,28 +40,21 @@ public class UserService {
         return userRepository.save(user);
     }
 
-    public User awardXp(String username, int correctCount, int totalQuestions) {
-        User user = userRepository.findByUsername(username);
+    public AppUser awardXp(String username, int correctCount, int totalQuestions) {
+        // 1. Find the user safely
+        AppUser user = userRepository.findByUsername(username)
+                .orElseThrow(() -> new RuntimeException("User not found in Jedi Archives: " + username));
 
-        if (user == null) {
-            throw new RuntimeException("User not found");
-        }
-
-        // Safety net for old ghost accounts!
-        if (user.getTotalXp() == null) {
-            user.setTotalXp(0);
-        }
-
-        // Calculate the base XP (10 per correct answer)
+        // 2. Calculate the base XP (10 per correct answer)
         int earnedXp = correctCount * 10;
 
-        // Add the Flawless Victory Bonus!
+        // 3. Add the Flawless Victory Bonus!
         if (correctCount == totalQuestions && totalQuestions > 0) {
             earnedXp += 500;
         }
 
-        // Add it to their lifetime total and save
-        user.setTotalXp(user.getTotalXp() + earnedXp);
+        // 4. Add it to their lifetime total and save (using getXp() instead of getTotalXp())
+        user.setXp(user.getXp() + earnedXp);
 
         return userRepository.save(user);
     }

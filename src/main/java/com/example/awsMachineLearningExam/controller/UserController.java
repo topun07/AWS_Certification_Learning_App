@@ -1,6 +1,6 @@
 package com.example.awsMachineLearningExam.controller;
 
-import com.example.awsMachineLearningExam.model.User;
+import com.example.awsMachineLearningExam.model.AppUser;
 import com.example.awsMachineLearningExam.service.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
@@ -21,7 +21,7 @@ public class UserController {
     public ResponseEntity<?> recordStudySession(@PathVariable String username) {
         try {
             // Call the brain we just built
-            User updatedUser = userService.recordStudySession(username);
+            AppUser updatedUser = userService.recordStudySession(username);
 
             // Send a JSON response back to Vue with the new streak number
             return ResponseEntity.ok(Map.of(
@@ -44,12 +44,12 @@ public class UserController {
             int earnedXp = (correctCount * 10) + (correctCount == totalQuestions && totalQuestions > 0 ? 500 : 0);
 
             // Tell the brain to save it
-            User updatedUser = userService.awardXp(username, correctCount, totalQuestions);
+            AppUser updatedUser = userService.awardXp(username, correctCount, totalQuestions);
 
             // Send the updated stats back to Vue
             return ResponseEntity.ok(java.util.Map.of(
-                    "message", "XP Awarded!",
-                    "totalXp", updatedUser.getTotalXp(),
+                    "message", "XP Aw==78   9=78arded!",
+                    "totalXp", updatedUser.getXp(),
                     "earnedXp", earnedXp
             ));
         } catch (Exception e) {

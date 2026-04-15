@@ -1,34 +1,55 @@
+🏗️ Tech Stack
+Frontend: Vue.js 3 (Composition API), HTML5, Tailwind CSS
+
+Backend: Java 24, Spring Boot 3
+
+Security: Spring Security, JSON Web Tokens (JWT), BCrypt Password Hashing
+
+Database: H2 Database (File-Based Persistence), Spring Data JPA, Hibernate
+
+Tools: IntelliJ IDEA, Maven, Chrome DevTools
+
 ✅ Current Objectives Completed
-Full-Stack Authentication: Implemented a secure Email/Password authentication flow using Spring Security and Vue.js.
+Enterprise JWT Authentication: Upgraded from a basic login to a highly secure authentication flow. The backend now issues encrypted JSON Web Tokens (JWT) that the Vue frontend stores and attaches to protected API calls (acting as a "VIP Pass").
 
-Database Persistence: Successfully migrated from a volatile in-memory H2 database to a file-based H2 storage (examdb.mv.db), ensuring user accounts and scores survive server restarts.
+Gamification Engine: Engineered a custom AppUser entity that actively tracks xp, rankTitle, currentStreak, and lastStudyDate.
 
-JPA Repository Layer: Architected a robust Data Access Object (DAO) pattern using Spring Data JPA, including custom query methods for email-based lookups.
+Database Persistence & Security: Successfully migrated from a volatile in-memory DB to a file-based H2 storage (awshub_db.mv.db). Passwords are never stored in plain text; they are actively hashed using BCrypt.
 
-Frontend-Backend Integration: Established a clean API communication layer using the Fetch API with reactive state management in Vue 3 (Composition API).
+Modernized JPA Repository Layer: Architected a robust Data Access Object (DAO) pattern using Spring Data JPA. Utilized java.util.Optional<AppUser> for strict null-safety and crash prevention.
 
-Hall of Fame Engine: Built the backend logic to aggregate top scores by user, ready for real-time leaderboard rendering.
+Frontend-Backend API Integration: Established a clean API communication layer using the Fetch API. Built an interactive, dynamic UI Modal in Vue that handles user registration, login, and error catching.
 
-🧠 Challenges Faced (The "Challenge" Log)
-The "In-Memory" Wipe: * Challenge: Losing all test data every time a code change triggered a backend restart.
+Real-Time Hall of Fame: Built the backend logic and custom Native SQL queries to aggregate top scores by user, rendering a real-time leaderboard on the frontend.
 
-Solution: Configured spring.datasource.url to use jdbc:h2:file, providing a persistent local data store.
+🧠 Challenges Faced & Overcome (The "Challenge" Log)
+1. The "Ghost Files" Refactor & Cache Wars
 
-Dependency Management: * Challenge: Encountered Cannot load driver class: org.h2.Driver runtime errors.
+Challenge: Transitioning from an older User architecture to a secure AppUser architecture caused severe clashes. Legacy code, cached IDE files, and browser caches caused "Frankenstein" payloads (sending old variables like passwordhash alongside new ones).
 
-Solution: Identified missing H2 dependencies in pom.xml and performed a manual Maven sync to align the IDE with the project runtime.
+Solution: Performed a systematic purge of legacy code. Cleaned the Vue reactive state variables, executed Hard Refreshes to break browser caching, and ruthlessly deleted orphaned Java classes to prevent IntelliJ auto-import conflicts.
 
-Java Type Safety & Optionals: * Challenge: Faced incompatible types errors when mapping database entities to Controller responses.
+2. Database Schema Evolution & DDL Crashes
 
-Solution: Refactored UserRepository to utilize java.util.Optional<User>, enforcing better null-safety and preventing potential NullPointerExceptions during login.
+Challenge: Upgrading the database blueprint to include primitives (like int xp) caused Spring Boot to throw 500 Internal Server Errors because Hibernate couldn't retroactively apply NOT NULL columns to old test data. We also faced Hibernate duplicate column mapping errors (current_streak vs currentStreak).
 
-Schema Evolution: * Challenge: Transitioned from a "Nickname" system to a "Unique Email" system, which initially caused database conflicts with existing records.
+Solution: Cleaned up rogue @Column annotations in the entity models and performed a controlled database wipe (dropping the data folder), allowing Hibernate to auto-generate a fresh, perfectly mapped schema.
 
-Solution: Performed a clean data migration by purging legacy DB files and redefining the @Column(unique = true) constraints in the User entity.
+3. Native SQL Desync
+
+Challenge: After migrating to the new username-only system, the Leaderboard crashed (Column "U.FULL_NAME" not found) because the custom @Query was still searching for a deprecated column.
+
+Solution: Refactored the native SQL query in the ExamHistoryRepository to dynamically target the new username column while maintaining the alias expected by the Vue frontend.
+
+4. Dependency & Type Safety Integrity
+
+Challenge: Encountered missing H2 driver errors and incompatible type mapping errors during early development.
+
+Solution: Performed a manual Maven sync to align the IDE with the project runtime and enforced strict Java typing using modern Optional wrappers instead of manual null checks.
 
 🛠️ Next Up on the Roadmap
-[ ] Leaderboard UI: Finalize the CSS/Vue loop to display the "Hall of Fame" data currently stored in the backend.
+[ ] Cloud Deployment: Containerize the application and deploy the Spring Boot backend and Vue frontend to the cloud (AWS/Render).
 
-[ ] Score Correlation: Ensure quiz results are linked to the currentUser.id upon completion.
+[ ] User Dashboard: Build a dedicated profile page where users can view their current rank, XP progress bar, and study streak calendar.
 
-[ ] UI Personalization: Implement a conditional header to display the user's name and a logout function.
+[ ] Expanded Module Library: Integrate more robust AWS question banks and dynamically track which specific modules a user has mastered.

@@ -17,7 +17,7 @@ public class ExamHistory {
 
     @ManyToOne
     @JoinColumn(name = "user_id")
-    private User user;
+    private AppUser user;
 
     @Transient
     private Long userId;
@@ -37,7 +37,7 @@ public class ExamHistory {
 
     // --- GETTERS (CRITICAL FOR JSON) ---
     public Long getId() { return id; }
-    public User getUser() { return user; }
+    public AppUser getUser() { return user; }
     public Long getUserId() { return userId; } // Added for convenience
     public String getExamCode() { return examCode; }
     public int getScorePercentage() { return scorePercentage; }
@@ -49,7 +49,7 @@ public class ExamHistory {
     public String getMissedQuestionIds() { return missedQuestionIds; }
 
     // --- SETTERS ---
-    public void setUser(User user) { this.user = user; }
+    public void setUser(AppUser user) { this.user = user; }
     public void setUserId(Long userId) { this.userId = userId; } // Added for convenience
     public void setExamCode(String examCode) { this.examCode = examCode; }
     public void setScorePercentage(int scorePercentage) { this.scorePercentage = scorePercentage; }

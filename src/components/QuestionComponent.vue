@@ -94,6 +94,52 @@
     </div>
   </div>
 
+    <div v-if="showAuthModal" class="fixed inset-0 bg-black bg-opacity-80 flex items-center justify-center z-50">
+      <div class="bg-gray-900 border border-blue-500 rounded-lg p-8 w-96 text-white shadow-[0_0_15px_rgba(59,130,246,0.5)]">
+
+        <h2 class="text-2xl font-bold text-center mb-6 text-blue-400">
+          {{ isLoginMode ? 'Access Datapad' : 'Register Recruit' }}
+        </h2>
+
+        <div v-if="authError" class="bg-red-900 border border-red-500 text-red-200 p-2 rounded mb-4 text-sm text-center">
+          {{ authError }}
+        </div>
+
+        <form @submit.prevent="submitAuth" class="space-y-4">
+
+          <div>
+            <label class="block text-sm text-gray-400 mb-1">Codename (Username)</label>
+            <input v-model="authForm.username" type="text" required class="w-full bg-gray-800 border border-gray-600 rounded p-2 text-white focus:outline-none focus:border-blue-500" />
+          </div>
+
+          <div v-if="!isLoginMode">
+            <label class="block text-sm text-gray-400 mb-1">Comm-Link (Email)</label>
+            <input v-model="authForm.email" type="email" required class="w-full bg-gray-800 border border-gray-600 rounded p-2 text-white focus:outline-none focus:border-blue-500" />
+          </div>
+
+          <div>
+            <label class="block text-sm text-gray-400 mb-1">Passcode</label>
+            <input v-model="authForm.password" type="password" required class="w-full bg-gray-800 border border-gray-600 rounded p-2 text-white focus:outline-none focus:border-blue-500" />
+          </div>
+
+          <button type="submit" class="w-full bg-blue-600 hover:bg-blue-500 text-white font-bold py-2 px-4 rounded transition-colors mt-4">
+            {{ isLoginMode ? 'Login' : 'Create Account' }}
+          </button>
+
+        </form>
+
+        <div class="text-center mt-6">
+          <button @click="isLoginMode = !isLoginMode; authError = ''" class="text-sm text-blue-400 hover:text-blue-300 underline">
+            {{ isLoginMode ? 'Need an account? Register here.' : 'Already a recruit? Login here.' }}
+          </button>
+        </div>
+
+        <button @click="showAuthModal = false" class="absolute top-4 right-4 text-gray-400 hover:text-white text-xl">
+          ✕
+        </button>
+      </div>
+    </div>
+
     <div v-if="selectedCert && currentView === 'landing'" id="protocol-menu" class="mt-8 mb-16 bg-white rounded-[2rem] p-6 md:p-8 border border-slate-200 shadow-xl animate-fade-in-up flex flex-col md:flex-row gap-8 max-w-5xl mx-auto">
 
       <div class="flex-shrink-0 flex flex-col items-center justify-center bg-slate-50 p-8 rounded-[1.5rem] border border-slate-100 md:w-1/3">
@@ -135,11 +181,11 @@
           </div>
         </button>
 
-        <button @click="initiateProtocol('learn')" class="group flex items-center gap-4 bg-white p-4 rounded-2xl border border-slate-200 hover:border-emerald-500 hover:shadow-md transition-all text-left w-full">
+        <button @click="enterKnowledgeForge" class="group flex items-center gap-4 bg-white p-4 rounded-2xl border border-slate-200 hover:border-emerald-500 hover:shadow-md transition-all text-left w-full">
           <span class="text-2xl bg-emerald-50 text-emerald-500 w-12 h-12 flex flex-shrink-0 items-center justify-center rounded-xl group-hover:scale-110 group-hover:bg-emerald-500 group-hover:text-white transition-all">🧠</span>
           <div>
-            <h5 class="text-sm font-bold text-slate-900 group-hover:text-emerald-600 transition-colors">Learn Mode</h5>
-            <p class="text-[11px] text-slate-500 font-medium leading-tight mt-0.5">Untimed study session. Instant answers and explanations.</p>
+            <h5 class="text-sm font-bold text-slate-900 group-hover:text-emerald-600 transition-colors">The Knowledge Forge</h5>
+            <p class="text-[11px] text-slate-500 font-medium leading-tight mt-0.5">Access study guides, architectural diagrams, and video modules.</p>
           </div>
         </button>
 
@@ -148,6 +194,7 @@
 
     <!-- View: Landing Page -->
     <div v-if="currentView === 'landing'" class="max-w-7xl mx-auto px-4 md:px-8 lg:px-12">
+
       <div class="text-center mb-12 md:mb-20 mt-8 md:mt-12">
         <h1 class="text-4xl md:text-6xl lg:text-7xl font-extrabold text-gray-900 mb-4 md:mb-6 tracking-tight">AWS Certification Hub</h1>
         <p class="text-lg md:text-2xl lg:text-3xl text-gray-600 font-medium">Select your path and master the cloud.</p>
@@ -335,29 +382,25 @@
           </div>
 
           <div class="flex-grow flex flex-col justify-center space-y-4">
+
             <div v-if="studyPriorities.length > 0" class="flex flex-col gap-3">
 
               <div
                   v-for="(priority, index) in studyPriorities"
                   :key="priority.name"
-                  :class="index === 0 ? 'bg-red-50 border border-red-100 text-red-900' : 'bg-amber-50 border border-amber-100 text-amber-900'"
-                  class="flex items-center justify-between p-4 rounded-xl shadow-sm transition-all hover:shadow-md"
+                  @click="jumpToForge(priority.name)"
+                  :class="index === 0 ? 'bg-red-50 border border-red-100 text-red-900 hover:bg-red-100' : 'bg-amber-50 border border-amber-100 text-amber-900 hover:bg-amber-100'"
+                  class="flex items-center justify-between p-4 rounded-xl shadow-sm transition-all hover:shadow-md cursor-pointer hover:-translate-y-1 group"
+                  title="Click to study this module in The Knowledge Forge"
               >
                 <div class="flex items-center gap-3">
-      <span
-          class="w-6 h-6 rounded-full flex items-center justify-center text-xs font-black"
-          :class="index === 0 ? 'bg-red-200 text-red-700' : 'bg-amber-200 text-amber-700'"
-      >
-        !
-      </span>
-                  <span class="font-bold text-sm">{{ priority.name }}</span>
+                  <span class="w-6 h-6 rounded-full flex items-center justify-center text-xs font-black transition-transform group-hover:scale-110" :class="index === 0 ? 'bg-red-200 text-red-700' : 'bg-amber-200 text-amber-700'">!</span>
+                  <span class="font-bold text-sm group-hover:underline">{{ priority.name }}</span>
                 </div>
-                <span
-                    class="font-black text-lg"
-                    :class="index === 0 ? 'text-red-600' : 'text-amber-600'"
-                >
-      {{ priority.percentage }}%
-    </span>
+                <div class="flex items-center gap-4">
+                  <span class="font-black text-lg" :class="index === 0 ? 'text-red-600' : 'text-amber-600'">{{ priority.percentage }}%</span>
+                  <span class="opacity-0 group-hover:opacity-100 transition-opacity font-bold text-xl" :class="index === 0 ? 'text-red-500' : 'text-amber-500'">➔</span>
+                </div>
               </div>
 
             </div>
@@ -365,12 +408,13 @@
             <div v-else class="text-center p-6 text-slate-400 text-sm font-bold">
               Insufficient telemetry data. Complete a simulation to generate priorities.
             </div>
+
           </div>
         </div>
 
       </div>
 
-      <div class="bg-slate-50 rounded-[2rem] p-8 border border-slate-100 border-dashed flex flex-col items-center justify-center text-center opacity-70">
+      <div class="bg-slate-50 rounded-[2rem] p-8 border border-slate-100 border-dashed flex flex-col items-center justify-center text-center opacity-70 mt-8">
         <div class="text-4xl mb-4">🎯</div>
         <h3 class="text-xl font-bold text-slate-400">Study Priorities</h3>
         <p class="text-sm text-slate-400 mt-2">More analytics incoming...</p>
@@ -563,6 +607,125 @@
       </div>
     </div>
 
+    <div v-else-if="currentView === 'library'" class="max-w-6xl mx-auto px-4 py-8 w-full animate-fade-in">
+
+      <div class="mb-10 text-center md:text-left flex flex-col md:flex-row md:items-end justify-between gap-4">
+        <div>
+          <h1 class="text-3xl md:text-5xl font-black text-slate-800 tracking-tight">The Knowledge Forge</h1>
+          <p class="text-slate-500 mt-2 text-lg">Access study guides, architectural diagrams, and video modules.</p>
+        </div>
+
+        <button @click="currentView = 'landing'" class="text-sm font-bold text-slate-500 hover:text-slate-800 transition-colors flex items-center gap-2 justify-center">
+          <span>← Back to Command Center</span>
+        </button>
+      </div>
+
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-6">
+        <div
+            v-for="module in libraryModules"
+            :key="module.id"
+            @click="openModule(module.id)"
+            class="bg-white border-2 border-slate-100 rounded-3xl p-6 md:p-8 cursor-pointer transition-all duration-300 hover:-translate-y-1 hover:shadow-xl hover:border-blue-200 group flex flex-col justify-between h-full"
+        >
+          <div>
+            <div class="flex items-start justify-between mb-4">
+          <span class="text-4xl md:text-5xl bg-slate-50 p-4 rounded-2xl group-hover:scale-110 group-hover:bg-blue-50 transition-all duration-300">
+            {{ module.icon }}
+          </span>
+              <span class="bg-slate-100 text-slate-600 text-xs font-black px-3 py-1 rounded-full uppercase tracking-widest">
+            {{ module.lessonCount }} Modules
+          </span>
+            </div>
+
+            <h2 class="text-2xl font-bold text-slate-800 mb-2 group-hover:text-blue-600 transition-colors">
+              {{ module.title }}
+            </h2>
+            <p class="text-slate-500 font-medium leading-relaxed">
+              {{ module.description }}
+            </p>
+          </div>
+
+          <div class="mt-8 pt-6 border-t-2 border-slate-50">
+            <div class="flex justify-between text-xs font-bold text-slate-400 mb-2">
+              <span>MODULE PROGRESS</span>
+              <span>{{ module.progress }}%</span>
+            </div>
+            <div class="w-full bg-slate-100 h-2 rounded-full overflow-hidden">
+              <div class="bg-blue-500 h-full rounded-full transition-all duration-1000" :style="`width: ${module.progress}%`"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div v-else-if="currentView === 'lessonViewer' && activeModule" class="max-w-4xl mx-auto px-4 py-8 w-full animate-fade-in">
+
+      <button @click="currentView = 'library'" class="group text-sm font-bold text-slate-500 hover:text-blue-600 transition-colors flex items-center gap-2 mb-8">
+        <span class="group-hover:-translate-x-1 transition-transform">←</span>
+        <span>Back to Library</span>
+      </button>
+
+      <div class="mb-10">
+        <div class="flex items-center gap-4 mb-4">
+          <span class="text-4xl bg-slate-50 p-3 rounded-2xl">{{ activeModule.icon }}</span>
+          <h1 class="text-3xl md:text-4xl font-black text-slate-800 tracking-tight">{{ activeModule.title }}</h1>
+        </div>
+        <p class="text-slate-500 text-lg border-b-2 border-slate-100 pb-8">{{ activeModule.description }}</p>
+      </div>
+
+      <div v-if="activeModule.videos && activeModule.videos.length > 0" class="mb-12">
+        <div class="w-full aspect-video bg-slate-900 rounded-3xl shadow-xl overflow-hidden mb-6 relative">
+          <iframe
+              :src="`https://www.youtube.com/embed/${activeModule.videos[currentVideoIndex].id}?rel=0`"
+              class="w-full h-full border-0 absolute inset-0"
+              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+              allowfullscreen
+          ></iframe>
+        </div>
+
+        <div v-if="activeModule.videos.length > 1" class="flex flex-col gap-3">
+          <h4 class="text-xs font-black text-slate-400 uppercase tracking-widest px-2">Module Playlist</h4>
+          <div class="flex flex-wrap gap-3">
+            <button
+                v-for="(video, index) in activeModule.videos"
+                :key="index"
+                @click="currentVideoIndex = index"
+                :class="currentVideoIndex === index ? 'bg-blue-600 text-white shadow-md border-blue-600' : 'bg-white text-slate-600 border-slate-200 hover:border-blue-300 hover:bg-blue-50 hover:shadow-sm'"
+                class="px-5 py-3 rounded-xl border font-bold text-sm transition-all flex items-center gap-3 group"
+            >
+              <span v-if="currentVideoIndex === index" class="animate-pulse">▶</span>
+              <span v-else class="opacity-50 font-mono text-xs">{{ index + 1 }}.</span>
+              {{ video.title }}
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <div v-else class="w-full aspect-video bg-slate-900 rounded-3xl shadow-xl overflow-hidden mb-12 relative flex flex-col items-center justify-center text-slate-600">
+        <span class="text-4xl mb-4 opacity-50">📡</span>
+        <span class="font-bold tracking-widest text-sm uppercase opacity-50">
+          Video Transmission Offline
+        </span>
+      </div>
+
+      <div class="prose prose-slate prose-lg md:prose-xl max-w-none mb-16">
+
+        <div v-html="activeModule.studyGuide"></div>
+
+        <div class="bg-emerald-50 border-l-4 border-emerald-500 p-6 rounded-r-2xl mt-8 text-emerald-900 font-medium">
+          💡 System Verified: This text was dynamically pulled from your Spring Boot Database!
+        </div>
+
+      </div>
+
+      <div class="flex justify-center border-t-2 border-slate-100 pt-12">
+        <button @click="completeActiveModule" class="bg-slate-800 hover:bg-black text-white px-8 py-4 rounded-2xl font-black uppercase tracking-widest text-sm transition-all hover:shadow-xl hover:-translate-y-1 flex items-center gap-3">
+          <span class="text-emerald-400 text-xl">✓</span>
+          Mark Module as Complete
+        </button>
+      </div>
+    </div>
+
     <!-- Modals -->
     <div v-if="showAuthModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-md z-[200] flex items-center justify-center p-4">
       <div class="bg-white rounded-[2rem] w-full max-w-sm overflow-hidden shadow-2xl relative p-10 text-center">
@@ -576,10 +739,9 @@
 
           <template v-if="isSignup">
             <input v-model="authForm.username" type="text" placeholder="Choose a Codename" class="w-full p-4 rounded-2xl border border-slate-200 text-center font-bold focus:border-blue-500 outline-none auth-input" />
-            <input v-model="authForm.fullName" type="text" placeholder="Your Legendary Name" class="w-full p-4 rounded-2xl border border-slate-200 text-center font-bold focus:border-blue-500 outline-none auth-input" />
           </template>
 
-          <input v-model="authForm.passwordhash" type="password" placeholder="Secret Access: Password" class="w-full p-4 rounded-2xl border border-slate-200 text-center font-bold focus:border-blue-500 outline-none auth-input" />
+          <input v-model="authForm.password" type="password" placeholder="Secret Access: Password" class="w-full p-4 rounded-2xl border border-slate-200 text-center font-bold focus:border-blue-500 outline-none auth-input" />
 
           <div v-if="authError" class="bg-red-900/10 border border-red-500/50 rounded-xl p-3 mt-1 animate-pulse text-center">
             <p class="text-[10px] font-mono font-black text-red-600 uppercase tracking-widest flex items-center justify-center gap-2">
@@ -772,12 +934,12 @@
   </template>
 
 <script setup>
-import confetti from 'canvas-confetti';
 import { ref, onMounted, computed, watch, onUnmounted } from 'vue';
 import { jsPDF } from "jspdf";
 import autoTable from 'jspdf-autotable';
 import { Radar } from 'vue-chartjs';
 import { Chart as ChartJS, RadialLinearScale, PointElement, LineElement, Filler, Tooltip, Legend } from 'chart.js';
+
 ChartJS.register(RadialLinearScale, PointElement, LineElement, Filler, Tooltip, Legend);
 // --- Core State ---
 const question = ref(null);
@@ -813,8 +975,9 @@ const seenQuestionIds = ref([]);
 const allQuestionsInSession = ref([]); // Added this to prevent "undefined" errors
 const selectedAnswersRecord = ref({}); // Added this to prevent "undefined" errors
 const MAX_HISTORY = 30;
-const authError = ref('');
 const userStreak = ref(0);
+const activeModule = ref(null);
+const currentVideoIndex = ref(0);
 
 // --- Performance Tracking ---
 const showResults = ref(false);
@@ -833,6 +996,13 @@ const hallOfFame = ref([]);
 // --- Timer Logic ---
 const timer = ref(0);
 
+// JWT AUTHENTICATION ENGINE
+const showAuthModal = ref(false);
+const isLoginMode = ref(true); // Toggle between Login and Register
+const authForm = ref({ username: '', email: '', password: '' });
+const authError = ref('');
+const authToken = ref(localStorage.getItem('aws_jwt') || null); // Load saved token if it exists
+
 // --- Category Logic ---
 const selectedCategory = ref('All');
 const categories = ['All', 'Data Engineering', 'Algorithms', 'Modeling', 'Deployment', 'Security', 'AI Services'];
@@ -842,9 +1012,7 @@ const examHistory = ref([]);
 
 // --- User Login ---
 const currentUser = ref(null);
-const showAuthModal = ref(true);
 const isSignup = ref(true);
-const authForm = ref({ email: '', username: '', password: '', fullName: '' });
 const userResults = ref({});
 
 const isAudioEnabled = ref(true); // Global mute switch
@@ -861,11 +1029,58 @@ const showSuccessHologram = ref(false);
 const welcomeMessage = ref('');
 const lastAttemptId = ref(null);
 
+// --- THE KNOWLEDGE FORGE: DYNAMIC DATABASE FETCH ---
+const libraryModules = ref([]); // Starts completely empty!
+
+// --- DYNAMIC TARGETED FETCH ---
+const fetchKnowledgeForge = async (targetCertCode) => {
+  if (!targetCertCode) return;
+
+  try {
+    // 1. Fetch the courses for this specific cert
+    const response = await fetch(`http://localhost:8080/api/modules/cert/${targetCertCode}`);
+
+    // 2. Fetch the logged-in user's progress history
+    let completedModules = [];
+    if (currentUser.value && currentUser.value.username) {
+      const progressResponse = await fetch(`http://localhost:8080/api/progress/${currentUser.value.username}`);
+      if (progressResponse.ok) {
+        completedModules = await progressResponse.json();
+      }
+    }
+
+    if (response.ok) {
+      const dbModules = await response.json();
+
+      libraryModules.value = dbModules.map(mod => ({
+        id: mod.id,
+        title: mod.title,
+        icon: mod.icon,
+        description: mod.description,
+        lessonCount: mod.videoIds ? mod.videoIds.length : 0,
+        // THE MAGIC: If the database says they completed it, fill the bar to 100%!
+        progress: completedModules.includes(mod.id) ? 100 : 0,
+        studyGuide: mod.studyGuideContent,
+        videos: mod.videoIds ? mod.videoIds.map((vidId, i) => ({ title: `Video Lesson ${i + 1}`, id: vidId })) : []
+      }));
+    }
+  } catch (error) {
+    console.error("The Jedi Archives are offline.", error);
+  }
+};
+
+// --- ENTER THE FORGE ---
+// Update your existing enterKnowledgeForge function to fetch the data BEFORE changing the screen!
+const enterKnowledgeForge = async () => {
+  // Pass the user's currently selected certification to the fetch engine
+  await fetchKnowledgeForge(selectedCert.value.code);
+  currentView.value = 'library';
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+};
 
 // --- Analytics: Radar Chart Configuration ---
 // 1. The Official AWS Domain Dictionary
 // (You can add the exact domains for all 12 certs here later!)
-
 const chartViewCode = ref('DEFAULT');
 
 // The Official AWS Domain Dictionary (Formatted for Radar Charts)
@@ -1158,10 +1373,9 @@ const stopTimer = () => {
   }
 };
 
-// Watch the current question index. Whenever it changes, reset the per-question clock!
-// (Make sure 'currentQuestionIndex' matches whatever variable you use to track the current question number)
 watch(question, () => {
   currentQuestionSeconds.value = 0;
+  autoSaveSession();
 });
 
 const isUserCorrect = (questionId) => {
@@ -1175,6 +1389,122 @@ const formattedTime = computed(() => {
   const secs = totalSeconds % 60;
   return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
 });
+
+
+// Function to handle clicking a card
+const openModule = (moduleId) => {
+  activeModule.value = libraryModules.value.find(m => m.id === moduleId);
+  currentVideoIndex.value = 0; // <-- Resets playlist to the first video
+  currentView.value = 'lessonViewer';
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+};
+
+// --- COMPLETE MODULE PROGRESSION ---
+const completeActiveModule = async () => {
+  // 1. Security Check: Are they logged in?
+  if (!currentUser.value || !currentUser.value.username) {
+    alert("⚠️ Authentication Required: Please log in to save your progress!");
+    return;
+  }
+
+  try {
+    // 2. Send the completion data to Spring Boot
+    // Inside your completeActiveModule function...
+    const response = await fetch(`http://localhost:8080/api/progress/complete?username=${currentUser.value.username}&moduleId=${activeModule.value.id}`, {
+      method: 'POST',
+      headers: {
+        // THIS IS THE VIP PASS!
+        'Authorization': `Bearer ${authToken.value}`
+      }
+    });
+
+    if (response.ok) {
+      // 3. Update the local UI (Fill the bar instantly!)
+      activeModule.value.progress = 100;
+
+      // 4. Award 500 XP and save it locally
+      userTotalXp.value += 500;
+      currentUser.value.xp = userTotalXp.value;
+      localStorage.setItem('aws_user', JSON.stringify(currentUser.value)); // Sync to permanent browser storage
+
+      // 5. Send them back to the grid with a victory message
+      alert(`✅ System Mastery Achieved!\n+500 XP awarded to ${currentUser.value.username}.`);
+      currentView.value = 'library';
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+  } catch (error) {
+    console.error("Transmission failed:", error);
+    alert("❌ Error connecting to the Jedi Archives.");
+  }
+};
+
+// --- THE SMART-LINK TELEPORTER ---
+const jumpToForge = async (categoryName) => {
+  if (!categoryName) return;
+
+  try {
+    let targetCode = selectedCert.value?.code;
+
+    // Tiny helper function: Strips ALL spaces, commas, and special characters
+    const normalize = (str) => str.toLowerCase().replace(/[^a-z0-9]/g, '');
+    const normCategory = normalize(categoryName);
+
+    // 1. THE FALLBACK: Auto-select cert if clicked from global dashboard
+    if (!targetCode) {
+      const response = await fetch('http://localhost:8080/api/modules');
+      if (response.ok) {
+        const allModules = await response.json();
+
+        // Use Fuzzy Mathing
+        const foundModule = allModules.find(m => {
+          const normTitle = normalize(m.title);
+          return normTitle.includes(normCategory) || normCategory.includes(normTitle);
+        });
+
+        if (foundModule) {
+          targetCode = foundModule.certCode;
+          for (const category in groupedCerts.value) {
+            const match = groupedCerts.value[category].find(c => c.code === targetCode);
+            if (match) {
+              selectedCert.value = match;
+              break;
+            }
+          }
+        }
+      }
+    }
+
+    if (!targetCode) {
+      alert(`⚠️ Could not locate the Jedi Archives for "${categoryName}". Please select a certification path above first.`);
+      return;
+    }
+
+    // 2. FORCE FETCH
+    await fetchKnowledgeForge(targetCode);
+
+    // 3. THE FUZZY SEARCH (The Magic Fix)
+    const targetModule = libraryModules.value.find(m => {
+      const normTitle = normalize(m.title);
+      // Now it successfully matches "Security, Compliance..." with "Security Compliance..."
+      return normTitle.includes(normCategory) || normCategory.includes(normTitle);
+    });
+
+    // 4. EXECUTE JUMP
+    if (targetModule) {
+      activeModule.value = targetModule;
+      currentVideoIndex.value = 0;
+      currentView.value = 'lessonViewer';
+    } else {
+      console.warn(`Target Missed: Teleporter could not match "${categoryName}" to any database module.`);
+      currentView.value = 'library'; // Fallback to Grid
+    }
+
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+
+  } catch (error) {
+    console.error("Teleporter malfunctioned:", error);
+  }
+};
 
 // 1. The clock shown during the quiz (resets every question)
 const formattedCurrentTime = computed(() => {
@@ -1227,19 +1557,6 @@ const examResultMessage = computed(() => {
     };
   }
 });
-
-const fetchTotalCount = async () => {
-  if (!selectedCert.value) return;
-  try {
-    const examCode = selectedCert.value.code;
-    const cat = selectedCategory.value;
-    const url = `http://localhost:8080/api/questions/count?examCode=${examCode}&category=${encodeURIComponent(cat)}&t=${Date.now()}`;
-    const response = await fetch(url);
-    const count = await response.json();
-    totalExamQuestions.value = Math.min(count, 65);
-  } catch (error) {
-  }
-};
 
 const fetchQuestion = async () => {
   if (!selectedCert.value?.code) return;
@@ -1479,6 +1796,23 @@ const startAmrapTimer = () => {
   }, 1000);
 };
 
+const autoSaveSession = () => {
+    if (currentView.value === 'quiz' && !showResults.value && question.value) {
+    const sessionState = {
+      certCode: selectedCert.value.code,
+      mode: activeProtocol.value,
+      certName: selectedCert.value.name,
+      // Change these variable names to match whatever you named them in your code!
+      sessionCount: sessionCount.value,
+      healthPoints: healthPoints.value,
+      savedQuestion: question.value
+    };
+
+    // Write it permanently to the browser's hard drive
+    localStorage.setItem('aws_active_exam', JSON.stringify(sessionState));
+  }
+};
+
 const analyzeCategoryMastery = () => {
   // 1. Get the active questions
   const activeQs = (allQuestionsInSession.value && allQuestionsInSession.value.length > 0)
@@ -1620,30 +1954,53 @@ const streakDisplay = computed(() => {
   }
 });
 
-const getStudyPriorities = () => {
-  // 1. Safety check: if no data exists yet, return an empty array
-  if (!categoryScores.value || Object.keys(categoryScores.value).length === 0) {
-    return [];
-  }
-
-  // 2. Map over the scores. 'score' is ALREADY the flat percentage number!
-  const priorities = Object.entries(categoryScores.value).map(([cat, score]) => {
-    return {
-      name: cat,
-      percentage: score // <-- THE FIX: No more math here!
-    };
-  });
-
-  // 3. Sort from lowest to highest score (to find their biggest weaknesses)
-  return priorities.sort((a, b) => a.percentage - b.percentage).slice(0, 3);
-};
-
 // --- THE PROTOCOL ROUTER ---
 const initiateProtocol = async (mode) => {
-  activeProtocol.value = mode;
+
+  const savedSession = localStorage.getItem('aws_active_exam');
+
+  if (savedSession) {
+    const parsedSession = JSON.parse(savedSession);
+
+    // Only ask to resume if they clicked the same cert they were previously studying!
+    if (parsedSession.certCode === selectedCert.value.code) {
+      const wantsToResume = confirm(`⚠️ Incomplete Exam Detected!\n\nDo you want to resume your ${parsedSession.certCode} exam at Question ${parsedSession.sessionCount}?\n\nClick 'Cancel' to delete the save and start fresh.`);
+
+      if (wantsToResume) {
+        // --- RESTORE THE SAVED STATE ---
+        activeProtocol.value = parsedSession.mode;
+        sessionCount.value = parsedSession.sessionCount;
+        healthPoints.value = parsedSession.healthPoints;
+        question.value = parsedSession.savedQuestion; // Reloads the exact question they were on!
+
+        // Restore specific mode settings
+        if (activeProtocol.value === 'amrap') {
+          isAmrapMode.value = true;
+          isSuddenDeath.value = false;
+          startAmrapTimer(); // You might need to adjust this to pass saved time if you want!
+        } else if (activeProtocol.value === 'sudden_death') {
+          isAmrapMode.value = false;
+          isSuddenDeath.value = true;
+          startTimer();
+        } else {
+          isAmrapMode.value = false;
+          isSuddenDeath.value = false;
+          startTimer();
+        }
+
+        currentView.value = 'quiz';
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+        return; // EXIT EARLY! This prevents the memory wipe below from running!
+      } else {
+        // They hit Cancel. Wipe the old save from the hard drive and start fresh.
+        localStorage.removeItem('aws_active_exam');
+      }
+    }
+  }
+
+   activeProtocol.value = mode;
 
   // --- THE MEMORY WIPE ---
-  // We clear out the old session data right before the new one starts
   seenQuestionIds.value = [];
   questions.value = [];
   allQuestionsInSession.value = [];
@@ -1673,7 +2030,7 @@ const initiateProtocol = async (mode) => {
   else if (mode === 'learn') {
     isAmrapMode.value = false;
     isSuddenDeath.value = false;
-    // We intentionally do NOT start the timer here. Zero pressure!
+    // No timer for learn mode!
   }
   else {
     // Standard Simulated Exam
@@ -1682,9 +2039,6 @@ const initiateProtocol = async (mode) => {
     startTimer();
   }
 
-  // --- FETCH THE QUESTIONS ---
-  // --- FETCH THE QUESTIONS ---
-  // --- FETCH THE QUESTIONS ---
   // --- FETCH THE QUESTIONS ---
   try {
     if (mode === 'amrap') {
@@ -1703,17 +2057,14 @@ const initiateProtocol = async (mode) => {
       questions.value = [newQuestion];
 
     } else {
-      // For Standard, Sudden Death, and Learn Mode
       await fetchQuestion();
     }
 
     // --- THE ULTIMATE SAFETY NET ---
-    // Only flip the screen IF we successfully loaded a question!
     if (question.value) {
       currentView.value = 'quiz';
       window.scrollTo({ top: 0, behavior: 'smooth' });
     } else {
-      // If it failed, ensure we stay on the landing page
       currentView.value = 'landing';
     }
 
@@ -1813,9 +2164,6 @@ const userRank = computed(() => {
     return { title: 'Cloud Initiate', color: 'text-blue-600', bar: 'bg-blue-500', min: 0, max: 500, progress: (xp / 500) * 100 };
   }
 });
-
-// 2. Add the Leaderboard ref back
-const leaderboard = ref([]);
 
 // --- 2. The Selection Logic ---
 // 1. THEY SELECT THE CERTIFICATION
@@ -1928,22 +2276,6 @@ const deleteAttempt = async (attemptId) => {
   }
 };
 
-const logout = () => {
-  // 1. Remove the user data from the browser's memory
-  localStorage.removeItem('aws_user');
-
-  // 2. Clear the reactive state
-  currentUser.value = null;
-
-  // 3. Optional: Redirect to landing and clear history
-  currentView.value = 'landing';
-  examHistory.value = [];
-
-  // 4. Refresh the leaderboard so it shows guest-level data if needed
-  fetchLeaderboard();
-
-  };
-
 const finishExam = async () => {
   // 1. Stop the clock
   if (timerInterval) clearInterval(timerInterval);
@@ -1974,22 +2306,6 @@ const togglePause = () => {
     // Restart the clock
     startTimer();
   }
-};
-
-const debugFinish = () => {
-  // Simulate finishing 65 questions
-  sessionCount.value = totalExamQuestions.value;
-  correctCount.value = 48; // Give yourself a passing score (approx 74%)
-
-  // Fill the "missed questions" list so the Priorities logic works
-  allQuestionsInSession.value = [question.value];
-
-  finishExam();
-};
-
-const exportToPDF = () => {
-  // We trigger the browser print dialog
-  window.print();
 };
 
 const handlePrint = async () => { // <-- NOTE THE 'async' HERE!
@@ -2109,48 +2425,6 @@ const handlePrint = async () => { // <-- NOTE THE 'async' HERE!
   doc.save(`AWS_Hub_Report_${candidateName.replace(/\s+/g, '_')}.pdf`);
 };
 
-const getFormattedDate = () => {
-  return new Date().toLocaleDateString('en-US', {
-    month: 'long',
-    day: 'numeric',
-    year: 'numeric'
-  });
-};
-
-const triggerFirework = () => {
-  const duration = 3 * 1000;
-  const animationEnd = Date.now() + duration;
-
-  // zIndex: 9999 ensures the confetti renders ON TOP of your modals/UI
-  const defaults = { startVelocity: 30, spread: 360, ticks: 60, zIndex: 9999 };
-
-  function randomInRange(min, max) {
-    return Math.random() * (max - min) + min;
-  }
-
-  const interval = setInterval(function() {
-    const timeLeft = animationEnd - Date.now();
-
-    if (timeLeft <= 0) {
-      return clearInterval(interval);
-    }
-
-    const particleCount = 50 * (timeLeft / duration);
-
-    // Shoot from the left edge
-    confetti({
-      ...defaults, particleCount,
-      origin: { x: randomInRange(0.1, 0.3), y: Math.random() - 0.2 }
-    });
-
-    // Shoot from the right edge
-    confetti({
-      ...defaults, particleCount,
-      origin: { x: randomInRange(0.7, 0.9), y: Math.random() - 0.2 }
-    });
-  }, 250);
-};
-
 // 1. The API Call (Defined first, so other functions can see it)
 const recordStudySession = async () => {
   if (!currentUser.value) return; // Don't track guests
@@ -2206,6 +2480,7 @@ const awardExperiencePoints = async () => {
 // 2. The Grading Sequence (Which now safely calls the function above)
 const executeGradingSequence = async () => {
   stopTimer();
+  localStorage.removeItem('aws_active_exam');
 
   // THE FIX: Stop the AMRAP clock ticking in the background!
   if (amrapInterval) {
@@ -2311,10 +2586,58 @@ const closeReview = () => {
   if (typeof fetchLeaderboard === 'function') fetchLeaderboard();
 };
 
+const submitAuth = async () => {
+  authError.value = ''; // Reset errors
+  const endpoint = isLoginMode.value ? '/api/auth/login' : '/api/auth/register';
+
+  try {
+    const response = await fetch(`http://localhost:8080${endpoint}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(authForm.value)
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      authError.value = errorText || "Authentication failed. Check your credentials.";
+      return;
+    }
+
+    const data = await response.json();
+
+    // 1. Save the VIP Pass (JWT) to the browser's secret storage
+    localStorage.setItem('aws_jwt', data.token);
+    authToken.value = data.token;
+
+    // 2. Update the local user stats
+    currentUser.value = {
+      username: data.username,
+      xp: data.xp
+    };
+    localStorage.setItem('aws_user', JSON.stringify(currentUser.value));
+
+    // 3. Clean up and close the modal
+    showAuthModal.value = false;
+    authForm.value = { username: '', email: '', password: '' }; // clear form
+    alert(`Welcome to the Knowledge Forge, ${data.username}!`);
+
+  } catch (error) {
+    console.error("Auth System Offline:", error);
+    authError.value = "Cannot connect to the server. Is Spring Boot running?";
+  }
+};
+
+const logout = () => {
+  localStorage.removeItem('aws_jwt');
+  localStorage.removeItem('aws_user');
+  authToken.value = null;
+  currentUser.value = null;
+  alert("You have been logged out.");
+};
+
 clearInterval(amrapInterval);
 
 // --- 1. THE WATCHER ---
-// Watchers must live at the root level of your script, completely outside of onMounted!
 watch(selectedCert, (newCert) => {
   if (newCert && currentUser.value) {
     if (typeof fetchQuestion === 'function' && currentView.value === 'quiz') {
@@ -2326,7 +2649,10 @@ watch(selectedCert, (newCert) => {
 // --- 2. THE BOOT SEQUENCE ---
 // Only ONE onMounted block is allowed!
 onMounted(async () => {
+
+  history.replaceState({ view: currentView.value }, '', `#${currentView.value}`);
   // A. Always fetch global Hall of Fame for the dashboard
+
   if (typeof fetchHallOfFame === 'function') {
     fetchHallOfFame();
   }
@@ -2350,6 +2676,29 @@ onMounted(async () => {
   }
 
   fetchLeaderboard();
+});
+
+onMounted(() => {
+  history.replaceState({ view: currentView.value }, '', `#${currentView.value}`);
+});
+
+// 2. Watch your view variable. Whenever you change screens, push a new entry to the browser!
+watch(currentView, (newView) => {
+  // Only push to history if it's actually a new screen
+  if (history.state === null || history.state.view !== newView) {
+    history.pushState({ view: newView }, '', `#${newView}`);
+  }
+});
+
+// 3. Hijack the Browser's Back/Forward Arrows
+window.addEventListener('popstate', (event) => {
+  if (event.state && event.state.view) {
+    // If they click 'Back', read the history and change the Vue screen to match
+    currentView.value = event.state.view;
+  } else {
+    // Failsafe: If they go back too far, dump them safely at the Command Center
+    currentView.value = 'landing';
+  }
 });
 
 onUnmounted(() => stopTimer());
