@@ -33,3 +33,12 @@ If you are a hiring manager or technical lead interested in a deep-dive review o
 LinkedIn: https://www.linkedin.com/in/aaronmosqueda/
 
 Email: aaron_mosqueda@outloook.com
+
+Created by Aaron Mosqueda – Automations Engineer | Aspiring AWS Cloud Architect & ML Associate
+
+Layer,Technology,Implementation Detail
+Frontend, Vue.js 3, Responsive SPA deployed via Amazon S3 and distributed through CloudFront for low-latency delivery.
+Backend, Java / Spring Boot, Containerized microservice hosted on Amazon ECS (Elastic Container Service) using Fargate for serverless scaling.
+Database, Amazon RDS, Managed PostgreSQL instance configured for automated backups and secure VPC integration.
+Cloud Hosting, AWS, End-to-end infrastructure management utilizing IAM for granular security and Route 53 for DNS.
+CI/CD, GitHub Actions, Automated pipelines for building Docker images and pushing to Amazon ECR.
