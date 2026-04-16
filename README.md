@@ -42,3 +42,14 @@ Backend, Java / Spring Boot, Containerized microservice hosted on Amazon ECS (El
 Database, Amazon RDS, Managed PostgreSQL instance configured for automated backups and secure VPC integration.
 Cloud Hosting, AWS, End-to-end infrastructure management utilizing IAM for granular security and Route 53 for DNS.
 CI/CD, GitHub Actions, Automated pipelines for building Docker images and pushing to Amazon ECR.
+
+``` mermaid
+graph TD
+    User[User] -->|Interacts with| VueJS[Vue.js Frontend]
+    VueJS -->|HTTPS Requests| SpringBoot[Spring Boot Backend]
+    SpringBoot -->|Secures| Security[Spring Security]
+    Security -->|Authenticates| JWT[JWT Authentication]
+    SpringBoot -->|Interacts with| Database[(PostgreSQL Database)]
+    JWT -->|Validates| Database
+    Database -->|Persists Data| Database
+```
