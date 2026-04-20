@@ -53,3 +53,14 @@ Solution: Performed a manual Maven sync to align the IDE with the project runtim
 [ ] User Dashboard: Build a dedicated profile page where users can view their current rank, XP progress bar, and study streak calendar.
 
 [ ] Expanded Module Library: Integrate more robust AWS question banks and dynamically track which specific modules a user has mastered.
+
+``` mermaid
+graph TD
+    User[User] -->|Interacts with| VueJS[Vue.js Frontend]
+    VueJS -->|HTTPS Requests| SpringBoot[Spring Boot Backend]
+    SpringBoot -->|Secures| Security[Spring Security]
+    Security -->|Authenticates| JWT[JWT Authentication]
+    SpringBoot -->|Interacts with| Database[(PostgreSQL Database)]
+    JWT -->|Validates| Database
+    Database -->|Persists Data| Database
+```
