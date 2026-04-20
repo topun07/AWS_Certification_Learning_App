@@ -1,0 +1,61 @@
+2) change 9 t0 65
+3) shorten click sfx
+4) add a button or an option to silence sfx
+5) need to stop repeated questions, each bank has 150 questions so there is no need for them to repeated
+6) reps in the time trial stays at 0
+7) at the end of the time trial i was given a score of 100 but this was not right
+8) still only getting one target prioritie9) 
+9) at the end of the e
+10) radio buttons changes all are squared 
+11) make sure ascended masters updates with the latest scores, 
+12) add more than 1 video to each subject in certs
+
+
+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   git hub token
+
+git init
+
+git add .
+
+git commit -m "First commit of my PLC automation scripts"
+
+git push -u origin master
+
+git status
+
+stripe login
+
+stripe listen --forward-to localhost:8080/api/payment/webhook
+
+stripe listen --print-secret
+
+whsec_f21a4eb11aa6924a39d48862bfb9e0b6de3485c9732b45d6f0cf0bbce0be78b8
+
+Screenshots/Video Demos: Show the UI (Vue) and functionality in action.
+
+Snippet Highlights: Share a few "safe" lines of code that show off your logic without revealing the whole system.
+
+Link to Live Site: If you have it hosted on Google Cloud, provide the link so they can test the final product.
+
+2. Choose the Right License
+If you decide to keep the code Public, you must include a LICENSE file. Without one, the "default copyright" applies (people can look but not copy), but it’s legally "gray."
+
+GPLv3: This is a "Copyleft" license. It allows others to use your code, but if they build something with it, they must also make their project open-source. This discourages companies from "stealing" it for proprietary products.
+
+Creative Commons (No Derivatives): While usually for media, you can apply "CC BY-ND" which allows people to share your work but forbids them from changing it or building upon it.
+
+3. Use a .gitignore for Sensitive Data
+Before pushing anything, ensure you aren't leaking the "keys to the castle."
+
+API Keys & Secrets: Never push your Google Cloud credentials or database passwords.
+
+Environment Variables: Use a .env file for your configurations and add .env to your .gitignore file.
+
+Build Artifacts: Ignore folders like /target (Java) or node_modules.
+
+4. GitHub Settings to Tweak
+In your repository's Settings tab, look for these options:
+
+Limit Invitations: Ensure only you can invite collaborators.
+
+Branch Protection: If you do let someone else contribute, set up "Branch Protection Rules" to require a pull request and your personal approval before any code is merged into the main branch.

@@ -12,5 +12,5 @@ public interface UserProgressRepository extends JpaRepository<UserProgress, Long
     List<UserProgress> findByUsername(String username);
 
     // Check if they already completed it (so they can't spam the button for infinite XP!)
-    boolean existsByUsernameAndModuleId(String username, String moduleId);
+    boolean existsByUsernameAndModuleId(String username, Long moduleId);
 }

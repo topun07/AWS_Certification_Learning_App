@@ -21,6 +21,9 @@ public class AppUser {
     @Column(nullable = false)
     private String password;
 
+    @Column(name = "is_premium")
+    private boolean isPremium = false;
+
     private int xp;
     private String rankTitle;
 
@@ -57,4 +60,6 @@ public class AppUser {
     public void setCurrentStreak(int currentStreak) { this.currentStreak = currentStreak; }
     public LocalDate getLastStudyDate() { return lastStudyDate; }
     public void setLastStudyDate(LocalDate lastStudyDate) { this.lastStudyDate = lastStudyDate; }
-}
+    public boolean isPremium() { return isPremium; }
+    public void setPremium(boolean premium) { isPremium = premium; }
+    }

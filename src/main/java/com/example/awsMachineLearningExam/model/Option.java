@@ -12,7 +12,7 @@ public class Option {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(name = "option_text")
+    @Column(columnDefinition = "TEXT")
     private String optionText;
 
     @Column(name = "is_correct")

@@ -1,12 +1,16 @@
 package com.example.awsMachineLearningExam.controller;
 
 import com.example.awsMachineLearningExam.model.AppUser;
+import com.example.awsMachineLearningExam.repository.AppUserRepository;
 import com.example.awsMachineLearningExam.service.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.security.Principal;
+import java.util.HashMap;
 import java.util.Map;
+import java.util.Optional;
 
 // Make sure your Vue ports are correct here!
 @CrossOrigin(origins = {"http://localhost:5173", "http://localhost:5174"}, maxAge = 3600)
@@ -17,13 +21,39 @@ public class UserController {
     @Autowired
     private UserService userService;
 
+    // 1. We inject the Repository so we can search the database directly
+    @Autowired
+    private AppUserRepository userRepository;
+
+    // 2. The Missing Profile Endpoint!
+    @GetMapping("/profile")
+    public ResponseEntity<?> getUserProfile(Principal principal) {
+        // If there is no user logged in, reject it
+        if (principal == null) {
+            return ResponseEntity.status(401).body("Unauthorized");
+        }
+
+        // Find the user in the database using their username
+        Optional<AppUser> optionalUser = userRepository.findByUsername(principal.getName());
+
+        if (optionalUser.isPresent()) {
+            AppUser user = optionalUser.get();
+
+            // Package up the exact data Vue is asking for
+            Map<String, Object> profileData = new HashMap<>();
+            profileData.put("username", user.getUsername());
+            profileData.put("isPremium", user.isPremium()); // Grabs their premium status
+
+            return ResponseEntity.ok(profileData);
+        } else {
+            return ResponseEntity.status(404).body("User not found");
+        }
+    }
+
     @PostMapping("/{username}/record-study")
     public ResponseEntity<?> recordStudySession(@PathVariable String username) {
         try {
-            // Call the brain we just built
             AppUser updatedUser = userService.recordStudySession(username);
-
-            // Send a JSON response back to Vue with the new streak number
             return ResponseEntity.ok(Map.of(
                     "message", "Study session recorded.",
                     "currentStreak", updatedUser.getCurrentStreak()
@@ -36,19 +66,14 @@ public class UserController {
     @PostMapping("/{username}/award-xp")
     public ResponseEntity<?> awardXp(@PathVariable String username, @RequestBody java.util.Map<String, Integer> payload) {
         try {
-            // Extract the quiz data sent from Vue
             int correctCount = payload.getOrDefault("correctCount", 0);
             int totalQuestions = payload.getOrDefault("totalQuestions", 1);
-
-            // Calculate the exact XP earned for the frontend pop-up
             int earnedXp = (correctCount * 10) + (correctCount == totalQuestions && totalQuestions > 0 ? 500 : 0);
 
-            // Tell the brain to save it
             AppUser updatedUser = userService.awardXp(username, correctCount, totalQuestions);
 
-            // Send the updated stats back to Vue
             return ResponseEntity.ok(java.util.Map.of(
-                    "message", "XP Aw==78   9=78arded!",
+                    "message", "XP Awarded!",
                     "totalXp", updatedUser.getXp(),
                     "earnedXp", earnedXp
             ));

@@ -63,14 +63,23 @@ public class AuthController {
             return ResponseEntity.badRequest().body("Error: Email is already in use!");
         }
 
-        // 2. Create new user's account and encrypt their password BEFORE saving
-        AppUser user = new AppUser(
-                request.username(),
-                request.email(),
-                passwordEncoder.encode(request.password())
-        );
+        // 1. Grab the email from the Record
+                String safeEmail = request.email();
 
-        userRepository.save(user);
+        // 2. The Fix: If it's blank, strictly convert it to a true NULL
+                if (safeEmail == null || safeEmail.trim().isEmpty()) {
+                    safeEmail = null;
+                }
+
+        // 3. Build the user using your existing constructor and the safeEmail
+                AppUser user = new AppUser(
+                        request.username(),
+                        safeEmail,
+                        passwordEncoder.encode(request.password()) // Still safely hashing!
+                );
+
+        // 4. Save it to the database
+                userRepository.save(user);
 
         // 3. Automatically log them in after registering by giving them a token
         String token = jwtService.generateToken(user.getUsername());

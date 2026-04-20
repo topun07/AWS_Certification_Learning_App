@@ -29,6 +29,9 @@ public class Question {
     @Column(name = "exam_code")
     private String examCode;
 
+    @Column(name = "correct_answer", columnDefinition = "TEXT")
+    private String correctAnswer;
+
     @OneToMany(mappedBy = "question", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<Option> options;
 
@@ -74,6 +77,14 @@ public class Question {
 
     public void setCorrectAnswerCount(Integer correctAnswerCount) {
         this.correctAnswerCount = correctAnswerCount;
+    }
+
+    public String getCorrectAnswer() {
+        return correctAnswer;
+    }
+
+    public void setCorrectAnswer(String correctAnswer) {
+        this.correctAnswer = correctAnswer;
     }
 
 }
