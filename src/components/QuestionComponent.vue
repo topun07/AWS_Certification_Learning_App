@@ -10,20 +10,51 @@
         <div v-if="authError" class="bg-red-900/50 border border-red-500 text-red-200 p-3 rounded-xl mb-6 text-sm text-center font-bold animate-pulse">
           {{ authError }}
         </div>
-        <form @submit.prevent="submitAuth" class="space-y-5">
-          <div>
-            <label class="block text-xs font-black text-slate-400 uppercase tracking-widest mb-2">Codename (Username)</label>
-            <input v-model="authForm.username" type="text" required class="w-full bg-gray-800 border border-gray-600 rounded-xl p-4 text-white font-bold focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-all" />
+        <form @submit.prevent="submitAuth">
+
+          <div v-if="!isLoginMode" class="mb-4">
+            <label class="block text-xs font-black uppercase tracking-widest text-slate-400 mb-2">
+              Codename (Username)
+            </label>
+            <input
+                type="text"
+                v-model="authForm.username"
+                placeholder="e.g. CloudNinja99"
+                class="w-full bg-slate-800/50 border border-slate-700 text-white rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                :required="!isLoginMode"
+            />
           </div>
-          <div v-if="!isLoginMode">
-            <label class="block text-xs font-black text-slate-400 uppercase tracking-widest mb-2">Comm-Link (Email)</label>
-            <input v-model="authForm.email" type="email" placeholder="Optional" class="w-full bg-gray-800 border border-gray-600 rounded-xl p-4 text-white font-bold focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-all" />
+
+          <div class="mb-4">
+            <label class="block text-xs font-black uppercase tracking-widest text-slate-400 mb-2">
+              Comm-Link (Email)
+            </label>
+            <input
+                type="email"
+                v-model="authForm.email"
+                placeholder="engineer@knowledgeforge.com"
+                class="w-full bg-slate-800/50 border border-slate-700 text-white rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                required
+            />
           </div>
-          <div>
-            <label class="block text-xs font-black text-slate-400 uppercase tracking-widest mb-2">Passcode</label>
-            <input v-model="authForm.password" type="password" required class="w-full bg-gray-800 border border-gray-600 rounded-xl p-4 text-white font-bold focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-all" />
+
+          <div class="mb-6">
+            <label class="block text-xs font-black uppercase tracking-widest text-slate-400 mb-2">
+              Passcode
+            </label>
+            <input
+                type="password"
+                v-model="authForm.password"
+                placeholder="••••••••"
+                class="w-full bg-slate-800/50 border border-slate-700 text-white rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                required
+            />
           </div>
-          <button type="submit" class="w-full bg-blue-600 hover:bg-blue-500 text-white font-black text-lg py-4 rounded-xl shadow-[0_0_15px_rgba(37,99,235,0.5)] transition-all hover:-translate-y-1 mt-2">
+
+          <button
+              type="submit"
+              class="w-full py-4 bg-blue-600 hover:bg-blue-500 text-white font-black rounded-xl uppercase tracking-widest transition-all shadow-lg shadow-blue-600/30 mb-4"
+          >
             {{ isLoginMode ? 'Login' : 'Create Account' }}
           </button>
         </form>
@@ -37,12 +68,30 @@
 
     <div class="max-w-5xl mx-auto flex flex-col md:flex-row justify-between items-center gap-4 mb-6 bg-white p-6 md:p-4 rounded-3xl shadow-sm border border-slate-100 mt-6">
       <div class="flex items-center gap-2 px-4 flex-shrink-0">
-        <div class="flex items-center gap-2 px-4 flex-shrink-0" @dblclick="currentView = 'adminlogin'">
-          <span class="text-3xl md:text-2xl font-black text-blue-600 tracking-tighter italic cursor-pointer hover:opacity-80 transition-opacity" title="System Mainframe">AWS.Hub</span>
+
+        <div
+            @dblclick="triggerAdminLock"
+            class="flex items-center gap-5 md:gap-6 group select-none cursor-pointer"
+        >
+
+          <div class="flex-shrink-0 transition-transform hover:scale-110">
+            <img
+                src="/image/logo/anvil.png"
+                alt="Knowledge Forge Academy Logo"
+                class="h-12 md:h-14 w-auto rounded-xl shadow-md border border-indigo-200"
+            />
+          </div>
+
+          <h2 class="text-2xl md:text-3xl font-black text-slate-900 tracking-tight leading-none mb-0 flex-shrink-0">
+            Knowledge <span class="text-indigo-600">Forge</span> <span class="text-[10px] md:text-xs font-black uppercase tracking-widest text-slate-400 block -mt-1">Academy</span>
+          </h2>
+
         </div>
+
       </div>
 
-      <div v-if="currentUser" class="flex flex-col md:flex-row items-center gap-3">
+
+    <div v-if="currentUser" class="flex flex-col md:flex-row items-center gap-3">
 
         <div class="flex items-center gap-2 px-4 py-2.5 bg-slate-50 rounded-xl border border-slate-200 shadow-sm transition-all hover:shadow-md">
           <span class="text-2xl transition-all duration-500" :class="[streakDisplay.color, streakDisplay.aura]">{{ streakDisplay.icon }}</span>
@@ -76,7 +125,7 @@
         </button>
       </div>
 
-      <div v-else class="flex items-center gap-4 px-4">
+    <div v-else class="flex items-center gap-4 px-4">
         <button @click="showAuthModal = true; isLoginMode = true; authError = ''" class="text-sm font-bold text-slate-500 hover:text-blue-600 transition-colors">Log In</button>
         <button @click="showAuthModal = true; isLoginMode = false; authError = ''" class="bg-blue-600 hover:bg-blue-700 text-white text-sm font-black px-6 py-2.5 rounded-xl shadow-md hover:shadow-lg transition-all hover:-translate-y-0.5">Sign Up</button>
       </div>
@@ -141,15 +190,76 @@
         </button>
 
         <button @click="initiateProtocol('library')" class="relative overflow-hidden group flex items-center gap-4 bg-white p-4 rounded-2xl border border-slate-200 hover:border-emerald-500 hover:shadow-xl hover:-translate-y-0.5 transition-all text-left w-full">
-          <div class="absolute top-0 right-0 bg-gradient-to-r from-amber-400 to-orange-500 text-white text-[10px] font-black px-3 py-1 rounded-bl-xl tracking-widest uppercase shadow-[0_0_15px_rgba(245,158,11,0.5)]">
-            ⭐ Premium
+
+
+
+          <div class="absolute top-0 right-0 bg-gradient-to-r from-emerald-400 to-green-500 text-white text-[10px] font-black px-4 py-1 rounded-bl-xl tracking-widest uppercase shadow-[0_0_15px_rgba(16,185,129,0.6)] animate-pulse">
+            ⚡ Free Access
           </div>
+
           <span class="text-2xl bg-emerald-50 text-emerald-500 w-12 h-12 flex flex-shrink-0 items-center justify-center rounded-xl group-hover:scale-110 group-hover:bg-emerald-500 group-hover:text-white transition-all">🧠</span>
           <div class="pr-16">
             <h5 class="text-sm font-bold text-slate-900 group-hover:text-emerald-600 transition-colors">The Knowledge Forge</h5>
             <p class="text-[11px] text-slate-500 font-medium leading-tight mt-0.5">Access study guides, architectural diagrams, and video modules.</p>
           </div>
         </button>
+      </div>
+    </div>
+
+    <div v-if="currentView === 'onboarding'" class="min-h-[80vh] flex items-center justify-center p-4 animate-fade-in">
+      <div class="bg-white max-w-2xl w-full rounded-[2.5rem] shadow-2xl border border-slate-200 overflow-hidden relative">
+
+        <div class="flex h-2 w-full bg-slate-100">
+          <div
+              class="bg-indigo-500 h-full transition-all duration-500 ease-out"
+              :style="{ width: ((activeSlide + 1) / onboardingSlides.length) * 100 + '%' }"
+          ></div>
+        </div>
+
+        <div class="p-8 md:p-12">
+          <div class="min-h-[250px] flex flex-col items-center text-center animate-fade-in-up" :key="activeSlide">
+            <div class="w-24 h-24 bg-indigo-50 text-5xl rounded-full flex items-center justify-center mb-8 shadow-inner border border-indigo-100">
+              {{ onboardingSlides[activeSlide].icon }}
+            </div>
+            <h2 class="text-3xl font-black text-slate-900 tracking-tight mb-4">
+              {{ onboardingSlides[activeSlide].title }}
+            </h2>
+            <p class="text-lg text-slate-500 font-medium leading-relaxed max-w-lg">
+              {{ onboardingSlides[activeSlide].text }}
+            </p>
+          </div>
+
+          <div class="flex items-center justify-between mt-12 pt-8 border-t border-slate-100">
+
+            <div class="flex gap-2">
+              <button
+                  v-for="(slide, index) in onboardingSlides"
+                  :key="index"
+                  @click="activeSlide = index"
+                  class="h-2.5 rounded-full transition-all duration-300"
+                  :class="activeSlide === index ? 'w-8 bg-indigo-600' : 'w-2.5 bg-slate-200 hover:bg-slate-300'"
+              ></button>
+            </div>
+
+            <div class="flex gap-3">
+              <button
+                  @click="prevSlide"
+                  :class="activeSlide === 0 ? 'opacity-0 pointer-events-none' : 'opacity-100'"
+                  class="px-6 py-3 rounded-xl font-bold text-sm uppercase tracking-widest text-slate-500 bg-slate-100 hover:bg-slate-200 transition-all"
+              >
+                Back
+              </button>
+              <button
+                  @click="nextSlide"
+                  class="px-8 py-3 rounded-xl font-black text-sm uppercase tracking-widest text-white transition-all shadow-md hover:-translate-y-0.5"
+                  :class="activeSlide === onboardingSlides.length - 1 ? 'bg-emerald-500 hover:bg-emerald-400 shadow-emerald-500/30' : 'bg-indigo-600 hover:bg-indigo-500 shadow-indigo-500/30'"
+              >
+                {{ activeSlide === onboardingSlides.length - 1 ? 'Enter the Forge' : 'Next' }}
+              </button>
+            </div>
+          </div>
+
+        </div>
       </div>
     </div>
 
@@ -252,16 +362,30 @@
               <h3 class="text-2xl font-black text-slate-800">Skill Radar</h3>
               <p class="text-slate-500 text-sm mt-1">Your mastery across architectural domains.</p>
             </div>
-            <select v-model="chartViewCode" class="bg-slate-50 border border-slate-200 text-slate-700 text-sm rounded-xl focus:ring-blue-500 focus:border-blue-500 block p-2.5 font-bold outline-none cursor-pointer hover:bg-slate-100 transition-colors">
-              <option value="DEFAULT">Overall AWS</option>
-              <optgroup label="Foundational"><option value="CLF-C02">Cloud Practitioner (CLF-C02)</option><option value="AIF-C01">AI Practitioner (AIF-C01)</option></optgroup>
-              <optgroup label="Associate"><option value="SAA-C03">Solutions Architect (SAA-C03)</option><option value="DVA-C02">Developer (DVA-C02)</option><option value="SOA-C02">SysOps Admin (SOA-C02)</option><option value="DEA-C01">Data Engineering (DEA-C01)</option></optgroup>
-              <optgroup label="Professional"><option value="SAP-C02">Solutions Architect Pro (SAP-C02)</option><option value="DOP-C02">DevOps Engineer Pro (DOP-C02)</option><option value="AIP-C01">Generative AI Dev (AIP-C01)</option></optgroup>
-              <optgroup label="Specialty"><option value="MLS-C01">Machine Learning (MLS-C01)</option><option value="SCS-C02">Security (SCS-C02)</option><option value="ANS-C01">Advanced Networking (ANS-C01)</option></optgroup>
+            <select
+                v-model="selectedRadarCert"
+                class="bg-slate-50 border border-slate-200 text-slate-700 text-sm font-bold rounded-xl px-4 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500 cursor-pointer shadow-sm"
+            >
+              <optgroup label="Foundational & Associate">
+                <option value="CLF-C02">Cloud Practitioner (CLF-C02)</option>
+                <option value="AIF-C01">AI Practioner (AIF-C01)</option>
+                <option value="SAA-C03">Solutions Architect (SAA-C03)</option>
+                <option value="DVA-C02">Developer (DVA-C02)</option>
+                <option value="SOA-C02">SysOps Admin (SOA-C02)</option>
+                <option value="DEA-C01">Data Engineer (DEA-C01)</option>
+                <option value="AIP-C01">AI Practitioner (AIP-C01)</option>
+                <option value="MLA-C01">ML Engineer (MLA-C01)</option>
+              </optgroup>
+              <optgroup label="Professional & Specialty">
+                <option value="SAP-C02">Solutions Architect Pro (SAP-C02)</option>
+                <option value="DOP-C02">DevOps Pro (DOP-C02)</option>
+                <option value="SCS-C02">Security Specialty (SCS-C02)</option>
+                <option value="ANS-C01">Advanced Networking (ANS-C01)</option>
+              </optgroup>
             </select>
           </div>
           <div class="flex-grow relative min-h-[300px] w-full flex justify-center items-center">
-            <Radar :key="chartViewCode" :data="radarData" :options="radarOptions" />
+            <Radar :key="chartViewCode" :data="dynamicRadarData" :options="radarOptions" />
           </div>
         </div>
 
@@ -284,6 +408,32 @@
               </div>
             </div>
             <div v-else class="text-center p-6 text-slate-400 text-sm font-bold">Insufficient telemetry data. Complete a simulation to generate priorities.</div>
+            <footer class="mt-24 border-t border-slate-200 bg-slate-50/50 pt-12 pb-8 rounded-t-[3rem]">
+              <div class="max-w-4xl mx-auto px-4 md:px-8 text-center flex flex-col items-center">
+
+                <div class="w-12 h-12 bg-indigo-600 text-white rounded-xl flex items-center justify-center text-xl font-black shadow-md shadow-indigo-500/20 mb-4 transform hover:scale-105 transition-transform">
+                  KF
+                </div>
+                <h3 class="text-xl font-black text-slate-900 tracking-tight mb-1">Knowledge Forge Academy</h3>
+                <p class="text-sm font-medium text-slate-500 mb-6 flex items-center gap-2">
+                  <span>📍</span> 1000 Pearl Suite, McKinney, TX 75002
+                </p>
+
+                <a href="tel:222-222-2222" class="inline-flex justify-center items-center gap-3 bg-white text-indigo-600 hover:text-indigo-700 hover:bg-indigo-50 px-6 py-4 rounded-2xl font-black text-sm uppercase tracking-widest transition-all border border-slate-200 hover:border-indigo-200 shadow-sm hover:shadow-md group w-full sm:w-auto flex-1">
+                  <span class="text-xl group-hover:animate-bounce">📞</span>
+                  (222) 222-2222
+                </a>
+
+                <a href="mailto:test@test.com" class="inline-flex justify-center items-center gap-3 bg-white text-indigo-600 hover:text-indigo-700 hover:bg-indigo-50 px-6 py-4 rounded-2xl font-black text-sm uppercase tracking-widest transition-all border border-slate-200 hover:border-indigo-200 shadow-sm hover:shadow-md group w-full sm:w-auto flex-1">
+                  <span class="text-xl group-hover:animate-pulse">✉️</span>
+                  test@test.com
+                </a>
+                <div class="mt-12 text-[10px] font-black uppercase tracking-widest text-slate-400 border-t border-slate-200/60 pt-6 w-full max-w-md">
+                  © 2026 Knowledge Forge Academy. System fully operational.
+                </div>
+
+              </div>
+            </footer>
           </div>
         </div>
       </div>
@@ -379,6 +529,12 @@
 
     <div v-else-if="currentView === 'library'" class="max-w-7xl mx-auto px-4 md:px-8 py-6 animate-fade-in-up">
 
+      <div class="mb-6">
+        <button @click="currentView = 'landing'" class="bg-slate-100 hover:bg-slate-200 text-slate-600 px-5 py-2.5 rounded-xl font-bold text-xs uppercase tracking-widest transition-colors border border-slate-200 inline-flex items-center shadow-sm">
+          ← Return to Dashboard
+        </button>
+      </div>
+
       <div class="flex flex-col md:flex-row justify-between items-center mb-6 gap-4 bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 px-6 py-4 rounded-2xl shadow-lg shadow-indigo-500/20 relative overflow-hidden text-white">
         <div class="absolute inset-0 bg-white/5 backdrop-blur-sm mix-blend-overlay"></div>
         <div class="flex items-center gap-4 relative z-10">
@@ -395,117 +551,168 @@
             </p>
           </div>
         </div>
-
       </div>
 
-      <div v-if="selectedCert && selectedCert.domains" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-
-        <div
-            v-for="(domain, index) in selectedCert.domains"
-            :key="index"
-            @click="handleDomainClick(domain, index)"
-            class="relative bg-white p-5 rounded-3xl border shadow-sm hover:shadow-xl transition-all cursor-pointer group transform hover:-translate-y-1 flex flex-col overflow-hidden"
-            :class="[(index > 0 && !(currentUser && currentUser.isPremium)) ? 'border-slate-200 opacity-95' : 'border-slate-200 hover:border-indigo-400']"
-        >
-
-          <div v-if="index === 0 && !(currentUser && currentUser.isPremium)" class="absolute top-0 right-0 bg-gradient-to-r from-emerald-400 to-green-500 text-white text-[9px] font-black px-3 py-1 rounded-bl-xl z-30 uppercase tracking-widest shadow-[0_0_10px_rgba(16,185,129,0.4)] animate-pulse">
-            ⚡ Free Preview
-          </div>
-
-          <div v-if="index > 0" class="absolute top-0 right-0 bg-gradient-to-r from-amber-400 to-orange-500 text-white text-[9px] font-black px-3 py-1 rounded-bl-xl z-30 uppercase tracking-widest shadow-[0_0_10px_rgba(245,158,11,0.4)]">
-            ⭐ Premium
-          </div>
-
-          <div v-if="index > 0 && !(currentUser && currentUser.isPremium)" class="absolute inset-0 z-20 bg-slate-50/70 backdrop-blur-[2px] flex flex-col items-center justify-center transition-all group-hover:bg-slate-50/50">
-            <div class="bg-white p-4 rounded-full shadow-lg text-2xl mb-2 group-hover:scale-110 transition-transform">🔒</div>
-            <span class="bg-indigo-600 text-white text-[10px] font-black px-3 py-1 rounded-full tracking-widest uppercase shadow-md shadow-indigo-500/30">Premium Required</span>
-          </div>
-
-          <div class="bg-slate-50 h-36 rounded-2xl mb-5 flex flex-col items-center justify-center group-hover:bg-indigo-50 transition-colors border border-slate-100 relative overflow-hidden">
-        <span class="text-4xl opacity-40 group-hover:opacity-100 group-hover:scale-110 transition-all drop-shadow-sm">
-          {{ domain.icon || '📁' }}
-        </span>
-          </div>
-
-          <span class="text-[9px] font-black tracking-widest uppercase px-2.5 py-1 rounded-full mb-3 inline-block self-start"
-                :class="[(index > 0 && !(currentUser && currentUser.isPremium)) ? 'bg-slate-100 text-slate-500' : 'bg-indigo-50 text-indigo-600']">
-        Domain {{ index + 1 }}
-      </span>
-
-          <h3 class="text-base font-black text-slate-900 mb-1.5 leading-tight"
-              :class="[(index > 0 && !(currentUser && currentUser.isPremium)) ? '' : 'group-hover:text-indigo-600 transition-colors']">
-            {{ domain.name }}
-          </h3>
-          <p class="text-[11px] text-slate-500 font-medium line-clamp-2">
-            {{ domain.description }}
-          </p>
-        </div>
-
-      </div>
-    </div>
-
-    <div v-else-if="currentView === 'adminlogin'" class="max-w-md mx-auto mt-20 p-8 bg-slate-900 rounded-[2rem] shadow-2xl border border-slate-800 text-center animate-fade-in-up">
-      <div class="w-16 h-16 bg-red-500/10 text-red-500 rounded-2xl flex items-center justify-center text-3xl mx-auto mb-6 border border-red-500/20 shadow-inner">🔒</div>
-      <h2 class="text-2xl font-black text-white tracking-widest uppercase mb-2">Director Access</h2>
-      <p class="text-slate-400 text-sm mb-8 font-mono">Enter authorization code to access the mainframe.</p>
-
-      <form @submit.prevent="handleAdminAuth" class="space-y-5">
-        <input
-            type="password"
-            v-model="adminPasscode"
-            placeholder="Enter Passcode..."
-            class="w-full bg-slate-950 border border-slate-800 rounded-xl p-4 text-center text-white font-mono tracking-widest focus:outline-none focus:border-red-500 focus:ring-1 focus:ring-red-500 transition-all shadow-inner"
-        />
-        <p v-if="adminLoginError" class="text-red-500 text-[10px] font-black uppercase tracking-widest animate-pulse">{{ adminLoginError }}</p>
-
-        <button type="submit" class="w-full bg-red-600 hover:bg-red-700 text-white py-4 rounded-xl font-black tracking-widest uppercase transition-all hover:-translate-y-0.5 shadow-lg shadow-red-500/20">
-          Authenticate
+      <div class="flex p-2 bg-slate-200/50 rounded-3xl mb-10 w-full max-w-2xl mx-auto shadow-inner border border-slate-200">
+        <button @click="activeForgeTab = 'domains'" :class="activeForgeTab === 'domains' ? 'bg-white text-indigo-600 shadow-sm border border-slate-200' : 'text-slate-500 hover:text-slate-700'" class="flex-1 py-3 md:py-4 rounded-2xl text-[10px] md:text-sm font-black uppercase tracking-widest transition-all">
+          Study Nodes
         </button>
-      </form>
-
-      <button @click="currentView = 'landing'" class="mt-8 text-slate-500 hover:text-white text-xs uppercase tracking-widest transition-colors">
-        ← Return to Base
-      </button>
-    </div>
-
-    <div v-else-if="currentView === 'admin_hub'" class="max-w-5xl mx-auto px-4 py-12 animate-fade-in-up">
-
-      <div class="mb-8 flex items-center justify-between bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
-        <div>
-          <h2 class="text-2xl font-black text-slate-900 tracking-tight">System Admin Hub</h2>
-          <p class="text-slate-500 font-medium text-sm mt-1">Manage the AWS Knowledge Matrix</p>
-        </div>
-        <button @click="currentView = 'landing'" class="bg-slate-100 hover:bg-slate-200 text-slate-600 px-5 py-2.5 rounded-xl font-bold text-xs uppercase tracking-widest transition-colors border border-slate-200">
-          ← Return to Base
+        <button @click="activeForgeTab = 'videos'" :class="activeForgeTab === 'videos' ? 'bg-white text-blue-600 shadow-sm border border-slate-200' : 'text-slate-500 hover:text-slate-700'" class="flex-1 py-3 md:py-4 rounded-2xl text-[10px] md:text-sm font-black uppercase tracking-widest transition-all">
+          Video Matrix
+        </button>
+        <button @click="activeForgeTab = 'cheatsheets'" :class="activeForgeTab === 'cheatsheets' ? 'bg-white text-emerald-600 shadow-sm border border-slate-200' : 'text-slate-500 hover:text-slate-700'" class="flex-1 py-3 md:py-4 rounded-2xl text-[10px] md:text-sm font-black uppercase tracking-widest transition-all">
+          Archives
         </button>
       </div>
 
-      <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+      <div v-if="activeForgeTab === 'domains'" class="space-y-6 max-w-5xl mx-auto animate-fade-in">
+        <div v-for="(domain, index) in currentForgeDomains" :key="index"
+             class="bg-white rounded-3xl border border-slate-200 overflow-hidden transition-all"
+             :class="(index !== 0 && !isPremiumUser) ? 'bg-slate-50 opacity-80 cursor-not-allowed' : 'shadow-sm hover:shadow-lg hover:border-indigo-300'">
 
-        <button @click="currentView = 'admin'; fetchAdminQuestions();" class="bg-white p-8 rounded-[2rem] border border-slate-200 shadow-sm hover:shadow-xl hover:-translate-y-1 hover:border-indigo-400 transition-all text-left group">
-          <div class="w-16 h-16 bg-indigo-50 text-indigo-600 rounded-2xl flex items-center justify-center text-3xl mb-6 group-hover:scale-110 transition-transform">⚙️</div>
-          <h3 class="text-xl font-black text-slate-900 mb-2">Question Database</h3>
-          <p class="text-slate-500 text-sm leading-relaxed">Manually inject, edit, or vaporize individual questions in the master data node.</p>
-        </button>
+          <button @click.prevent="toggleDomain(index)" class="w-full px-6 py-6 md:px-10 md:py-8 flex items-center justify-between focus:outline-none group" :class="(index !== 0 && !isPremiumUser) ? 'cursor-not-allowed' : 'bg-white'">
+            <div class="flex items-center gap-5 md:gap-8">
 
-        <div class="bg-white p-8 rounded-[2rem] border border-slate-200 shadow-sm flex flex-col transition-all hover:shadow-md">
-          <div class="w-16 h-16 bg-emerald-50 text-emerald-600 rounded-2xl flex items-center justify-center text-3xl mb-6">📁</div>
-          <h3 class="text-xl font-black text-slate-900 mb-2">Bulk CSV Upload</h3>
-          <p class="text-slate-500 text-sm leading-relaxed mb-6">Expand the Jedi Archives instantly. Upload formatted CSV files to populate the database.</p>
+              <div class="w-12 h-12 md:w-16 md:h-16 rounded-full flex items-center justify-center font-black text-lg md:text-xl transition-transform"
+                   :class="(index !== 0 && !isPremiumUser) ? 'bg-slate-200 text-slate-400' : 'bg-indigo-50 text-indigo-500 group-hover:scale-110'">
+                <span v-if="index !== 0 && !isPremiumUser">🔒</span>
+                <span v-else>{{ index + 1 }}</span>
+              </div>
 
-          <div class="mt-auto">
-            <input type="file" id="csv-upload" accept=".csv" class="hidden" @change="handleFileUpload" />
-            <label for="csv-upload" class="cursor-pointer inline-flex w-full items-center justify-center gap-2 bg-slate-800 hover:bg-slate-950 text-white px-6 py-4 rounded-xl font-black transition-all shadow-md hover:shadow-lg hover:-translate-y-1">
-              <svg class="w-5 h-5 text-white/70" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"></path></svg>
-              Select CSV File
-            </label>
+              <div class="text-left">
+                <div class="flex items-center gap-3 md:gap-4 mb-1">
+                  <h3 class="text-lg md:text-2xl font-black tracking-tight" :class="(index !== 0 && !isPremiumUser) ? 'text-slate-500' : 'text-slate-900'">{{ domain.title }}</h3>
+                  <span v-if="index === 0" class="text-[9px] md:text-xs font-black text-emerald-500 bg-emerald-50 px-2 py-1 md:px-3 rounded-md border border-emerald-200 uppercase tracking-widest">🔓 Free</span>
+                  <span v-else-if="!isPremiumUser" class="text-[9px] md:text-xs font-black text-amber-500 bg-amber-50 px-2 py-1 md:px-3 rounded-md border border-amber-200 uppercase tracking-widest">⭐ Premium</span>
+                </div>
+                <span class="text-xs md:text-sm font-black text-slate-400 uppercase tracking-widest">Exam Weight: <span :class="(index !== 0 && !isPremiumUser) ? 'text-slate-400' : 'text-indigo-500'">{{ domain.weight }}</span></span>
+              </div>
+            </div>
+            <span v-if="index === 0 || isPremiumUser" class="text-3xl text-slate-300 transition-transform duration-300" :class="expandedDomain === index ? 'rotate-180' : ''">↓</span>
+          </button>
+
+          <div v-show="expandedDomain === index" class="px-6 pb-6 pt-2 md:px-10 md:pb-10 md:pt-4 border-t border-slate-100 bg-slate-50">
+            <div class="mb-6 md:mb-8">
+              <h4 class="text-xs md:text-sm font-black text-slate-500 uppercase tracking-widest mb-4">Core Topics:</h4>
+              <ul class="space-y-3">
+                <li v-for="(topic, tIndex) in domain.topics" :key="tIndex" class="flex items-start gap-3 text-base md:text-lg text-slate-600 font-medium">
+                  <span class="text-indigo-400 mt-1">•</span> {{ topic }}
+                </li>
+              </ul>
+            </div>
+            <div class="bg-indigo-100/50 border border-indigo-200 p-5 md:p-8 rounded-2xl flex gap-4 md:gap-6 items-start">
+              <span class="text-3xl md:text-4xl">💡</span>
+              <div>
+                <span class="text-[10px] md:text-xs font-black text-indigo-600 uppercase tracking-widest block mb-2">Matrix Fact</span>
+                <p class="text-base md:text-lg font-semibold text-slate-700 leading-relaxed">{{ domain.keyFact }}</p>
+              </div>
+            </div>
           </div>
         </div>
-
       </div>
+
+      <div v-else-if="activeForgeTab === 'videos'" class="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-5xl mx-auto animate-fade-in">
+        <div v-for="(i, index) in 4" :key="i" class="bg-white rounded-3xl border border-slate-200 p-2 transition-all relative overflow-hidden"
+             :class="(index !== 0 && !isPremiumUser) ? 'opacity-80 cursor-not-allowed bg-slate-50' : 'shadow-sm group hover:shadow-xl hover:-translate-y-1'">
+
+          <div v-if="index !== 0 && !isPremiumUser" class="absolute inset-0 z-30 bg-slate-900/10 backdrop-blur-[2px] flex items-center justify-center rounded-3xl">
+            <div class="bg-white/95 px-6 py-4 md:px-8 md:py-5 rounded-2xl shadow-xl border border-slate-200 flex flex-col items-center gap-2 transform transition-transform hover:scale-105">
+              <span class="text-3xl md:text-4xl">🔒</span>
+              <span class="text-xs md:text-sm font-black text-slate-800 uppercase tracking-widest">Premium Module</span>
+            </div>
+          </div>
+
+          <div class="bg-slate-900 h-48 rounded-2xl relative flex items-center justify-center overflow-hidden">
+            <div class="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent z-10"></div>
+            <div class="absolute top-3 left-3 z-20">
+              <span v-if="index === 0" class="bg-emerald-500 text-white text-[9px] md:text-xs font-black uppercase tracking-widest px-2 py-1 md:px-3 rounded shadow-md">🔓 Free</span>
+              <span v-else-if="!isPremiumUser" class="bg-gradient-to-r from-amber-400 to-orange-500 text-white text-[9px] md:text-xs font-black uppercase tracking-widest px-2 py-1 md:px-3 rounded shadow-md">⭐ Premium</span>
+            </div>
+            <div class="w-16 h-16 bg-white/20 backdrop-blur-md rounded-full flex items-center justify-center z-20 transition-transform border border-white/30" :class="(index === 0 || isPremiumUser) ? 'cursor-pointer group-hover:scale-110' : ''">
+              <span class="text-2xl ml-1">▶️</span>
+            </div>
+            <span class="absolute bottom-4 right-4 text-white font-mono text-xs md:text-sm z-20 bg-black/50 px-2 py-1 rounded-md">14:2{{ i }}</span>
+          </div>
+          <div class="p-5 md:p-6">
+            <span class="text-[10px] md:text-xs font-black text-blue-500 uppercase tracking-widest mb-1 md:mb-2 block">Module 0{{ i }}</span>
+            <h3 class="text-lg md:text-xl font-black mb-1 md:mb-2" :class="(index !== 0 && !isPremiumUser) ? 'text-slate-500' : 'text-slate-900'">Deep Dive: Core Services</h3>
+            <p class="text-sm md:text-base text-slate-500 font-medium">Learn how to provision and connect to foundational architecture.</p>
+          </div>
+        </div>
+      </div>
+
+      <div v-else-if="activeForgeTab === 'cheatsheets'" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6 max-w-5xl mx-auto animate-fade-in">
+        <div v-for="(sheet, index) in ['Architecture Quick Start', 'Parameter Guide', 'Service Comparisons']" :key="sheet"
+             class="bg-white p-6 md:p-8 rounded-[2rem] border border-slate-200 transition-all text-center relative overflow-hidden"
+             :class="(index !== 0 && !isPremiumUser) ? 'opacity-80 cursor-not-allowed bg-slate-50' : 'shadow-sm hover:shadow-xl hover:-translate-y-1 hover:border-emerald-400 group cursor-pointer'">
+
+          <div v-if="index !== 0 && !isPremiumUser" class="absolute inset-0 z-30 bg-slate-900/5 backdrop-blur-[2px] flex flex-col items-center justify-center rounded-[2rem]">
+            <div class="bg-white/95 px-6 py-4 md:px-8 md:py-5 rounded-2xl shadow-xl border border-slate-200 flex flex-col items-center gap-2 transform transition-transform hover:scale-105">
+              <span class="text-3xl md:text-4xl">🔒</span>
+              <span class="text-xs md:text-sm font-black text-slate-800 uppercase tracking-widest">Premium Archive</span>
+            </div>
+          </div>
+
+          <div class="absolute top-4 left-4 z-20">
+            <span v-if="index === 0" class="text-[9px] md:text-xs font-black text-emerald-500 bg-emerald-50 px-2 py-1 md:px-3 rounded-md border border-emerald-200 uppercase tracking-widest">🔓 Free</span>
+          </div>
+
+          <div class="absolute -top-10 -right-10 w-32 h-32 md:w-40 md:h-40 bg-emerald-50 rounded-full blur-2xl transition-colors" :class="(index === 0 || isPremiumUser) ? 'group-hover:bg-emerald-100' : ''"></div>
+          <div class="w-16 h-16 md:w-20 md:h-20 mx-auto bg-emerald-50 text-emerald-500 rounded-2xl flex items-center justify-center text-3xl md:text-4xl mb-4 md:mb-6 relative z-10 border border-emerald-100 transition-transform" :class="(index === 0 || isPremiumUser) ? 'group-hover:scale-110' : ''">
+            📄
+          </div>
+          <h3 class="text-md md:text-lg font-black relative z-10" :class="(index !== 0 && !isPremiumUser) ? 'text-slate-500' : 'text-slate-900'">{{ sheet }}</h3>
+          <p v-if="index === 0 || isPremiumUser" class="text-xs md:text-sm text-slate-400 mt-2 md:mt-3 font-bold uppercase tracking-widest relative z-10 hover:text-emerald-500">Download PDF ↓</p>
+        </div>
+      </div>
+
     </div>
 
     <div v-else-if="currentView === 'admin'" class="max-w-7xl mx-auto px-4 py-8 animate-fade-in admin-dashboard">
+
+      <button @click="currentView = 'landing'" class="mb-6 bg-slate-100 hover:bg-slate-200 text-slate-600 px-5 py-2.5 rounded-xl font-bold text-xs uppercase tracking-widest transition-colors border border-slate-200 inline-flex items-center shadow-sm">
+        ← Return to Admin Hub
+      </button>
+
+      <div class="mb-8 bg-slate-800 p-6 md:p-8 rounded-2xl border border-slate-700 relative overflow-hidden shadow-xl text-left">
+        <h3 class="text-xl font-black text-white mb-2 flex items-center gap-3">
+          <span class="p-2 bg-indigo-500/20 text-indigo-400 rounded-lg">🗄️</span>
+          Mass Databank Injection
+        </h3>
+        <p class="text-sm text-slate-400 mb-6 max-w-2xl">Upload official AWS question sets (.csv) to update the Knowledge Forge. Ensure columns match the master schema.</p>
+
+        <div class="flex flex-col md:flex-row gap-4 items-start md:items-center">
+          <label class="block flex-1 w-full relative cursor-pointer group">
+            <input
+                type="file"
+                accept=".csv"
+                @change="handleFileSelect"
+                class="block w-full text-sm text-slate-400
+            file:mr-4 file:py-3 file:px-6
+            file:rounded-xl file:border-0
+            file:text-sm file:font-black file:uppercase file:tracking-widest
+            file:bg-indigo-500/10 file:text-indigo-400
+            group-hover:file:bg-indigo-500/20 file:transition-colors file:cursor-pointer
+            bg-slate-900 border border-slate-700 rounded-xl cursor-pointer"
+            />
+          </label>
+
+          <button
+              @click="uploadCsv"
+              :disabled="!selectedCsvFile"
+              class="px-8 py-3 rounded-xl font-black text-sm uppercase tracking-widest text-white transition-all w-full md:w-auto flex-shrink-0"
+              :class="selectedCsvFile ? 'bg-indigo-600 hover:bg-indigo-500 shadow-lg shadow-indigo-500/30 hover:-translate-y-0.5' : 'bg-slate-700 cursor-not-allowed opacity-50'"
+          >
+            Inject Data
+          </button>
+        </div>
+
+        <div v-if="uploadStatus" class="mt-6 pt-4 border-t border-slate-700">
+          <p class="text-sm font-bold flex items-center gap-2" :class="uploadStatus.includes('✅') ? 'text-emerald-400' : (uploadStatus.includes('❌') ? 'text-rose-400' : 'text-amber-400 animate-pulse')">
+            {{ uploadStatus }}
+          </p>
+        </div>
+      </div>
       <div class="admin-header">
         <h2>SYSTEM MAINFRAME: QUESTION DATABASE</h2>
         <button @click="openAdminModal(null)" class="btn-create">+ INJECT NEW QUESTION</button>
@@ -536,19 +743,58 @@
       </table>
 
       <div v-if="showAdminModal" class="admin-modal-overlay">
-        <div class="admin-modal-content">
+        <div class="admin-modal-content max-h-[90vh] overflow-y-auto">
           <h3>{{ isAdminEditing ? 'EDIT DATA NODE' : 'INJECT NEW DATA NODE' }}</h3>
+
           <label>Certification Code</label>
           <input v-model="adminForm.examCode" placeholder="e.g. SCS-C02" />
+
           <label>Category</label>
           <input v-model="adminForm.category" placeholder="e.g. Security" />
+
           <label>Question Text</label>
           <textarea v-model="adminForm.text" rows="3"></textarea>
-          <label>Correct Answer</label>
-          <input v-model="adminForm.correctAnswer" />
+
+          <div class="flex justify-between items-end mb-1 mt-2">
+            <label class="!mb-0">Response Options (Check box if correct)</label>
+            <button
+                v-if="adminForm.options && adminForm.options.length < 6"
+                @click.prevent="addOption"
+                class="text-[10px] bg-indigo-100 text-indigo-700 px-2 py-1 rounded font-black uppercase tracking-widest hover:bg-indigo-200 transition-colors">
+              + Add Option
+            </button>
+          </div>
+
+          <div class="space-y-2 mb-4 bg-slate-50 p-4 rounded-xl border border-slate-200 shadow-inner">
+            <div v-for="(opt, index) in adminForm.options" :key="index" class="flex items-center gap-3">
+
+              <input
+                  type="checkbox"
+                  v-model="opt.isCorrect"
+                  class="w-5 h-5 text-emerald-500 rounded border-slate-300 focus:ring-emerald-500 cursor-pointer shadow-sm"
+                  :title="opt.isCorrect ? 'Marked as Correct' : 'Marked as Incorrect'"
+              />
+
+              <input
+                  v-model="opt.text"
+                  :placeholder="'Option ' + (index + 1) + ' text...'"
+                  class="flex-grow !mb-0 !mt-0"
+                  :class="opt.isCorrect ? 'border-emerald-500 bg-emerald-50/50' : 'border-slate-300 bg-white'"
+              />
+
+              <button
+                  v-if="adminForm.options && adminForm.options.length > 2"
+                  @click.prevent="removeOption(index)"
+                  class="w-8 h-8 flex items-center justify-center bg-red-100 text-red-600 rounded-lg font-black hover:bg-red-200 transition-colors flex-shrink-0"
+                  title="Remove Option">
+                ×
+              </button>
+            </div>
+          </div>
           <label>Explanation</label>
           <textarea v-model="adminForm.explanation" rows="2"></textarea>
-          <div class="modal-actions">
+
+          <div class="modal-actions mt-4">
             <button @click="showAdminModal = false" class="btn-cancel">CANCEL</button>
             <button @click="saveAdminQuestion" class="btn-save">OVERWRITE MAINFRAME</button>
           </div>
@@ -1050,6 +1296,7 @@ const userTotalXp = ref(0);
 const isSuddenDeath = ref(true);
 const healthPoints = ref(3);
 const isDead = computed(() => healthPoints.value <= 0);
+
 // --- AMRAP (TIME ATTACK) MECHANIC ---
 const isAmrapMode = ref(true); // Toggle ON for testing!
 const amrapTimeLeft = ref(600); // 10 minutes (in seconds)
@@ -1079,15 +1326,22 @@ const categoryScores = ref(savedScores ? JSON.parse(savedScores) : {});
 
 // --- Platform State ---
 const currentView = ref(window.location.hash.replace('#', '') || 'landing');
+// --- 🚀 ONBOARDING PROTOCOL STATE ---
+const activeSlide = ref(0);
 const selectedCert = ref(null);
 const showGuestLimitModal = ref(false);
 const hallOfFame = ref([]);
+
+  // --- 🧠 THE KNOWLEDGE FORGE STATE ---
+  const activeForgeTab = ref('domains'); // 'domains', 'videos', or 'cheatsheets'
+  const expandedDomain = ref(null); // Tracks which accordion is currently open
 
 // --- Timer Logic ---
 const timer = ref(0);
 
 // JWT AUTHENTICATION ENGINE
 const showAuthModal = ref(false);
+const liveUserScores = ref([0, 0, 0, 0]);
 const showPremiumModal = ref(false);
 const isLoginMode = ref(true); // Toggle between Login and Register
 const authForm = ref({ username: '', email: '', password: '' });
@@ -1105,8 +1359,8 @@ const examHistory = ref([]);
 const isSignup = ref(true);
 const userResults = ref({});
 
-  // 2. THE SYNCHRONIZER: When App.vue sends new data, update our local user!
-  watch(() => props.isLoggedIn, (newStatus) => {
+// 2. THE SYNCHRONIZER: When App.vue sends new data, update our local user!
+watch(() => props.isLoggedIn, (newStatus) => {
     if (newStatus && props.username) {
       currentUser.value = {
         ...currentUser.value,
@@ -1117,8 +1371,8 @@ const userResults = ref({});
     // 🚨 THE FIX: We deleted the 'else' block that was prematurely wiping your user!
   }, { immediate: true });
 
-  // 3. THE UPGRADE CATCHER & AUTO-LAUNCHER
-  watch(() => props.isPremium, (newPremium) => {
+// 3. THE UPGRADE CATCHER & AUTO-LAUNCHER
+watch(() => props.isPremium, (newPremium) => {
     if (currentUser.value) {
       currentUser.value.isPremium = newPremium;
     }
@@ -1158,6 +1412,8 @@ const allExamQuestions = ref([]);
 const showSuccessHologram = ref(false);
 const welcomeMessage = ref('');
 const lastAttemptId = ref(null);
+const selectedCsvFile = ref(null);
+const uploadStatus = ref('');
 
 // --- THE KNOWLEDGE FORGE: DYNAMIC DATABASE FETCH ---
 const libraryModules = ref([]);
@@ -1165,7 +1421,7 @@ const libraryModules = ref([]);
 // --- DYNAMIC TARGETED FETCH ---
   // --- DYNAMIC TARGETED FETCH ---
   // --- DYNAMIC TARGETED FETCH ---
-  const fetchKnowledgeForge = async (targetCertCode) => {
+const fetchKnowledgeForge = async (targetCertCode) => {
     if (!targetCertCode) return;
 
     try {
@@ -1235,9 +1491,53 @@ const enterKnowledgeForge = async () => {
   window.scrollTo({ top: 0, behavior: 'smooth' });
 };
 
+// Safely check if the current user has the premium flag from Stripe
+const isPremiumUser = computed(() => {
+    return currentUser.value?.isPremium || false;
+  });
+
+  const toggleDomain = (index) => {
+    // 🚨 THE FREEMIUM LOCK: If it's not the first item (index 0) and they aren't premium, deny access!
+    if (index !== 0 && !isPremiumUser.value) {
+      console.log("Access Denied: Premium Databank.");
+      // Optional: If you have a toast notification system, trigger it here telling them to upgrade!
+      return;
+    }
+
+    expandedDomain.value = expandedDomain.value === index ? null : index;
+    if (isAudioEnabled.value && expandedDomain.value !== null) playSound('click');
+  };
+
+// 📚 Mock Data for the UI (You can move this to your Java backend later!)
+const forgeDomains = [
+    {
+      title: "Domain 1: Fundamentals of AI & ML",
+      weight: "20%",
+      topics: ["Supervised vs. Unsupervised Learning", "Deep Learning vs. Traditional ML", "Key Terminology (Epochs, Weights, Bias)"],
+      keyFact: "Supervised learning requires labeled data; Unsupervised looks for hidden patterns in unlabeled data."
+    },
+    {
+      title: "Domain 2: Fundamentals of Generative AI",
+      weight: "24%",
+      topics: ["Large Language Models (LLMs)", "Foundation Models", "Tokenization & Embeddings", "Prompt Engineering Techniques"],
+      keyFact: "Temperature controls randomness in Generative AI. High temperature = creative/random, Low temperature = deterministic/focused."
+    },
+    {
+      title: "Domain 3: Applications of Foundation Models",
+      weight: "28%",
+      topics: ["Amazon Bedrock", "Amazon Q", "Amazon SageMaker JumpStart", "Choosing the right model for the use case"],
+      keyFact: "Amazon Bedrock is a fully managed service that offers a choice of high-performing foundation models via a single API."
+    },
+    {
+      title: "Domain 4: Responsible AI & Security",
+      weight: "28%",
+      topics: ["Data Privacy in AWS", "Mitigating Bias and Hallucinations", "Amazon Bedrock Guardrails", "Regulatory Compliance"],
+      keyFact: "Bedrock Guardrails allow you to implement safeguards across foundation models based on your specific use cases and responsible AI policies."
+    }
+  ];
+
 // --- Analytics: Radar Chart Configuration ---
 // 1. The Official AWS Domain Dictionary
-// (You can add the exact domains for all 12 certs here later!)
 const chartViewCode = ref('DEFAULT');
 
 // --- Achievement Modal State ---
@@ -1268,44 +1568,6 @@ const examDomains = {
   // --- DEFAULT ---
   'DEFAULT': ['Compute', 'Storage', 'Database', 'Networking', 'Security', 'Management']
 };
-
-// 2. The Dynamic Radar Engine
-const radarData = computed(() => {
-  // Figure out which cert they are looking at, or use the default
-  const certCode = chartViewCode.value;
-
-  // Grab the specific labels for that exact exam
-  const currentLabels = examDomains[certCode] || examDomains['DEFAULT'];
-
-  const realScores = currentLabels.map(label => {
-    // If we have a real score for this category, use it!
-    if (categoryScores.value && categoryScores.value[label] !== undefined) {
-      return categoryScores.value[label];
-    }
-    // If we haven't tested this category yet, default to 0
-    return 0;
-  });
-
-  // Generate placeholder scores that perfectly match the number of labels
-  // (We randomize them between 40-100 just so the chart looks cool for testing)
-  const mockScores = currentLabels.map(() => Math.floor(Math.random() * 60) + 40);
-
-  return {
-    labels: currentLabels,
-    datasets: [
-      {
-        label: `${certCode === 'DEFAULT' ? 'Overall AWS' : certCode} Mastery`,
-        backgroundColor: 'rgba(59, 130, 246, 0.2)',
-        borderColor: 'rgba(59, 130, 246, 1)',
-        pointBackgroundColor: 'rgba(59, 130, 246, 1)',
-        pointBorderColor: '#fff',
-        pointHoverBackgroundColor: '#fff',
-        pointHoverBorderColor: 'rgba(59, 130, 246, 1)',
-        data: realScores // <-- Feeding the real scores into the chart!
-      }
-    ]
-  };
-});
 
 // --- Analytics: Study Priorities Engine ---
 // --- THE REACTIVE PRIORITIES ENGINE ---
@@ -1530,7 +1792,8 @@ const arcadeConfig = {
     },
     library: {
       name: 'The Knowledge Forge',
-      requiresPremium: true
+      requiresPremium: false,
+      maxFreePlays: null
     },
     flashcards: {
       name: 'Flashcard Matrix',
@@ -1595,7 +1858,7 @@ const formattedTime = computed(() => {
 
 // Function to handle clicking a card
   // Function to handle clicking a card
-  const openModule = (moduleId) => {
+const openModule = (moduleId) => {
     // 1. Find the exact module they clicked and its index in the array
     const targetIndex = libraryModules.value.findIndex(m => m.id === moduleId);
     const targetModule = libraryModules.value[targetIndex];
@@ -1626,6 +1889,121 @@ const formattedTime = computed(() => {
     currentView.value = 'lessonViewer';
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
+
+const onboardingSlides = [
+    {
+      title: "Propel Your Cloud Career",
+      text: "Obtaining AWS certifications is the ultimate catalyst for your tech career. Knowledge Forge Academy works tirelessly to provide the most up-to-date training modules, dynamic quizzes, and real-world scenarios. We are constantly evolving our databanks to ensure you are exam-ready.",
+      icon: "🚀"
+    },
+    {
+      title: "Certification Databanks",
+      text: "Select your target protocol. Whether you are aiming for Cloud Practitioner, Solutions Architect, Developer, or specialized AI/ML certifications, our forges adapt to your specific exam requirements.",
+      icon: "🗄️"
+    },
+    {
+      title: "The Skill Radar",
+      text: "Stop guessing what to study. Our dynamic Skill Radar tracks your quiz performance across every AWS domain in real-time, instantly highlighting your strengths and generating Target Priorities to patch your weakest architectural blind spots.",
+      icon: "🎯"
+    },
+    {
+      title: "Ascended Masters",
+      text: "Compete with the elite. The Ascended Masters leaderboard ranks our top engineers. Your rank is dynamically calculated based on your accumulated XP, Sudden Death survival rates, and overall quiz accuracy. Claim your spot at the top.",
+      icon: "👑"
+    }
+  ];
+
+const nextSlide = () => {
+    if (activeSlide.value < onboardingSlides.length - 1) {
+      activeSlide.value++;
+      if (isAudioEnabled.value) playSound('click');
+    } else {
+      // If it's the last slide, send them to the main dashboard!
+      currentView.value = 'landing';
+      if (isAudioEnabled.value) playSound('success');
+    }
+  };
+
+const prevSlide = () => {
+    if (activeSlide.value > 0) {
+      activeSlide.value--;
+      if (isAudioEnabled.value) playSound('click');
+    }
+  };
+
+// --- 🎯 DYNAMIC SKILL RADAR ENGINE ---
+
+// 1. Track what the user selects in the dropdown
+const selectedRadarCert = ref('AIF-C01');
+
+// 2. The Central Database: Maps certs to their specific domains and mock scores
+const radarDatabase = {
+    'CLF-C02': ['Cloud Concepts', 'Security & Compliance', 'Cloud Tech & Services', 'Billing & Pricing'],
+    'SOA-C02': ['Monitoring & Reporting', 'High Availability', 'Deployment & Provisioning', 'Storage & Data', 'Security & Compliance', 'Networking'],
+    'DVA-C02': ['Development with AWS', 'Security', 'Deployment', 'Troubleshooting'],
+    'SAA-C03': ['Secure Architectures', 'Resilient Architectures', 'High-Performing', 'Cost-Optimized'],
+    'SAP-C02': ['Design for Complexity', 'New Solutions', 'Migration Planning', 'Cost Control', 'Continuous Improvement'],
+    'DOP-C02': ['SDLC Automation', 'IaC & Config', 'Monitoring & Logging', 'Policies & Standards', 'Incident Response', 'High Availability'],
+    'DEA-C01': ['Data Ingestion', 'Data Store Management', 'Data Operations', 'Security & Governance'],
+    'MLA-C01': ['Data Preparation', 'ML Architecture', 'Model Training', 'Deployment & Ops', 'Security'],
+    'AIP-C01': ['AI/ML Fundamentals', 'Generative AI', 'Foundation Models', 'Responsible AI'],
+    'SCS-C02': ['Threat Detection', 'Logging & Monitoring', 'Infrastructure Security', 'IAM', 'Data Protection'],
+    'ANS-C01': ['Network Design', 'Network Implementation', 'Network Management', 'Network Security'],
+    'AIF-C01': ['Fundamentals of AI & ML', 'Fundamentals of Generative AI', 'Applications of Foundation Models', 'Responsible AI & Security']
+  };
+
+const fetchRadarData = async (certCode) => {
+    // If no user is logged in yet, just draw zeroes
+    if (!currentUser.value || !currentUser.value.id) {
+      liveUserScores.value = new Array(radarDatabase[certCode].length).fill(0);
+      return;
+    }
+
+    try {
+      const token = localStorage.getItem('aws_jwt');
+
+      // 🚨 FIX: Using currentUser.value.id instead of a hardcoded 1!
+      const response = await fetch(`http://localhost:8080/api/radar/user/${currentUser.value.id}/cert/${certCode}`, {
+        headers: { 'Authorization': `Bearer ${token}` } // 🚨 ADDED VIP PASS
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        liveUserScores.value = data.scores;
+      } else {
+        liveUserScores.value = new Array(radarDatabase[certCode].length).fill(0);
+      }
+    } catch (error) {
+      console.error("Cannot connect to Java backend:", error);
+    }
+  };
+
+watch(selectedRadarCert, (newCertCode) => {
+    fetchRadarData(newCertCode);
+  });
+
+onMounted(() => {
+    fetchRadarData(selectedRadarCert.value);
+  });
+
+const dynamicRadarData = computed(() => {
+    // Grab the correct labels for the selected cert
+    const currentLabels = radarDatabase[selectedRadarCert.value] || radarDatabase['CLF-C02'];
+
+    return {
+      labels: currentLabels,
+      datasets: [{
+        label: 'Skill Proficiency (%)',
+        backgroundColor: 'rgba(79, 70, 229, 0.2)',
+        borderColor: 'rgba(79, 70, 229, 1)',
+        pointBackgroundColor: 'rgba(16, 185, 129, 1)',
+        pointBorderColor: '#fff',
+        pointHoverBackgroundColor: '#fff',
+        pointHoverBorderColor: 'rgba(16, 185, 129, 1)',
+        data: liveUserScores.value // 🔥 THIS IS NOW LIVE DATA FROM JAVA!
+      }]
+    };
+  });
 
 // --- COMPLETE MODULE PROGRESSION ---
 const completeActiveModule = async () => {
@@ -1831,6 +2209,19 @@ const fetchQuestion = async () => {
     alert("Communication error with the Jedi Archives.");
   }
 };
+
+// --- 🛡️ ADMIN SECURITY PROTOCOL ---
+const triggerAdminLock = () => {
+    // 1. Throw up the browser's native password prompt
+    const authCode = prompt("SECURITY OVERRIDE: Enter Admin Authorization Code");
+
+    // 2. Check the password
+    if (authCode === "masterkey") {
+      currentView.value = 'admin'; // Grant Access
+    } else if (authCode !== null && authCode !== "") {
+      alert("❌ Authorization Denied. Invalid Code.");
+    }
+  };
 
 const loadNextQuestion = async () => {
   if (question.value) {
@@ -2157,84 +2548,104 @@ const submitExam = async () => {
   }
 };
 
-const saveResults = async () => {
-  analyzeCategoryMastery();
+  const saveResults = async () => {
+    analyzeCategoryMastery();
 
-  try {
-    const activeQs = (allQuestionsInSession.value && allQuestionsInSession.value.length > 0)
-        ? allQuestionsInSession.value
-        : questions.value;
+    try {
+      const activeQs = (allQuestionsInSession.value && allQuestionsInSession.value.length > 0)
+          ? allQuestionsInSession.value
+          : questions.value;
 
-    const total = activeQs.length || 1;
-    let correctCount = 0;
-    let missedIds = [];
+      const total = activeQs.length || 1;
+      let correctCount = 0;
+      let missedIds = [];
 
-    // THE FIX: Loop through EVERY question in the exam.
-    // If you didn't explicitly get it right, it is forced to "missed".
-    activeQs.forEach(q => {
-      if (userResults.value[q.id] === true) {
-        correctCount++;
-      } else {
-        missedIds.push(q.id);
-        userResults.value[q.id] = false; // Force the UI to show it as missed too!
-      }
-    });
+      activeQs.forEach(q => {
+        if (userResults.value[q.id] === true) {
+          correctCount++;
+        } else {
+          missedIds.push(q.id);
+          userResults.value[q.id] = false;
+        }
+      });
 
-    const finalScore = Math.round((correctCount / total) * 100);
+      const finalScore = Math.round((correctCount / total) * 100);
+      const token = localStorage.getItem('aws_jwt'); // 🚨 GRAB THE VIP PASS
 
-    // Build the payload
-    // Build the payload inside saveResults
-    const historyData = {
-      userId: currentUser.value.id,
-      examCode: selectedCert.value?.code || 'AWS-CERT',
-      scorePercentage: finalScore,
-      totalQuestions: total,
-      correctCount: correctCount,
-      missedQuestionIds: missedIds.join(','),
+      const historyData = {
+        userId: currentUser.value.id,
+        examCode: selectedCert.value?.code || 'AWS-CERT',
+        scorePercentage: finalScore,
+        totalQuestions: total,
+        correctCount: correctCount,
+        missedQuestionIds: missedIds.join(','),
+        timeSpentSeconds: totalExamSeconds.value
+      };
 
-      // CHANGE THIS FROM 0 to totalExamSeconds.value
-      timeSpentSeconds: totalExamSeconds.value
-    };
+      const response = await fetch('http://localhost:8080/api/questions/history/save', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}` // 🚨 SEND THE VIP PASS TO JAVA!
+        },
+        body: JSON.stringify(historyData)
+      });
 
-    // Make sure this URL matches your actual Spring Boot endpoint!
-    const response = await fetch('http://localhost:8080/api/questions/history/save', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(historyData)
-    });
-
-  } catch (error) {
-  }
-};
-
-const fetchHistory = async () => {
-  // 1. Get the ID from your reactive currentUser ref
-  const userId = currentUser.value?.id;
-
-  // 2. If no user is logged in, clear the table and stop
-  if (!userId) {
-    examHistory.value = [];
-    return;
-  }
-
-  try {
-    const response = await fetch(`http://localhost:8080/api/questions/history?userId=${userId}`);
-    if (response.ok) {
-      const data = await response.json();
-      examHistory.value = data;
+    } catch (error) {
+      console.error("Failed to save history to database:", error);
     }
-  } catch (error) {
-  }
-};
+  };
+
+  const fetchHistory = async () => {
+    const userId = currentUser.value?.id;
+
+    if (!userId) {
+      examHistory.value = [];
+      return;
+    }
+
+    try {
+      const token = localStorage.getItem('aws_jwt'); // 🚨 GRAB THE VIP PASS
+
+      const response = await fetch(`http://localhost:8080/api/questions/history?userId=${userId}`, {
+        headers: { 'Authorization': `Bearer ${token}` } // 🚨 SEND THE VIP PASS TO JAVA!
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        examHistory.value = data;
+      }
+    } catch (error) {
+      console.error("Failed to fetch history:", error);
+    }
+  };
 
 const adminForm = ref({
-  id: null,
-  text: '',
-  category: '',
-  examCode: 'SCS-C02', // Defaulting to Security
-  correctAnswer: '',
-  explanation: ''
-});
+    id: null,
+    text: '',
+    category: '',
+    examCode: 'SCS-C02',
+    explanation: '',
+    // 🚨 THE NEW UPGRADE: An array of objects instead of a single string
+    options: [
+      { text: '', isCorrect: true },  // Default Option 1
+      { text: '', isCorrect: false }, // Default Option 2
+      { text: '', isCorrect: false }, // Default Option 3
+      { text: '', isCorrect: false }  // Default Option 4
+    ]
+  });
+
+const addOption = () => {
+    if (adminForm.value.options.length < 6) {
+      adminForm.value.options.push({ text: '', isCorrect: false });
+    }
+  };
+
+const removeOption = (index) => {
+    if (adminForm.value.options.length > 2) {
+      adminForm.value.options.splice(index, 1);
+    }
+  };
 
 // 1. READ: Download all questions
 const fetchAdminQuestions = async () => {
@@ -2300,16 +2711,29 @@ const deleteAdminQuestion = async (id) => {
 
 // 4. UI HELPER: Open the modal for editing or creating
 const openAdminModal = (question = null) => {
-  if (question) {
-    adminForm.value = { ...question }; // Copy the existing question
-    isAdminEditing.value = true;
-  } else {
-    // Reset to blank form for a new question
-    adminForm.value = { id: null, text: '', category: '', examCode: '', correctAnswer: '', explanation: '' };
-    isAdminEditing.value = false;
-  }
-  showAdminModal.value = true;
-};
+    if (question) {
+      // If editing, we will eventually need to map the Java options here
+      adminForm.value = { ...question };
+      isAdminEditing.value = true;
+    } else {
+      // 🚨 UPDATED BLANK FORM: Now includes the default 4 options!
+      adminForm.value = {
+        id: null,
+        text: '',
+        category: '',
+        examCode: '',
+        explanation: '',
+        options: [
+          { text: '', isCorrect: true },
+          { text: '', isCorrect: false },
+          { text: '', isCorrect: false },
+          { text: '', isCorrect: false }
+        ]
+      };
+      isAdminEditing.value = false;
+    }
+    showAdminModal.value = true;
+  };
 
 // --- FETCH LIFETIME RADAR STATS FROM SPRING BOOT ---
 const fetchRadarStats = async () => {
@@ -2350,9 +2774,9 @@ const streakDisplay = computed(() => {
   }
 });
 
-  // --- THE PROTOCOL ROUTER ---
+// --- THE PROTOCOL ROUTER ---
   // 🛡️ THE MASTER GATEKEEPER
-  const initiateProtocol = (targetView) => {
+const initiateProtocol = (targetView) => {
     const gameConfig = arcadeConfig[targetView];
 
     // If the view isn't in our roster (like the 'landing' page), just let them go
@@ -2360,8 +2784,6 @@ const streakDisplay = computed(() => {
       currentView.value = targetView;
       return;
     }
-
-    const isPremiumUser = currentUser.value && currentUser.value.isPremium;
 
     // --- GATE 1: THE PREMIUM WALL ---
     if (gameConfig.requiresPremium && !isPremiumUser) {
@@ -2405,8 +2827,8 @@ const streakDisplay = computed(() => {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
-  // 🚨 THE NEW ENGINE STARTER
-  const bootQuizEngine = async (mode) => {
+// 🚨 THE NEW ENGINE STARTER
+const bootQuizEngine = async (mode) => {
     // 1. Reset all previous state
     resetSession();
 
@@ -2629,6 +3051,110 @@ const certifications = ref([
     }
   ]);
 
+// 📚 The Central Data Dictionary for All Certifications
+const allCertDomains = {
+  'AIF-C01': [
+    {
+      title: "Domain 1: Fundamentals of AI & ML", weight: "20%",
+      topics: ["Supervised vs. Unsupervised Learning", "Deep Learning vs. Traditional ML", "Key Terminology (Epochs, Weights, Bias)"],
+      keyFact: "Supervised learning requires labeled data; Unsupervised looks for hidden patterns in unlabeled data."
+    },
+    {
+      title: "Domain 2: Fundamentals of Generative AI", weight: "24%",
+      topics: ["Large Language Models (LLMs)", "Foundation Models", "Tokenization", "Prompt Engineering"],
+      keyFact: "Temperature controls randomness in Generative AI. High temp = creative, Low temp = deterministic."
+    },
+    {
+      title: "Domain 3: Applications of Foundation Models", weight: "28%",
+      topics: ["Amazon Bedrock", "Amazon Q", "Amazon SageMaker JumpStart"],
+      keyFact: "Amazon Bedrock is a fully managed service that offers a choice of high-performing foundation models via a single API."
+    },
+    {
+      title: "Domain 4: Responsible AI & Security", weight: "28%",
+      topics: ["Data Privacy in AWS", "Mitigating Bias", "Amazon Bedrock Guardrails"],
+      keyFact: "Bedrock Guardrails allow you to implement safeguards across foundation models based on your specific use cases."
+    }
+  ],
+  'DOP-C02': [
+    {
+      title: "Domain 1: SDLC Automation", weight: "22%",
+      topics: ["CI/CD Pipelines", "AWS CodePipeline & CodeBuild", "Deployment Strategies"],
+      keyFact: "AWS CodeDeploy supports in-place and blue/green deployments for EC2, but Lambda only supports blue/green or canary."
+    },
+    {
+      title: "Domain 2: Configuration Management and IaC", weight: "17%",
+      topics: ["AWS CloudFormation", "AWS CDK", "AWS Systems Manager"],
+      keyFact: "CloudFormation StackSets allow you to deploy infrastructure across multiple AWS accounts and regions simultaneously."
+    },
+    {
+      title: "Domain 3: Monitoring and Logging", weight: "15%",
+      topics: ["Amazon CloudWatch", "AWS CloudTrail", "Amazon EventBridge"],
+      keyFact: "CloudWatch Logs Insights enables you to interactively search and analyze your log data using a purpose-built query language."
+    },
+    {
+      title: "Domain 4: Policies and Standards Automation", weight: "14%",
+      topics: ["AWS Config", "AWS Security Hub", "IAM Best Practices"],
+      keyFact: "AWS Config continuously monitors and records your AWS resource configurations to automate the evaluation of recorded configurations against desired guidelines."
+    }
+  ]
+};
+
+// 🚨 THE ROUTER: This automatically swaps the data when the cert changes!
+const currentForgeDomains = computed(() => {
+  if (!selectedCert.value) return [];
+  // If we don't have data for the specific cert yet, fallback to an empty array or a default
+  return allCertDomains[selectedCert.value.code] || allCertDomains['AIF-C01'];
+  });
+
+// 1. Catches the file when the user picks it
+const handleFileSelect = (event) => {
+    selectedCsvFile.value = event.target.files[0];
+    uploadStatus.value = ''; // Reset the status message
+  };
+
+// 2. Ships the file to your Java backend (NOW SECURED WITH JWT)
+const uploadCsv = async () => {
+    if (!selectedCsvFile.value) {
+      uploadStatus.value = 'Please select a file first.';
+      return;
+    }
+
+    const formData = new FormData();
+    formData.append('file', selectedCsvFile.value);
+
+    uploadStatus.value = 'Injecting into mainframes...';
+
+    try {
+      // 🚨 CRITICAL FIX: Grab the user's security token from the browser!
+      const token = localStorage.getItem('aws_jwt');
+
+      const response = await fetch('http://localhost:8080/api/admin/questions/upload', {
+        method: 'POST',
+        headers: {
+          // 🚨 Include the token so Spring Boot doesn't block the upload!
+          'Authorization': `Bearer ${token}`
+        },
+        body: formData,
+      });
+
+      if (response.ok) {
+        const result = await response.json();
+        uploadStatus.value = `✅ Success: Injected ${result.count} new questions!`;
+        selectedCsvFile.value = null;
+
+        // Refresh the admin table instantly
+        if (typeof fetchAdminQuestions === 'function') {
+          fetchAdminQuestions();
+        }
+      } else {
+        uploadStatus.value = '❌ Upload failed. The CSV format might be invalid or server rejected it.';
+      }
+    } catch (error) {
+      console.error('Upload error:', error);
+      uploadStatus.value = '❌ Server connection lost.';
+    }
+  };
+
 // This computed property automatically groups them so you don't have to!
 const groupedCerts = computed(() => {
   const groups = {
@@ -2824,7 +3350,7 @@ const togglePause = () => {
   }
 };
 
-  const abortQuiz = () => {
+const abortQuiz = () => {
     const wantsToLeave = confirm("⚠️ ABORT SIMULATION?\n\nAre you sure you want to exit? Your progress will be wiped, and no score or XP will be recorded.");
 
     if (wantsToLeave) {
@@ -2990,56 +3516,59 @@ const downloadDocumentPDF = () => {
   };
 
 // 1. The API Call (Defined first, so other functions can see it)
-const recordStudySession = async () => {
-  if (!currentUser.value) return; // Don't track guests
+  // 🚨 FIX 1: Added the VIP Pass to the Streak tracker
+  const recordStudySession = async () => {
+    if (!currentUser.value) return;
 
-  try {
-    const response = await fetch(`http://localhost:8080/api/users/${currentUser.value.username}/record-study`, {
-      method: 'POST',
-      // headers: { 'Content-Type': 'application/json' }
-    });
+    try {
+      const token = localStorage.getItem('aws_jwt'); // Grab the token!
 
-    if (response.ok) {
-      const data = await response.json();
-      // Update your Vue variable so the flame updates instantly without a page refresh!
-      userStreak.value = data.currentStreak;
-      console.log("Streak updated successfully:", data);
+      const response = await fetch(`http://localhost:8080/api/users/${currentUser.value.username}/record-study`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}` // 🚨 THIS WAS MISSING
+        }
+      });
 
-    } else {
-      // 2. Let's force the console to print the EXACT Spring Boot error!
-      const errorText = await response.text();
-      console.error("Backend rejected the request:", errorText);
+      if (response.ok) {
+        const data = await response.json();
+        userStreak.value = data.currentStreak;
+      }
+    } catch (error) {
+      console.error("Failed to record study session:", error);
     }
-  } catch (error) {
-    console.error("Failed to record study session:", error);
-  }
-};
+  };
 
-const awardExperiencePoints = async () => {
-  if (!currentUser.value) return;
+  // 🚨 FIX 2: Added the VIP Pass to the XP tracker
+  const awardExperiencePoints = async () => {
+    if (!currentUser.value) return;
 
-  // Calculate how many they got right (assuming you have finalScore and totalExamQuestions variables!)
-  const correctCount = Math.round((finalScore.value / 100) * totalExamQuestions.value);
+    const correctCount = Math.round((finalScore.value / 100) * totalExamQuestions.value);
 
-  try {
-    const response = await fetch(`http://localhost:8080/api/users/${currentUser.value.username}/award-xp`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        correctCount: correctCount,
-        totalQuestions: totalExamQuestions.value
-      })
-    });
+    try {
+      const token = localStorage.getItem('aws_jwt'); // Grab the token!
 
-    if (response.ok) {
-      const data = await response.json();
-      userTotalXp.value = data.totalXp; // Instantly fills the progress bar!
-      console.log(`Earned ${data.earnedXp} XP! Total is now: ${data.totalXp}`);
+      const response = await fetch(`http://localhost:8080/api/users/${currentUser.value.username}/award-xp`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}` // 🚨 THIS WAS MISSING
+        },
+        body: JSON.stringify({
+          correctCount: correctCount,
+          totalQuestions: totalExamQuestions.value
+        })
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        userTotalXp.value = data.totalXp;
+      }
+    } catch (error) {
+      console.error("Failed to award XP:", error);
     }
-  } catch (error) {
-    console.error("Failed to award XP:", error);
-  }
-};
+  };
 
 // 2. The Grading Sequence (Which now safely calls the function above)
 const executeGradingSequence = async () => {
@@ -3071,9 +3600,7 @@ const forceGradeExam = () => {
 };
 
 // --- Computed Results ---
-
 // 1. Calculate how many questions were answered perfectly
-// 1. We use 'computed' so Vue knows this is a live math formula!
 const correctCount = computed(() => {
   // THE FIX: Point the formula to the array where the questions actually live!
   const activeQuestions = (allQuestionsInSession.value && allQuestionsInSession.value.length > 0)
@@ -3110,45 +3637,6 @@ const finalScore = computed(() => {
 // 3. Determine if they passed the AWS standard (72%)
 const isPassing = computed(() => scorePercentage.value >= 72);
 
-// 5. BULK UPLOAD: The CSV Data Pipeline
-const handleFileUpload = async (event) => {
-  const file = event.target.files[0];
-  if (!file) return;
-
-  // We have to package the file into a special FormData envelope
-  const formData = new FormData();
-  formData.append('file', file);
-
-  try {
-    const token = localStorage.getItem('aws_jwt');
-
-    // Alert the user that the upload is starting
-    alert(`Initiating Data Pipeline for: ${file.name}...`);
-
-    const response = await fetch(`${API_BASE_URL}/api/admin/questions/upload`, {
-      method: 'POST',
-      headers: { 'Authorization': `Bearer ${token}` },
-      body: formData
-    });
-
-    if (response.ok) {
-      const result = await response.json();
-      alert(`✅ MAINFRAME UPDATED: Successfully injected ${result.count} new questions!`);
-
-      // Refresh the table so the new questions appear instantly!
-      await fetchAdminQuestions();
-
-      // Clear the file input so you can upload another one if needed
-      event.target.value = '';
-    } else {
-      alert("❌ Matrix Error: Upload failed.");
-    }
-  } catch (error) {
-    console.error("Pipeline severed:", error);
-    alert("❌ Critical Error: Could not reach the server.");
-  }
-};
-
 const closeReview = () => {
   // 1. Turn off all the Results and Historical screens
   showResults.value = false;
@@ -3167,75 +3655,79 @@ const closeReview = () => {
   if (typeof fetchLeaderboard === 'function') fetchLeaderboard();
 };
 
-// --- AUTHENTICATION PIPELINE ---
-const submitAuth = async () => {
-  authError.value = '';
+  // --- AUTHENTICATION PIPELINE ---
+  const submitAuth = async () => {
+    authError.value = '';
 
-  try {
-    // 1. Determine the endpoint (Login vs Register)
-    const endpoint = isLoginMode.value ? '/api/auth/login' : '/api/auth/register';
+    try {
+      const endpoint = isLoginMode.value ? '/api/auth/login' : '/api/auth/register';
+      console.log(`Initiating ${isLoginMode.value ? 'Login' : 'Registration'} Protocol...`);
 
-    // Alert the user that the system is working
-    console.log(`Initiating ${isLoginMode.value ? 'Login' : 'Registration'} Protocol...`);
+      const response = await fetch(`http://localhost:8080${endpoint}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(authForm.value)
+      });
 
-    // 2. Fire the primary request
-    const response = await fetch(`http://localhost:8080${endpoint}`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(authForm.value)
-    });
+      if (response.ok) {
+        if (!isLoginMode.value) {
+          // Auto-Login after registration
+          // Auto-Login after registration
+          const autoLoginResponse = await fetch('http://localhost:8080/api/auth/login', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              email: authForm.value.email, // 🚨 SWAPPED: Now sending email!
+              password: authForm.value.password
+            })
+          });
 
-    if (response.ok) {
-      // --- THE NEW AUTO-LOGIN LOGIC ---
-      if (!isLoginMode.value) {
-        // If they just registered, immediately hit the login endpoint behind the scenes!
-        const autoLoginResponse = await fetch('http://localhost:8080/api/auth/login', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            username: authForm.value.username,
-            password: authForm.value.password
-          })
-        });
-
-        if (autoLoginResponse.ok) {
-          const loginData = await autoLoginResponse.json();
-          completeLoginProcess(loginData.token, authForm.value.username);
-          return; // Exit the function, we are done!
+          if (autoLoginResponse.ok) {
+            const fullUserObj = await autoLoginResponse.json();
+            completeLoginProcess(fullUserObj);
+          }
+        } else {
+          // Normal Login
+          const fullUserObj = await response.json();
+          completeLoginProcess(fullUserObj);
         }
       } else {
-        // If it was just a normal login, process it
-        const data = await response.json();
-        completeLoginProcess(data.token, authForm.value.username);
+        // 🚨 THE FIX: Intercept the ugly Spring Boot JSON!
+        if (response.status === 403 || response.status === 401) {
+          // Clear the password field so they can try again
+          authForm.value.password = '';
+          authError.value = "Access Denied: Invalid username or passcode.";
+        } else if (response.status === 400) {
+          // Usually happens during Registration if username is taken
+          const errorText = await response.text();
+          authError.value = errorText;
+        } else {
+          authError.value = "Matrix Error: The authentication server is unreachable.";
+        }
       }
-    } else {
-      // Handle incorrect passwords or taken usernames
-      const errorText = await response.text();
-      authError.value = `Matrix Error: ${errorText}`;
+    } catch (error) {
+      console.error("Authentication pipeline severed:", error);
+      authError.value = "Critical Error: Could not reach the authentication server.";
     }
-  } catch (error) {
-    console.error("Authentication pipeline severed:", error);
-    authError.value = "Critical Error: Could not reach the authentication server.";
-  }
-};
+  };
 
-// Helper function to keep our code clean (Add this right below submitAuth!)
-const completeLoginProcess = (token, username) => {
-  // Save the VIP Pass
-  localStorage.setItem('aws_jwt', token);
+  const completeLoginProcess = (loginData) => {
+    // 1. Save the VIP Pass
+    const token = loginData.token || loginData.jwt;
+    localStorage.setItem('aws_jwt', token);
 
-  // Set the current user in Vue's memory
-  currentUser.value = { username: username };
+    // 2. Save the User Data
+    currentUser.value = loginData;
+    localStorage.setItem('aws_user', JSON.stringify(loginData));
 
-  // Close the modal
-  showAuthModal.value = false;
+    // 3. Close modal and route
+    showAuthModal.value = false;
+    currentView.value = 'landing';
+    authForm.value = { username: '', email: '', password: '' };
 
-  // Route them straight to the Landing Dashboard!
-  currentView.value = 'landing';
-
-  // Clear the form for security
-  authForm.value = { username: '', email: '', password: '' };
-};
+    // Debugging log so we can see exactly what Java gave us!
+    console.log("LOGIN COMPLETE. User Data from Java:", loginData);
+  };
 
 // --- MONETIZATION: Stripe Checkout Pipeline ---
 const upgradeToPremium = async () => {
@@ -3383,7 +3875,6 @@ const logout = () => {
   localStorage.removeItem('aws_user');
   authToken.value = null;
   currentUser.value = null;
-  alert("You have been logged out.");
 };
 
 clearInterval(amrapInterval);
@@ -3392,7 +3883,7 @@ clearInterval(amrapInterval);
   // 🛠️ THE MASTER CERTIFICATE WATCHER
   // 🛠️ THE MASTER CERTIFICATE WATCHER (Memory Bank)
   // 🛠️ THE MASTER CERTIFICATE WATCHER (Memory Bank - FIXED)
-  watch(selectedCert, (newCert, oldCert) => {
+watch(selectedCert, (newCert, oldCert) => {
 
     // 1. If the selected cert becomes empty...
     if (!newCert) {
@@ -3424,13 +3915,13 @@ clearInterval(amrapInterval);
     }
   }, { immediate: true });
 
-  // 💾 LMS MEMORY BANK: Auto-save the user's place in the curriculum
-  watch(activeDomain, (newDomain) => {
+// 💾 LMS MEMORY BANK: Auto-save the user's place in the curriculum
+watch(activeDomain, (newDomain) => {
     if (newDomain) localStorage.setItem('aws_active_domain', newDomain.name);
     else localStorage.removeItem('aws_active_domain');
   });
 
-  watch(activeModule, (newModule) => {
+watch(activeModule, (newModule) => {
     // 🚨 THE FIX: Reset the player back to the thumbnail whenever they click a new lesson!
     isPlaying.value = false;
 
@@ -3438,7 +3929,7 @@ clearInterval(amrapInterval);
     else localStorage.removeItem('aws_active_module');
   });
 
-  const handleDomainClick = (domain, index) => {
+const handleDomainClick = (domain, index) => {
     const isPremiumUser = currentUser.value && currentUser.value.isPremium;
 
     // Domain 1 (index 0) is always free. Everything else requires Premium.
@@ -3456,8 +3947,8 @@ clearInterval(amrapInterval);
     openDomainTraining(domain);
   };
 
-  // 3. 🛠️ THE ROUTER: Opens the viewer and auto-loads the first lesson
-  const openDomainTraining = (domain) => {
+// 3. 🛠️ THE ROUTER: Opens the viewer and auto-loads the first lesson
+const openDomainTraining = (domain) => {
     if (typeof playSound === 'function') playSound('click');
 
     activeDomain.value = domain; // Save which domain they clicked
@@ -3473,10 +3964,10 @@ clearInterval(amrapInterval);
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
-  const isPlaying = ref(false); // Controls the video player state
+const isPlaying = ref(false); // Controls the video player state
 
-  // --- 2. THE BOOT SEQUENCE ---
-  onMounted(async () => {
+// --- 2. THE BOOT SEQUENCE ---
+onMounted(async () => {
 
     // 🚨 1. THE STRIPE INTERCEPTOR (Must run first!)
     const urlParams = new URLSearchParams(window.location.search);
@@ -3490,6 +3981,29 @@ clearInterval(amrapInterval);
 
       welcomeMessage.value = "Payment Secured! Premium Databanks Unlocked.";
       showSuccessHologram.value = true;
+
+      setTimeout(() => {
+        showSuccessHologram.value = false;
+      }, 4500);
+
+      // 🚨 THE FIX: Force Vue to fetch your updated Premium status from Java!
+      const actualToken = localStorage.getItem('aws_jwt');
+      const savedUser = JSON.parse(localStorage.getItem('aws_user'));
+
+      if (savedUser && savedUser.username && actualToken) {
+        // Fetch the fresh user profile from the database
+        fetch(`http://localhost:8080/api/users/${savedUser.username}`, {
+          headers: { 'Authorization': `Bearer ${actualToken}` }
+        })
+            .then(res => res.json())
+            .then(updatedUser => {
+              // Overwrite the old Free profile with the new Premium one!
+              currentUser.value = updatedUser;
+              localStorage.setItem('aws_user', JSON.stringify(updatedUser));
+              console.log("Identity re-synced. Premium Status: " + updatedUser.isPremium);
+            })
+            .catch(err => console.error("Failed to sync updated profile:", err));
+      }
 
       // Clean up the URL (Removes the ?success=true)
       window.history.replaceState({}, document.title, window.location.pathname);

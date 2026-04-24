@@ -10,9 +10,9 @@ import java.util.Optional;
 @Repository
 public interface CategoryMasteryRepository extends JpaRepository<CategoryMastery, Long> {
 
-    // Finds a specific category stat for a specific user (Used when updating scores)
+    // 1. Used by ProgressController (The one we just fixed!)
     Optional<CategoryMastery> findByUserIdAndCategory(Long userId, String category);
 
-    // Grabs ALL category stats for a specific user (Used to build the Radar Chart)
+    // 3. Used to grab everything
     List<CategoryMastery> findAllByUserId(Long userId);
 }

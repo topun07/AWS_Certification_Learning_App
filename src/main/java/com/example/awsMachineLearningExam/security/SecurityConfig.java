@@ -56,7 +56,7 @@ public class SecurityConfig {
                         // --- PUBLIC ROUTES (No VIP Pass needed) ---
                         .requestMatchers(
                                 "/api/auth/**",
-                                "/api/webhook/stripe",    // 🚨 EXACT MATCH TO YOUR CONTROLLER!
+                                "/api/payment/webhook",    // 🚨 EXACT MATCH TO YOUR CONTROLLER!
                                 "/api/modules/**",
                                 "/api/questions/**",
                                 "/h2-console/**",

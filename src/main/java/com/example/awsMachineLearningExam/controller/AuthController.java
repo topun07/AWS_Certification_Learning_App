@@ -23,7 +23,6 @@ public class AuthController {
     private final PasswordEncoder passwordEncoder;
     private final JwtService jwtService;
 
-    // We use constructor injection now instead of @Autowired (it's the modern standard!)
     public AuthController(AuthenticationManager authenticationManager, AppUserRepository userRepository, PasswordEncoder passwordEncoder, JwtService jwtService) {
         this.authenticationManager = authenticationManager;
         this.userRepository = userRepository;
@@ -33,29 +32,28 @@ public class AuthController {
 
     @PostMapping("/login")
     public ResponseEntity<?> authenticateUser(@RequestBody LoginRequest request) {
-        // 1. Let Spring Security's AuthenticationManager verify the hash
+        // Look up by email
+        AppUser user = userRepository.findByEmail(request.email())
+                .orElseThrow(() -> new RuntimeException("Access Denied: Email not found."));
+
         Authentication authentication = authenticationManager.authenticate(
-                new UsernamePasswordAuthenticationToken(request.username(), request.password())
+                new UsernamePasswordAuthenticationToken(user.getUsername(), request.password())
         );
 
-        // 2. If successful, generate the VIP Pass!
-        String token = jwtService.generateToken(request.username());
+        String token = jwtService.generateToken(user.getUsername());
 
-        // 3. Fetch the user to get their XP and stats
-        AppUser user = userRepository.findByUsername(request.username()).orElseThrow();
-
-        // 4. Return the Token instead of the raw User object
         Map<String, Object> response = new HashMap<>();
         response.put("token", token);
+        response.put("id", user.getId());
         response.put("username", user.getUsername());
         response.put("xp", user.getXp());
+        response.put("isPremium", user.isPremium());
 
         return ResponseEntity.ok(response);
     }
 
     @PostMapping("/register")
     public ResponseEntity<?> registerUser(@RequestBody RegisterRequest request) {
-        // 1. Check if email or username is taken
         if (userRepository.existsByUsername(request.username())) {
             return ResponseEntity.badRequest().body("Error: Username is already taken!");
         }
@@ -63,39 +61,26 @@ public class AuthController {
             return ResponseEntity.badRequest().body("Error: Email is already in use!");
         }
 
-        // 1. Grab the email from the Record
-                String safeEmail = request.email();
+        AppUser user = new AppUser(
+                request.username(),
+                request.email(),
+                passwordEncoder.encode(request.password())
+        );
 
-        // 2. The Fix: If it's blank, strictly convert it to a true NULL
-                if (safeEmail == null || safeEmail.trim().isEmpty()) {
-                    safeEmail = null;
-                }
+        userRepository.save(user);
 
-        // 3. Build the user using your existing constructor and the safeEmail
-                AppUser user = new AppUser(
-                        request.username(),
-                        safeEmail,
-                        passwordEncoder.encode(request.password()) // Still safely hashing!
-                );
-
-        // 4. Save it to the database
-                userRepository.save(user);
-
-        // 3. Automatically log them in after registering by giving them a token
         String token = jwtService.generateToken(user.getUsername());
 
         Map<String, Object> response = new HashMap<>();
         response.put("token", token);
+        response.put("id", user.getId());
         response.put("username", user.getUsername());
         response.put("xp", user.getXp());
+        response.put("isPremium", user.isPremium());
 
         return ResponseEntity.ok(response);
     }
 
-    // ==========================================
-    // DATA TRANSFER OBJECTS (DTOs)
-    // ==========================================
-    // This replaces your old AuthRequest file! It's much cleaner.
     public record RegisterRequest(String username, String email, String password) {}
-    public record LoginRequest(String username, String password) {}
+    public record LoginRequest(String email, String password) {}
 }
