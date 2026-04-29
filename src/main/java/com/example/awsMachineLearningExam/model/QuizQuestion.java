@@ -8,27 +8,46 @@ public class QuizQuestion {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id; // Auto-generates a unique number for every question
+    private Long id;
 
-    private String certCode; // e.g., "SAA-C03"
-    private String domain;   // e.g., "Design Secure Architectures"
+    private String certCode;
+    private String domain;
 
-    @Column(columnDefinition = "TEXT")
+    // 🚨 THE FIX: Expand from 255 to 2000 characters!
+    @Column(length = 2000)
     private String questionText;
 
+    @Column(length = 1000)
     private String optionA;
-    private String optionB;
-    private String optionC;
-    private String optionD;
-    private String correctOption; // Expecting "A", "B", "C", or "D"
 
-    @Column(columnDefinition = "TEXT")
+    @Column(length = 1000)
+    private String optionB;
+
+    @Column(length = 1000)
+    private String optionC;
+
+    @Column(length = 1000)
+    private String optionD;
+
+    @Column(length = 1000)
+    private String optionF;
+
+    @Column(length = 1000)
+    private String optionE;
+
+    @Column(length = 1000)
+    private String correctOption;
+
+    // 🚨 THE FIX: Explanations are long! Give them 2000 characters.
+    @Column(length = 2000)
     private String explanation;
 
-    // --- Constructors ---
-    public QuizQuestion() {}
+    // Default Constructor
+    public QuizQuestion() {
+    }
 
-    public QuizQuestion(String certCode, String domain, String questionText, String optionA, String optionB, String optionC, String optionD, String correctOption, String explanation) {
+    // Parameterized Constructor
+    public QuizQuestion(String certCode, String domain, String questionText, String optionA, String optionB, String optionC, String optionD, String optionE, String optionF, String correctOption, String explanation) {
         this.certCode = certCode;
         this.domain = domain;
         this.questionText = questionText;
@@ -36,11 +55,13 @@ public class QuizQuestion {
         this.optionB = optionB;
         this.optionC = optionC;
         this.optionD = optionD;
+        this.optionE = optionE;
+        this.optionF = optionF;
         this.correctOption = correctOption;
         this.explanation = explanation;
     }
 
-    // --- Getters and Setters ---
+    // --- GETTERS AND SETTERS ---
     public Long getId() { return id; }
     public void setId(Long id) { this.id = id; }
     public String getCertCode() { return certCode; }
@@ -57,6 +78,10 @@ public class QuizQuestion {
     public void setOptionC(String optionC) { this.optionC = optionC; }
     public String getOptionD() { return optionD; }
     public void setOptionD(String optionD) { this.optionD = optionD; }
+    public String getOptionE() { return optionE; }
+    public void setOptionE(String optionE) { this.optionE = optionE; }
+    public String getOptionF() { return optionF; }
+    public void setOptionF(String optionF) { this.optionF = optionF; }
     public String getCorrectOption() { return correctOption; }
     public void setCorrectOption(String correctOption) { this.correctOption = correctOption; }
     public String getExplanation() { return explanation; }

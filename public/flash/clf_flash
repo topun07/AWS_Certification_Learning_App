@@ -1,0 +1,127 @@
+
+Exam Code, Category, Term, Definition
+CLF-C02, Cloud Concepts, Cloud Computing, The on-demand delivery of IT resources over the internet with pay-as-you-go pricing instead of owning and maintaining physical data centers and servers.
+CLF-C02, Cloud Concepts, On-Demand Self-Service, The ability to provision computing resources automatically without requiring human interaction with the service provider.
+CLF-C02, Cloud Concepts, Elasticity, The ability to automatically scale computing resources up or down based on demand to match workload requirements.
+CLF-C02, Cloud Concepts, Scalability, The ability of a system to handle increased workload by adding resources either vertically (bigger instance) or horizontally (more instances).
+CLF-C02, Cloud Concepts, High Availability, Designing systems to remain operational and accessible with minimal downtime by distributing resources across multiple locations.
+CLF-C02, Cloud Concepts, Fault Tolerance, The ability of a system to continue operating properly even when one or more components fail.
+CLF-C02, Cloud Concepts, Agility, The ability to rapidly develop test and launch applications that drive business growth using cloud resources.
+CLF-C02, Cloud Concepts, Pay-As-You-Go Pricing, A cloud billing model where you only pay for the resources you actually consume with no upfront commitments.
+CLF-C02, Cloud Concepts, Economies of Scale, The cost advantage AWS achieves by operating at massive scale and passing savings on to customers through lower prices.
+CLF-C02, Cloud Concepts, Capital Expenditure (CapEx), Upfront spending on physical infrastructure such as servers and data centers; cloud computing shifts this to operational expenditure.
+CLF-C02, Cloud Concepts, Operational Expenditure (OpEx), Ongoing costs for running day-to-day services such as cloud usage fees; pay only for what you use.
+CLF-C02, Cloud Concepts, Infrastructure as a Service (IaaS), A cloud service model that provides virtualized computing resources (servers storage networking) over the internet. Example: Amazon EC2.
+CLF-C02, Cloud Concepts, Platform as a Service (PaaS), A cloud service model that provides a platform for developers to build and deploy applications without managing underlying infrastructure. Example: AWS Elastic Beanstalk.
+CLF-C02, Cloud Concepts, Software as a Service (SaaS), A cloud service model that delivers fully functional software applications over the internet. Example: Amazon WorkSpaces.
+CLF-C02, Cloud Concepts, Public Cloud, Cloud infrastructure owned and operated by a third-party provider (like AWS) and shared across multiple organizations over the internet.
+CLF-C02, Cloud Concepts, Private Cloud, Cloud infrastructure operated solely for a single organization providing greater control and security.
+CLF-C02, Cloud Concepts, Hybrid Cloud, A cloud deployment model that combines on-premises infrastructure with public cloud resources allowing data and applications to be shared between them.
+CLF-C02, Cloud Concepts, Multi-Cloud, A strategy that uses cloud services from multiple providers to avoid vendor lock-in and leverage best-of-breed services.
+CLF-C02, Cloud Concepts, Well-Architected Framework, An AWS framework providing best practices across six pillars: Operational Excellence; Security; Reliability; Performance Efficiency; Cost Optimization; and Sustainability.
+CLF-C02, Cloud Concepts, Cloud Value Proposition, The business benefits of cloud computing including reduced costs; global reach; increased speed and agility; and the ability to stop guessing capacity.
+CLF-C02, AWS Global Infrastructure, AWS Region, A physical geographic area containing multiple isolated data centers (Availability Zones) where AWS services are hosted.
+CLF-C02, AWS Global Infrastructure, Availability Zone (AZ), One or more discrete data centers within a Region with redundant power networking and connectivity designed for fault isolation.
+CLF-C02, AWS Global Infrastructure, Edge Location, A site that Amazon CloudFront uses to cache copies of content closer to end users for faster delivery and lower latency.
+CLF-C02, AWS Global Infrastructure, AWS Local Zone, An extension of an AWS Region that places compute storage and database services closer to large population centers for single-digit millisecond latency.
+CLF-C02, AWS Global Infrastructure, AWS Wavelength, An AWS service that embeds compute and storage at the edge of 5G networks to deliver ultra-low latency applications.
+CLF-C02, AWS Global Infrastructure, AWS Outposts, A fully managed service that extends AWS infrastructure and services to on-premises locations for a consistent hybrid experience.
+CLF-C02, Compute Services, Amazon EC2 (Elastic Compute Cloud), A web service that provides resizable virtual servers (instances) in the cloud for running applications.
+CLF-C02, Compute Services, Amazon EC2 Auto Scaling, A service that automatically adjusts the number of EC2 instances based on demand to maintain performance and minimize costs.
+CLF-C02, Compute Services, AWS Lambda, A serverless compute service that runs code in response to events without provisioning or managing servers; you pay only for compute time consumed.
+CLF-C02, Compute Services, Amazon ECS (Elastic Container Service), A fully managed container orchestration service that supports Docker containers for running and scaling containerized applications.
+CLF-C02, Compute Services, Amazon EKS (Elastic Kubernetes Service), A managed service that makes it easy to run Kubernetes on AWS without needing to install and operate your own Kubernetes control plane.
+CLF-C02, Compute Services, AWS Fargate, A serverless compute engine for containers that works with ECS and EKS eliminating the need to manage the underlying servers.
+CLF-C02, Compute Services, AWS Elastic Beanstalk, A PaaS service that automatically handles deployment capacity provisioning load balancing and scaling for web applications.
+CLF-C02, Compute Services, Amazon Lightsail, A simplified compute service that provides virtual private servers with pre-configured plans for small-scale applications and websites.
+CLF-C02, Compute Services, EC2 Instance Types, Categories of EC2 instances optimized for different workloads: General Purpose; Compute Optimized; Memory Optimized; Storage Optimized; and Accelerated Computing.
+CLF-C02, Compute Services, EC2 Pricing Models, Options for paying for EC2: On-Demand (pay per hour/second); Reserved Instances (1-3 year commitment for discount); Spot Instances (bid on unused capacity); and Savings Plans.
+CLF-C02, Storage Services, Amazon S3 (Simple Storage Service), An object storage service offering virtually unlimited scalability high durability (99.999999999%) and availability for storing and retrieving any amount of data.
+CLF-C02, Storage Services, S3 Storage Classes, Tiers of S3 storage for different access patterns: S3 Standard; S3 Intelligent-Tiering; S3 Standard-IA; S3 One Zone-IA; S3 Glacier Instant Retrieval; S3 Glacier Flexible Retrieval; and S3 Glacier Deep Archive.
+CLF-C02, Storage Services, Amazon EBS (Elastic Block Store), A block-level storage service designed for use with EC2 instances providing persistent storage volumes that can be attached to running instances.
+CLF-C02, Storage Services, Amazon EFS (Elastic File System), A fully managed scalable elastic file storage system for use with AWS cloud services and on-premises resources using the NFS protocol.
+CLF-C02, Storage Services, Amazon S3 Glacier, A low-cost cloud storage service for data archiving and long-term backup with retrieval times ranging from minutes to hours.
+CLF-C02, Storage Services, AWS Storage Gateway, A hybrid cloud storage service that connects on-premises environments with AWS cloud storage for seamless integration.
+CLF-C02, Storage Services, AWS Snow Family, Physical devices (Snowcone; Snowball; Snowmobile) for migrating large amounts of data into and out of AWS when network transfer is impractical.
+CLF-C02, Database Services, Amazon RDS (Relational Database Service), A managed service that makes it easy to set up operate and scale relational databases in the cloud (MySQL; PostgreSQL; Oracle; SQL Server; MariaDB; Aurora).
+CLF-C02, Database Services, Amazon Aurora, A MySQL and PostgreSQL-compatible relational database built for the cloud that is up to 5x faster than standard MySQL and 3x faster than PostgreSQL.
+CLF-C02, Database Services, Amazon DynamoDB, A fully managed NoSQL key-value and document database that delivers single-digit millisecond performance at any scale.
+CLF-C02, Database Services, Amazon Redshift, A fully managed cloud data warehouse service designed for large-scale data analytics and business intelligence queries.
+CLF-C02, Database Services, Amazon ElastiCache, A fully managed in-memory caching service supporting Redis and Memcached for improving application performance.
+CLF-C02, Database Services, Amazon DocumentDB, A managed document database service compatible with MongoDB workloads.
+CLF-C02, Database Services, Amazon Neptune, A fully managed graph database service for building and running applications that work with highly connected datasets.
+CLF-C02, Database Services, Amazon DMS (Database Migration Service), A service that helps migrate databases to AWS quickly and securely with minimal downtime.
+CLF-C02, Networking Services, Amazon VPC (Virtual Private Cloud), A logically isolated virtual network within AWS where you can launch resources in a defined network configuration that you control.
+CLF-C02, Networking Services, Subnet, A range of IP addresses within a VPC; public subnets have internet access and private subnets do not.
+CLF-C02, Networking Services, Internet Gateway, A VPC component that allows communication between instances in your VPC and the internet.
+CLF-C02, Networking Services, NAT Gateway, A managed service that enables instances in a private subnet to connect to the internet while preventing the internet from initiating connections to those instances.
+CLF-C02, Networking Services, Security Group, A virtual firewall for EC2 instances that controls inbound and outbound traffic at the instance level; stateful (return traffic is automatically allowed).
+CLF-C02, Networking Services, Network ACL (Access Control List), An optional layer of security for your VPC that acts as a firewall at the subnet level; stateless (return traffic must be explicitly allowed).
+CLF-C02, Networking Services, Amazon Route 53, A highly available and scalable DNS (Domain Name System) web service for routing end users to internet applications.
+CLF-C02, Networking Services, Amazon CloudFront, A fast content delivery network (CDN) service that securely delivers data videos applications and APIs to customers globally with low latency.
+CLF-C02, Networking Services, AWS Direct Connect, A dedicated private network connection from your on-premises data center to AWS bypassing the public internet for more consistent performance.
+CLF-C02, Networking Services, Elastic Load Balancing (ELB), A service that automatically distributes incoming application traffic across multiple targets (EC2 instances; containers; IP addresses) for high availability.
+CLF-C02, Networking Services, AWS Transit Gateway, A service that connects VPCs and on-premises networks through a central hub simplifying network architecture.
+CLF-C02, Security & Compliance, AWS Shared Responsibility Model, A framework where AWS is responsible for security OF the cloud (hardware; software; networking; facilities) and customers are responsible for security IN the cloud (data; configuration; access).
+CLF-C02, Security & Compliance, IAM (Identity and Access Management), A service for securely managing access to AWS resources by creating and managing users groups roles and permissions policies.
+CLF-C02, Security & Compliance, IAM Policy, A JSON document that defines permissions specifying what actions are allowed or denied on which AWS resources.
+CLF-C02, Security & Compliance, IAM Role, An IAM identity with specific permissions that can be assumed by users applications or AWS services without long-term credentials.
+CLF-C02, Security & Compliance, Multi-Factor Authentication (MFA), An additional layer of security requiring users to provide two or more verification factors to access AWS resources.
+CLF-C02, Security & Compliance, Root User, The account owner identity created when you first set up an AWS account; has complete unrestricted access and should be secured with MFA and rarely used.
+CLF-C02, Security & Compliance, Principle of Least Privilege, A security best practice of granting only the minimum permissions necessary for a user or service to perform their required tasks.
+CLF-C02, Security & Compliance, AWS Organizations, A service for centrally managing and governing multiple AWS accounts with consolidated billing and policy-based controls.
+CLF-C02, Security & Compliance, Service Control Policies (SCPs), Policies in AWS Organizations that set permission guardrails for all accounts in an organization restricting which services and actions are available.
+CLF-C02, Security & Compliance, Amazon GuardDuty, A threat detection service that continuously monitors for malicious activity and unauthorized behavior in your AWS accounts.
+CLF-C02, Security & Compliance, AWS Shield, A managed DDoS (Distributed Denial of Service) protection service that safeguards applications running on AWS.
+CLF-C02, Security & Compliance, AWS WAF (Web Application Firewall), A firewall service that protects web applications from common web exploits like SQL injection and cross-site scripting.
+CLF-C02, Security & Compliance, Amazon Inspector, An automated security assessment service that helps improve the security and compliance of applications deployed on AWS.
+CLF-C02, Security & Compliance, AWS KMS (Key Management Service), A managed service for creating and controlling encryption keys used to encrypt your data across AWS services.
+CLF-C02, Security & Compliance, AWS CloudTrail, A service that records AWS API calls for your account providing a log of actions taken by users roles or services for auditing and compliance.
+CLF-C02, Security & Compliance, AWS Config, A service that tracks and records AWS resource configurations and evaluates them against desired configurations for compliance auditing.
+CLF-C02, Security & Compliance, Amazon Macie, A security service that uses machine learning to automatically discover classify and protect sensitive data such as PII stored in Amazon S3.
+CLF-C02, Security & Compliance, AWS Artifact, A self-service portal for on-demand access to AWS compliance reports and security documentation (e.g. SOC and ISO reports).
+CLF-C02, Security & Compliance, AWS Security Hub, A service that provides a comprehensive view of your security state across AWS accounts and checks your environment against security best practices.
+CLF-C02, Security & Compliance, Encryption at Rest, Protecting stored data by converting it into an unreadable format using encryption keys; supported by services like S3 EBS and RDS.
+CLF-C02, Security & Compliance, Encryption in Transit, Protecting data as it moves between systems using protocols like TLS/SSL to prevent interception.
+CLF-C02, Security & Compliance, AWS Compliance Programs, Certifications and attestations that AWS maintains (e.g. HIPAA; PCI DSS; SOC; GDPR; FedRAMP) to help customers meet regulatory requirements.
+CLF-C02, Billing & Pricing, AWS Free Tier, A program offering limited free usage of certain AWS services for new accounts including Always Free; 12 Months Free; and Trials.
+CLF-C02, Billing & Pricing, AWS Pricing Calculator, A web-based tool for estimating the cost of AWS services based on your expected usage before you commit to resources.
+CLF-C02, Billing & Pricing, AWS Cost Explorer, A tool that lets you visualize understand and manage your AWS costs and usage over time with custom reports and forecasts.
+CLF-C02, Billing & Pricing, AWS Budgets, A service that lets you set custom cost and usage budgets and receive alerts when your spending exceeds or is forecasted to exceed your thresholds.
+CLF-C02, Billing & Pricing, Consolidated Billing, A feature of AWS Organizations that combines billing across multiple AWS accounts into a single payment method for volume discounts and simplified management.
+CLF-C02, Billing & Pricing, Reserved Instances, A pricing model offering significant discounts (up to 72%) compared to On-Demand pricing in exchange for a 1-year or 3-year commitment.
+CLF-C02, Billing & Pricing, Savings Plans, A flexible pricing model offering lower prices on EC2 Lambda and Fargate usage in exchange for a commitment to a consistent amount of usage (measured in $/hour) for 1 or 3 years.
+CLF-C02, Billing & Pricing, Spot Instances, Unused EC2 capacity available at up to 90% discount compared to On-Demand prices; instances can be interrupted by AWS with 2 minutes notice.
+CLF-C02, Billing & Pricing, AWS Cost and Usage Report, The most detailed billing report available providing comprehensive data about your AWS costs and usage for analysis and optimization.
+CLF-C02, Billing & Pricing, Tags, Key-value pairs you assign to AWS resources for organizing tracking and managing costs by project department or environment.
+CLF-C02, Management & Governance, AWS Management Console, A web-based user interface for accessing and managing AWS services through a browser.
+CLF-C02, Management & Governance, AWS CLI (Command Line Interface), A unified tool for managing AWS services from the command line allowing automation through scripts.
+CLF-C02, Management & Governance, AWS SDKs (Software Development Kits), Libraries and tools for various programming languages that allow developers to interact with AWS services programmatically.
+CLF-C02, Management & Governance, AWS CloudFormation, An Infrastructure as Code (IaC) service that lets you model and provision AWS resources using templates in JSON or YAML format.
+CLF-C02, Management & Governance, AWS CloudWatch, A monitoring and observability service that collects metrics logs and events from AWS resources and applications for real-time monitoring and alerting.
+CLF-C02, Management & Governance, AWS Trusted Advisor, An online tool that provides real-time guidance to help you provision resources following AWS best practices across cost optimization performance security fault tolerance and service limits.
+CLF-C02, Management & Governance, AWS Systems Manager, A service that provides a unified interface for managing AWS resources at scale including patching automation and parameter storage.
+CLF-C02, Management & Governance, AWS Personal Health Dashboard, A personalized view of AWS service health that provides alerts and remediation guidance when AWS events may affect your resources.
+CLF-C02, Management & Governance, AWS Service Health Dashboard, A public dashboard showing the current status and health of all AWS services across all Regions.
+CLF-C02, Management & Governance, Infrastructure as Code (IaC), The practice of managing and provisioning infrastructure through machine-readable configuration files rather than manual processes.
+CLF-C02, Migration & Transfer, AWS Migration Hub, A central location for tracking the progress of application migrations across multiple AWS and partner solutions.
+CLF-C02, Migration & Transfer, AWS Application Migration Service, A service that simplifies and expedites migration of applications to AWS by automatically converting source servers to run natively on AWS.
+CLF-C02, Migration & Transfer, AWS Cloud Adoption Framework (CAF), A framework providing guidance and best practices for organizations planning their cloud migration across six perspectives: Business; People; Governance; Platform; Security; and Operations.
+CLF-C02, Migration & Transfer, Six R's of Migration, Six common migration strategies: Rehost (lift and shift); Replatform (lift tinker and shift); Refactor (re-architect); Repurchase (drop and shop); Retire; and Retain.
+CLF-C02, Support & Resources, AWS Support Plans, Tiered support options: Basic (free); Developer; Business; and Enterprise providing increasing levels of technical support and response times.
+CLF-C02, Support & Resources, AWS Marketplace, A digital catalog of third-party software solutions that run on AWS making it easy to find buy deploy and manage software.
+CLF-C02, Support & Resources, AWS Partner Network (APN), A global partner program for technology and consulting businesses that leverage AWS to build solutions and services for customers.
+CLF-C02, Support & Resources, AWS Professional Services, A global team of experts that helps organizations realize their desired business outcomes through AWS adoption.
+CLF-C02, Support & Resources, AWS Knowledge Center, A collection of frequently asked questions and articles addressing common AWS issues and best practices.
+CLF-C02, Additional Services, Amazon SNS (Simple Notification Service), A fully managed messaging service for sending notifications from the cloud to subscribers via email SMS HTTP and other protocols.
+CLF-C02, Additional Services, Amazon SQS (Simple Queue Service), A fully managed message queuing service that enables decoupling and scaling of microservices distributed systems and serverless applications.
+CLF-C02, Additional Services, AWS Step Functions, A serverless orchestration service that lets you coordinate multiple AWS services into workflows using visual state machines.
+CLF-C02, Additional Services, Amazon EventBridge, A serverless event bus service that connects applications using events from AWS services and SaaS applications.
+CLF-C02, Additional Services, Amazon Kinesis, A platform for collecting processing and analyzing real-time streaming data at any scale.
+CLF-C02, Additional Services, AWS Glue, A fully managed serverless ETL (extract transform load) service for preparing and transforming data for analytics.
+CLF-C02, Additional Services, Amazon Athena, An interactive query service that makes it easy to analyze data in Amazon S3 using standard SQL without needing to set up infrastructure.
+CLF-C02, Additional Services, Amazon QuickSight, A cloud-powered business intelligence service for creating interactive dashboards and visualizations from your data.
+CLF-C02, Additional Services, AWS CodePipeline, A fully managed continuous delivery service that automates the build test and deploy phases of your release process.
+CLF-C02, Additional Services, Amazon Connect, A cloud-based contact center service that makes it easy to set up and manage a customer contact center at any scale.
+CLF-C02, Additional Services, AWS IAM Identity Center (SSO), A service that makes it easy to centrally manage single sign-on access to multiple AWS accounts and business applications.
+

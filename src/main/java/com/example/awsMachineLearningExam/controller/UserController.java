@@ -50,6 +50,20 @@ public class UserController {
         }
     }
 
+    // 🚨 THE MASTER SYNC BRIDGE: Allows Vue to request the official User ID by Username
+     @GetMapping("/{username}")
+    public ResponseEntity<?> getUserByUsername(@PathVariable String username) {
+
+        // 🚨 THE FIX: Tell Java to look for AppUser, not User!
+        java.util.Optional<AppUser> user = userRepository.findByUsername(username);
+
+        if (user.isPresent()) {
+            return ResponseEntity.ok(user.get());
+        } else {
+            return ResponseEntity.notFound().build();
+        }
+    }
+
     @PostMapping("/{username}/record-study")
     public ResponseEntity<?> recordStudySession(@PathVariable String username) {
         try {

@@ -1,6 +1,8 @@
 package com.example.awsMachineLearningExam.model;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
+import jakarta.persistence.Transient;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -17,6 +19,7 @@ public class ExamHistory {
 
     @ManyToOne
     @JoinColumn(name = "user_id")
+    @JsonIgnore
     private AppUser user;
 
     @Transient
@@ -34,6 +37,11 @@ public class ExamHistory {
     private int timeSpentSeconds;
     private String weakestCategory;
     private LocalDateTime completedAt = LocalDateTime.now();
+
+    @Transient
+    public String getFullName() {
+        return user != null ? user.getUsername() : "Anonymous Ninja";
+    }
 
     // --- GETTERS (CRITICAL FOR JSON) ---
     public Long getId() { return id; }

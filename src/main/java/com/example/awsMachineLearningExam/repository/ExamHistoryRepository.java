@@ -8,13 +8,15 @@ import java.util.List;
 
 @Repository
 public interface ExamHistoryRepository extends JpaRepository<ExamHistory, Long> {
-    
-    // This will allow us to fetch the most recent scores for the dashboard
+
+    List<ExamHistory> findByUser_Id(Long userId);
+
+    List<ExamHistory> findTop10ByOrderByScorePercentageDesc();
+
     List<ExamHistory> findTop10ByOrderByCompletedAtDesc();
 
     List<ExamHistory> findTop5ByTotalQuestionsGreaterThanEqualOrderByScorePercentageDesc(int minQuestions);
-    
-    // Optional: Fetch history for a specific exam type
+
     List<ExamHistory> findByExamCodeOrderByCompletedAtDesc(String examCode);
 
     @Query(value = "SELECT " +

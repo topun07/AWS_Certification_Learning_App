@@ -2,88 +2,144 @@
   <div class="min-h-screen bg-gray-50 pb-12 px-4 font-sans relative">
 
     <div v-if="showAuthModal" class="fixed inset-0 bg-slate-900/80 backdrop-blur-md flex items-center justify-center z-[200] p-4">
-      <div class="bg-gray-900 border border-blue-500 rounded-2xl p-8 w-full max-w-md text-white shadow-[0_0_30px_rgba(59,130,246,0.3)] relative">
-        <button @click="showAuthModal = false" class="absolute top-4 right-4 text-gray-400 hover:text-white text-3xl leading-none">&times;</button>
-        <h2 class="text-3xl font-black text-center mb-6 text-blue-400 tracking-tight">
+      <div class="bg-gray-900 border border-blue-500 rounded-2xl 2xl:rounded-[2rem] p-8 2xl:p-16 w-full max-w-md 2xl:max-w-2xl text-white shadow-[0_0_30px_rgba(59,130,246,0.3)] relative">
+        <button @click="showAuthModal = false" class="absolute top-4 right-4 2xl:top-8 2xl:right-8 text-gray-400 hover:text-white text-3xl 2xl:text-5xl leading-none">&times;</button>
+        <h2 class="text-3xl 2xl:text-5xl font-black text-center mb-6 2xl:mb-10 text-blue-400 tracking-tight">
           {{ isLoginMode ? 'Access Datapad' : 'Register Recruit' }}
         </h2>
-        <div v-if="authError" class="bg-red-900/50 border border-red-500 text-red-200 p-3 rounded-xl mb-6 text-sm text-center font-bold animate-pulse">
+        <div v-if="authError" class="bg-red-900/50 border border-red-500 text-red-200 p-3 2xl:p-5 rounded-xl mb-6 2xl:text-lg text-sm text-center font-bold animate-pulse">
           {{ authError }}
         </div>
         <form @submit.prevent="submitAuth">
 
-          <div v-if="!isLoginMode" class="mb-4">
-            <label class="block text-xs font-black uppercase tracking-widest text-slate-400 mb-2">
+          <div v-if="!isLoginMode" class="mb-4 2xl:mb-6">
+            <label class="block text-xs 2xl:text-base font-black uppercase tracking-widest text-slate-400 mb-2 2xl:mb-3">
               Codename (Username)
             </label>
             <input
                 type="text"
                 v-model="authForm.username"
                 placeholder="e.g. CloudNinja99"
-                class="w-full bg-slate-800/50 border border-slate-700 text-white rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                class="w-full bg-slate-800/50 border border-slate-700 text-white rounded-xl 2xl:rounded-2xl px-4 py-3 2xl:px-6 2xl:py-5 2xl:text-xl focus:outline-none focus:ring-2 focus:ring-blue-500"
                 :required="!isLoginMode"
             />
           </div>
 
-          <div class="mb-4">
-            <label class="block text-xs font-black uppercase tracking-widest text-slate-400 mb-2">
+          <div class="mb-4 2xl:mb-6">
+            <label class="block text-xs 2xl:text-base font-black uppercase tracking-widest text-slate-400 mb-2 2xl:mb-3">
               Comm-Link (Email)
             </label>
             <input
                 type="email"
                 v-model="authForm.email"
                 placeholder="engineer@knowledgeforge.com"
-                class="w-full bg-slate-800/50 border border-slate-700 text-white rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                class="w-full bg-slate-800/50 border border-slate-700 text-white rounded-xl 2xl:rounded-2xl px-4 py-3 2xl:px-6 2xl:py-5 2xl:text-xl focus:outline-none focus:ring-2 focus:ring-blue-500"
                 required
             />
           </div>
 
-          <div class="mb-6">
-            <label class="block text-xs font-black uppercase tracking-widest text-slate-400 mb-2">
+          <div class="mb-6 2xl:mb-10">
+            <label class="block text-xs 2xl:text-base font-black uppercase tracking-widest text-slate-400 mb-2 2xl:mb-3">
               Passcode
             </label>
             <input
                 type="password"
                 v-model="authForm.password"
                 placeholder="••••••••"
-                class="w-full bg-slate-800/50 border border-slate-700 text-white rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                class="w-full bg-slate-800/50 border border-slate-700 text-white rounded-xl 2xl:rounded-2xl px-4 py-3 2xl:px-6 2xl:py-5 2xl:text-xl focus:outline-none focus:ring-2 focus:ring-blue-500"
                 required
             />
           </div>
 
           <button
               type="submit"
-              class="w-full py-4 bg-blue-600 hover:bg-blue-500 text-white font-black rounded-xl uppercase tracking-widest transition-all shadow-lg shadow-blue-600/30 mb-4"
+              class="w-full py-4 2xl:py-6 bg-blue-600 hover:bg-blue-500 text-white font-black 2xl:text-2xl rounded-xl 2xl:rounded-2xl uppercase tracking-widest transition-all shadow-lg shadow-blue-600/30 mb-4"
           >
             {{ isLoginMode ? 'Login' : 'Create Account' }}
           </button>
         </form>
-        <div class="text-center mt-6">
-          <button @click="isLoginMode = !isLoginMode; authError = ''" class="text-sm font-bold text-slate-400 hover:text-white transition-colors">
+        <div class="text-center mt-6 2xl:mt-8">
+          <button @click="isLoginMode = !isLoginMode; authError = ''" class="text-sm 2xl:text-lg font-bold text-slate-400 hover:text-white transition-colors">
             {{ isLoginMode ? 'Need an account? Register here.' : 'Already a recruit? Login here.' }}
           </button>
         </div>
       </div>
     </div>
 
-    <div class="max-w-5xl mx-auto flex flex-col md:flex-row justify-between items-center gap-4 mb-6 bg-white p-6 md:p-4 rounded-3xl shadow-sm border border-slate-100 mt-6">
-      <div class="flex items-center gap-2 px-4 flex-shrink-0">
+    <div v-if="showAgreementModal" class="fixed inset-0 z-[100] flex items-center justify-center p-4 backdrop-blur-sm bg-slate-900/90 transition-all">
+      <div class="bg-slate-900 w-full max-w-2xl 2xl:max-w-4xl rounded-3xl 2xl:rounded-[3rem] border border-slate-700 shadow-2xl shadow-indigo-900/20 overflow-hidden flex flex-col">
+
+        <div class="p-6 2xl:p-10 border-b border-slate-800 flex justify-between items-center bg-slate-800/50">
+          <h2 class="text-xl 2xl:text-3xl font-black text-white uppercase tracking-widest flex items-center gap-3">
+            <span class="text-indigo-500">⚖️</span> End User License Agreement
+          </h2>
+          <button @click="showAgreementModal = false" class="text-slate-400 hover:text-white 2xl:text-3xl transition-colors">
+            ✕
+          </button>
+        </div>
+
+        <div class="p-6 2xl:p-10 bg-slate-900/50">
+          <p class="text-sm 2xl:text-xl text-slate-400 mb-4 2xl:mb-8 font-bold">Please review the Knowledge Forge Academy subscription terms before initiating the secure uplink.</p>
+
+          <div class="max-h-60 2xl:max-h-96 overflow-y-auto pr-4 space-y-4 2xl:space-y-6 text-xs 2xl:text-base text-slate-400 leading-relaxed custom-scrollbar border border-slate-800 p-4 2xl:p-8 rounded-xl 2xl:rounded-2xl bg-slate-950">
+            <p><strong class="text-slate-300 uppercase block mb-1 2xl:mb-2 2xl:text-lg">1. Subscription Terms</strong>By clicking "I Agree", you authorize Knowledge Forge Academy to charge your payment method on a recurring monthly basis until you cancel. You may cancel at any time through your account portal.</p>
+            <p><strong class="text-slate-300 uppercase block mb-1 2xl:mb-2 2xl:text-lg">2. No Refunds</strong>Because you gain immediate access to proprietary digital databanks, training modules, and architectural blueprints, all charges are final and non-refundable.</p>
+            <p><strong class="text-slate-300 uppercase block mb-1 2xl:mb-2 2xl:text-lg">3. Usage Restrictions</strong>Your account is for personal use only. Sharing your login credentials, scraping the databanks, or attempting to reverse-engineer the Knowledge Forge mainframe will result in immediate termination without refund.</p>
+            <p><strong class="text-slate-300 uppercase block mb-1 2xl:mb-2 2xl:text-lg">4. Uptime & Availability</strong>While we strive for 99.9% uptime, the Knowledge Forge makes no guarantees regarding uninterrupted access to the platform.</p>
+          </div>
+        </div>
+
+        <div class="p-6 2xl:p-10 border-t border-slate-800 bg-slate-900 flex flex-col gap-4 2xl:gap-8">
+
+          <label class="flex items-center gap-3 2xl:gap-5 cursor-pointer group">
+            <div class="relative flex items-center justify-center w-6 h-6 2xl:w-10 2xl:h-10 rounded 2xl:rounded-md border-2 transition-colors"
+                 :class="hasAcceptedTerms ? 'border-indigo-500 bg-indigo-500' : 'border-slate-600 bg-slate-800 group-hover:border-slate-500'">
+              <input type="checkbox" v-model="hasAcceptedTerms" class="sr-only" />
+              <svg v-if="hasAcceptedTerms" class="w-4 h-4 2xl:w-6 2xl:h-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="3">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" />
+              </svg>
+            </div>
+            <span class="text-sm 2xl:text-xl font-bold text-slate-300 group-hover:text-white transition-colors">
+            I have read and agree to the Subscription Terms of Service.
+          </span>
+          </label>
+
+          <div class="flex justify-end gap-3 2xl:gap-6 mt-2">
+            <button @click="showAgreementModal = false" class="px-6 py-3 2xl:px-10 2xl:py-5 rounded-xl 2xl:rounded-2xl font-bold text-sm 2xl:text-lg text-slate-400 hover:text-white hover:bg-slate-800 transition-colors">
+              Cancel
+            </button>
+            <button
+                @click="proceedToStripe"
+                :disabled="!hasAcceptedTerms"
+                class="px-8 py-3 2xl:px-12 2xl:py-5 rounded-xl 2xl:rounded-2xl font-black text-sm 2xl:text-lg uppercase tracking-widest transition-all flex items-center gap-2"
+                :class="hasAcceptedTerms ? 'bg-indigo-600 text-white hover:bg-indigo-500 shadow-lg shadow-indigo-500/20 hover:-translate-y-0.5' : 'bg-slate-800 text-slate-500 cursor-not-allowed'"
+            >
+              Proceed to Checkout <span>→</span>
+            </button>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <div class="max-w-5xl xl:max-w-7xl 2xl:max-w-[100rem] mx-auto flex flex-col md:flex-row justify-between items-center gap-4 mb-6 bg-white p-6 md:p-4 2xl:p-8 rounded-3xl 2xl:rounded-[2.5rem] shadow-sm border border-slate-100 mt-6 transition-all duration-300">
+      <div class="flex items-center gap-2 px-4 2xl:px-8 flex-shrink-0">
 
         <div
             @dblclick="triggerAdminLock"
-            class="flex items-center gap-5 md:gap-6 group select-none cursor-pointer"
+            class="flex items-center gap-5 md:gap-6 2xl:gap-10 group select-none cursor-pointer"
         >
 
           <div class="flex-shrink-0 transition-transform hover:scale-110">
             <img
                 src="/image/logo/anvil.png"
                 alt="Knowledge Forge Academy Logo"
-                class="h-12 md:h-14 w-auto rounded-xl shadow-md border border-indigo-200"
+                class="h-12 md:h-14 2xl:h-24 w-auto rounded-xl 2xl:rounded-2xl shadow-md border border-indigo-200"
             />
           </div>
 
-          <h2 class="text-2xl md:text-3xl font-black text-slate-900 tracking-tight leading-none mb-0 flex-shrink-0">
-            Knowledge <span class="text-indigo-600">Forge</span> <span class="text-[10px] md:text-xs font-black uppercase tracking-widest text-slate-400 block -mt-1">Academy</span>
+          <h2 class="text-2xl md:text-3xl 2xl:text-5xl font-black text-slate-900 tracking-tight leading-none mb-0 flex-shrink-0">
+            Knowledge <span class="text-indigo-600">Forge</span> <span class="text-[10px] md:text-xs 2xl:text-lg font-black uppercase tracking-widest text-slate-400 block -mt-1 2xl:-mt-2">Academy</span>
           </h2>
 
         </div>
@@ -91,167 +147,174 @@
       </div>
 
 
-    <div v-if="currentUser" class="flex flex-col md:flex-row items-center gap-3">
+      <div v-if="currentUser" class="flex flex-col md:flex-row items-center gap-3 2xl:gap-8">
 
-        <div class="flex items-center gap-2 px-4 py-2.5 bg-slate-50 rounded-xl border border-slate-200 shadow-sm transition-all hover:shadow-md">
-          <span class="text-2xl transition-all duration-500" :class="[streakDisplay.color, streakDisplay.aura]">{{ streakDisplay.icon }}</span>
+        <div class="flex items-center gap-2 2xl:gap-4 px-4 py-2.5 2xl:px-8 2xl:py-5 bg-slate-50 rounded-xl 2xl:rounded-2xl border border-slate-200 shadow-sm transition-all hover:shadow-md">
+          <span class="text-2xl 2xl:text-4xl transition-all duration-500" :class="[streakDisplay.color, streakDisplay.aura]">{{ streakDisplay.icon }}</span>
           <div class="flex flex-col text-left">
-            <span class="text-[10px] font-black uppercase tracking-wider text-slate-400 leading-none mb-1">Daily Streak</span>
-            <span class="text-sm font-bold text-slate-800 leading-none">
-            {{ userStreak }} Days <span class="text-[10px] font-normal italic opacity-75 ml-1 hidden lg:inline-block">({{ streakDisplay.label }})</span>
-          </span>
+            <span class="text-[10px] 2xl:text-sm font-black uppercase tracking-wider text-slate-400 leading-none mb-1 2xl:mb-2">Daily Streak</span>
+            <span class="text-sm 2xl:text-2xl font-bold text-slate-800 leading-none">
+          {{ userStreak }} Days <span class="text-[10px] 2xl:text-base font-normal italic opacity-75 ml-1 hidden lg:inline-block">({{ streakDisplay.label }})</span>
+        </span>
           </div>
         </div>
 
-        <div class="flex items-center justify-between gap-4 mb-2">
+        <div class="flex items-center justify-between gap-4 2xl:gap-8 mb-2 md:mb-0">
           <div class="flex flex-col">
-            <span class="text-[10px] font-black uppercase tracking-[0.2em] mb-0.5" :class="userRank.color">{{ userRank.title }}</span>
-            <span class="text-xl font-black text-slate-900 tracking-tighter leading-none drop-shadow-sm truncate max-w-[120px]">{{ currentUser?.username }}</span>
+            <span class="text-[10px] 2xl:text-sm font-black uppercase tracking-[0.2em] mb-0.5 2xl:mb-1" :class="userRank.color">{{ userRank.title }}</span>
+            <span class="text-xl 2xl:text-3xl font-black text-slate-900 tracking-tighter leading-none drop-shadow-sm truncate max-w-[120px] 2xl:max-w-[200px]">{{ currentUser?.username }}</span>
           </div>
-          <div class="h-8 w-px bg-slate-200 hidden md:block"></div>
+          <div class="h-8 2xl:h-12 w-px bg-slate-200 hidden md:block"></div>
 
           <button @click="logout" class="group relative flex flex-col items-center">
-            <span class="text-[9px] font-black text-red-500 uppercase tracking-widest transition-all group-hover:text-red-700">Logout</span>
-            <span class="h-0.5 w-0 bg-red-500 transition-all group-hover:w-full"></span>
+            <span class="text-[9px] 2xl:text-xs font-black text-red-500 uppercase tracking-widest transition-all group-hover:text-red-700">Logout</span>
+            <span class="h-0.5 2xl:h-1 w-0 bg-red-500 transition-all group-hover:w-full mt-1"></span>
           </button>
         </div>
 
-         <button @click="toggleMusic" class="p-2 rounded-full hover:bg-slate-100 transition-colors group" :title="isMusicPlaying ? 'Pause Focus Track' : 'Play Focus Track'">
-          <span class="text-lg opacity-70 group-hover:opacity-100 transition-opacity" :class="isMusicPlaying ? 'animate-pulse text-blue-500' : 'grayscale'">🎧</span>
+        <button @click="toggleMusic" class="p-2 2xl:p-4 rounded-full hover:bg-slate-100 transition-colors group" :title="isMusicPlaying ? 'Pause Focus Track' : 'Play Focus Track'">
+          <span class="text-lg 2xl:text-3xl opacity-70 group-hover:opacity-100 transition-opacity" :class="isMusicPlaying ? 'animate-pulse text-blue-500' : 'grayscale'">🎧</span>
         </button>
 
-        <button @click="toggleSFX" class="p-2 rounded-full hover:bg-slate-100 transition-colors group" :title="isAudioEnabled ? 'Mute Sound Effects' : 'Enable Sound Effects'">
-          <span class="text-lg transition-all" :class="isAudioEnabled ? 'opacity-100 text-amber-500' : 'opacity-40 grayscale'">🔊</span>
+        <button @click="toggleSFX" class="p-2 2xl:p-4 rounded-full hover:bg-slate-100 transition-colors group" :title="isAudioEnabled ? 'Mute Sound Effects' : 'Enable Sound Effects'">
+          <span class="text-lg 2xl:text-3xl transition-all" :class="isAudioEnabled ? 'opacity-100 text-amber-500' : 'opacity-40 grayscale'">🔊</span>
         </button>
       </div>
 
-    <div v-else class="flex items-center gap-4 px-4">
-        <button @click="showAuthModal = true; isLoginMode = true; authError = ''" class="text-sm font-bold text-slate-500 hover:text-blue-600 transition-colors">Log In</button>
-        <button @click="showAuthModal = true; isLoginMode = false; authError = ''" class="bg-blue-600 hover:bg-blue-700 text-white text-sm font-black px-6 py-2.5 rounded-xl shadow-md hover:shadow-lg transition-all hover:-translate-y-0.5">Sign Up</button>
+      <div v-else class="flex items-center gap-4 2xl:gap-8 px-4">
+        <button @click="showAuthModal = true; isLoginMode = true; authError = ''" class="text-sm 2xl:text-xl font-bold text-slate-500 hover:text-blue-600 transition-colors">Log In</button>
+        <button @click="showAuthModal = true; isLoginMode = false; authError = ''" class="bg-blue-600 hover:bg-blue-700 text-white text-sm 2xl:text-xl font-black px-6 py-2.5 2xl:px-10 2xl:py-4 rounded-xl 2xl:rounded-2xl shadow-md hover:shadow-lg transition-all hover:-translate-y-0.5">Sign Up</button>
       </div>
     </div>
 
-    <div v-if="selectedCert && currentView === 'landing'" id="protocol-menu" class="mt-8 mb-16 bg-white rounded-[2rem] p-6 md:p-8 border border-slate-200 shadow-xl animate-fade-in-up flex flex-col md:flex-row gap-8 max-w-5xl mx-auto">
-      <div class="flex-shrink-0 flex flex-col items-center justify-center bg-slate-50 p-8 rounded-[1.5rem] border border-slate-100 md:w-1/3">
-        <div :class="[selectedCert.color, 'w-24 h-24 rounded-2xl shadow-lg flex items-center justify-center text-5xl mb-4 transform transition-transform hover:scale-105']">
+    <div v-if="selectedCert && currentView === 'landing'" id="protocol-menu" class="mt-8 mb-16 2xl:mt-12 2xl:mb-24 bg-white rounded-[2rem] 2xl:rounded-[3rem] p-6 md:p-8 2xl:p-16 border border-slate-200 shadow-xl animate-fade-in-up flex flex-col md:flex-row gap-8 2xl:gap-16 max-w-5xl xl:max-w-7xl 2xl:max-w-[100rem] mx-auto">
+      <div class="flex-shrink-0 flex flex-col items-center justify-center bg-slate-50 p-8 2xl:p-12 rounded-[1.5rem] 2xl:rounded-[2.5rem] border border-slate-100 md:w-1/3">
+        <div :class="[selectedCert.color, 'w-24 h-24 2xl:w-40 2xl:h-40 rounded-2xl 2xl:rounded-[2rem] shadow-lg flex items-center justify-center text-5xl 2xl:text-8xl mb-4 2xl:mb-8 transform transition-transform hover:scale-105']">
           {{ selectedCert.icon }}
         </div>
-        <h3 class="text-xl font-black text-slate-900 text-center leading-tight mb-1">{{ selectedCert.name }}</h3>
-        <span class="text-xs font-bold px-3 py-1 bg-slate-200 text-slate-600 rounded-full uppercase tracking-wider mb-6">{{ selectedCert.code }}</span>
-        <button @click="selectedCert = null" class="mt-auto w-full group relative overflow-hidden flex flex-col items-center justify-center bg-white hover:bg-slate-50 p-4 rounded-2xl transition-all border-2 border-slate-100 hover:border-slate-300 shadow-sm hover:shadow-md">
+        <h3 class="text-xl 2xl:text-4xl font-black text-slate-900 text-center leading-tight mb-1 2xl:mb-4">{{ selectedCert.name }}</h3>
+        <span class="text-xs 2xl:text-lg font-bold px-3 py-1 2xl:px-6 2xl:py-2 bg-slate-200 text-slate-600 rounded-full uppercase tracking-wider mb-6 2xl:mb-10">{{ selectedCert.code }}</span>
+        <button @click="selectedCert = null" class="mt-auto w-full group relative overflow-hidden flex flex-col items-center justify-center bg-white hover:bg-slate-50 p-4 2xl:p-6 rounded-2xl 2xl:rounded-3xl transition-all border-2 border-slate-100 hover:border-slate-300 shadow-sm hover:shadow-md">
 
-          <div class="flex items-center gap-2 text-sm font-black text-slate-800 uppercase tracking-widest mb-1 relative z-10">
-            <span class="group-hover:-translate-x-1.5 transition-transform text-slate-400 group-hover:text-slate-800 text-lg">←</span>
+          <div class="flex items-center gap-2 text-sm 2xl:text-xl font-black text-slate-800 uppercase tracking-widest mb-1 relative z-10">
+            <span class="group-hover:-translate-x-1.5 transition-transform text-slate-400 group-hover:text-slate-800 text-lg 2xl:text-2xl">←</span>
             Switch Certification
           </div>
 
-          <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider text-center relative z-10">
-        Return to roster & view scores
-      </span>
+          <span class="text-[10px] 2xl:text-sm font-bold text-slate-400 uppercase tracking-wider text-center relative z-10">
+      Return to roster & view scores
+    </span>
 
           <div class="absolute inset-0 bg-gradient-to-t from-slate-100/50 to-transparent opacity-0 group-hover:opacity-100 transition-opacity"></div>
         </button>
       </div>
 
-      <div class="flex-grow flex flex-col gap-3">
-        <h4 class="text-xs font-black text-slate-400 uppercase tracking-widest mb-1 px-2">Select Training Protocol</h4>
+      <div class="flex-grow flex flex-col gap-3 2xl:gap-6">
+        <h4 class="text-xs 2xl:text-xl font-black text-slate-400 uppercase tracking-widest mb-1 px-2">Select Training Protocol</h4>
 
-        <button @click="initiateProtocol('standard')" class="relative overflow-hidden group flex items-center gap-4 bg-white p-4 rounded-2xl border border-slate-200 hover:border-blue-500 hover:shadow-xl hover:-translate-y-0.5 transition-all text-left w-full">
-          <div class="absolute top-0 right-0 bg-gradient-to-r from-amber-400 to-orange-500 text-white text-[10px] font-black px-3 py-1 rounded-bl-xl tracking-widest uppercase shadow-[0_0_15px_rgba(245,158,11,0.5)]">
+        <button @click="initiateProtocol('standard')" class="relative overflow-hidden group flex items-center gap-4 2xl:gap-8 bg-white p-4 2xl:p-8 rounded-2xl 2xl:rounded-3xl border border-slate-200 hover:border-blue-500 hover:shadow-xl hover:-translate-y-0.5 transition-all text-left w-full">
+          <div class="absolute top-0 right-0 bg-gradient-to-r from-amber-400 to-orange-500 text-white text-[10px] 2xl:text-sm font-black px-3 py-1 2xl:px-6 2xl:py-2 rounded-bl-xl 2xl:rounded-bl-2xl tracking-widest uppercase shadow-[0_0_15px_rgba(245,158,11,0.5)]">
             ⭐ Premium
           </div>
-          <span class="text-2xl bg-blue-50 text-blue-500 w-12 h-12 flex flex-shrink-0 items-center justify-center rounded-xl group-hover:scale-110 group-hover:bg-blue-500 group-hover:text-white transition-all">🏛️</span>
-          <div class="pr-16">
-            <h5 class="text-sm font-bold text-slate-900 group-hover:text-blue-600 transition-colors">Simulated Exam</h5>
-            <p class="text-[11px] text-slate-500 font-medium leading-tight mt-0.5">Standard assessment. Timed. Real exam conditions.</p>
+          <span class="text-2xl 2xl:text-5xl bg-blue-50 text-blue-500 w-12 h-12 2xl:w-24 2xl:h-24 flex flex-shrink-0 items-center justify-center rounded-xl 2xl:rounded-2xl group-hover:scale-110 group-hover:bg-blue-500 group-hover:text-white transition-all">🏛️</span>
+          <div class="pr-16 2xl:pr-24">
+            <h5 class="text-sm 2xl:text-3xl font-bold text-slate-900 group-hover:text-blue-600 transition-colors">Simulated Exam</h5>
+            <p class="text-[11px] 2xl:text-lg text-slate-500 font-medium leading-tight mt-0.5 2xl:mt-2">Standard assessment. Timed. Real exam conditions.</p>
           </div>
         </button>
 
-        <button @click="initiateProtocol('amrap')" class="relative overflow-hidden group flex items-center gap-4 bg-white p-4 rounded-2xl border border-slate-200 hover:border-red-500 hover:shadow-xl hover:-translate-y-0.5 transition-all text-left w-full">
-          <div class="absolute top-0 right-0 bg-gradient-to-r from-amber-400 to-orange-500 text-white text-[10px] font-black px-3 py-1 rounded-bl-xl tracking-widest uppercase shadow-[0_0_15px_rgba(245,158,11,0.5)]">
+        <button @click="initiateProtocol('amrap')" class="relative overflow-hidden group flex items-center gap-4 2xl:gap-8 bg-white p-4 2xl:p-8 rounded-2xl 2xl:rounded-3xl border border-slate-200 hover:border-red-500 hover:shadow-xl hover:-translate-y-0.5 transition-all text-left w-full">
+          <div class="absolute top-0 right-0 bg-gradient-to-r from-amber-400 to-orange-500 text-white text-[10px] 2xl:text-sm font-black px-3 py-1 2xl:px-6 2xl:py-2 rounded-bl-xl 2xl:rounded-bl-2xl tracking-widest uppercase shadow-[0_0_15px_rgba(245,158,11,0.5)]">
             ⭐ Premium
           </div>
-          <span class="text-2xl bg-red-50 text-red-500 w-12 h-12 flex flex-shrink-0 items-center justify-center rounded-xl group-hover:scale-110 group-hover:bg-red-500 group-hover:text-white transition-all">⏱️</span>
-          <div class="pr-16">
-            <h5 class="text-sm font-bold text-slate-900 group-hover:text-red-600 transition-colors">AMRAP Attack</h5>
-            <p class="text-[11px] text-slate-500 font-medium leading-tight mt-0.5">10 minute clock. Infinite questions. Pure speed and recall.</p>
+          <span class="text-2xl 2xl:text-5xl bg-red-50 text-red-500 w-12 h-12 2xl:w-24 2xl:h-24 flex flex-shrink-0 items-center justify-center rounded-xl 2xl:rounded-2xl group-hover:scale-110 group-hover:bg-red-500 group-hover:text-white transition-all">⏱️</span>
+          <div class="pr-16 2xl:pr-24">
+            <h5 class="text-sm 2xl:text-3xl font-bold text-slate-900 group-hover:text-red-600 transition-colors">AMRAP Attack</h5>
+            <p class="text-[11px] 2xl:text-lg text-slate-500 font-medium leading-tight mt-0.5 2xl:mt-2">10 minute clock. Infinite questions. Pure speed and recall.</p>
           </div>
         </button>
 
-        <button @click="initiateProtocol('sudden_death')" class="relative overflow-hidden group flex items-center gap-4 bg-white p-4 rounded-2xl border-2 border-purple-100 hover:border-purple-500 hover:shadow-xl hover:shadow-purple-500/20 hover:-translate-y-0.5 transition-all text-left w-full">
-          <div class="absolute top-0 right-0 bg-gradient-to-r from-emerald-400 to-green-500 text-white text-[10px] font-black px-4 py-1 rounded-bl-xl tracking-widest uppercase shadow-[0_0_15px_rgba(16,185,129,0.6)] animate-pulse">
+        <button @click="initiateProtocol('sudden_death')" class="relative overflow-hidden group flex items-center gap-4 2xl:gap-8 bg-white p-4 2xl:p-8 rounded-2xl 2xl:rounded-3xl border-2 border-purple-100 hover:border-purple-500 hover:shadow-xl hover:shadow-purple-500/20 hover:-translate-y-0.5 transition-all text-left w-full">
+          <div class="absolute top-0 right-0 bg-gradient-to-r from-emerald-400 to-green-500 text-white text-[10px] 2xl:text-sm font-black px-4 py-1 2xl:px-6 2xl:py-2 rounded-bl-xl 2xl:rounded-bl-2xl tracking-widest uppercase shadow-[0_0_15px_rgba(16,185,129,0.6)] animate-pulse">
             ⚡ Free Play
           </div>
-          <span class="text-2xl bg-purple-50 text-purple-500 w-12 h-12 flex flex-shrink-0 items-center justify-center rounded-xl group-hover:scale-110 group-hover:bg-purple-500 group-hover:text-white transition-all">💀</span>
-          <div class="pr-20">
-            <h5 class="text-sm font-bold text-slate-900 group-hover:text-purple-600 transition-colors">Sudden Death</h5>
-            <p class="text-[11px] text-slate-500 font-medium leading-tight mt-0.5">3 Lives. No timer. One mistake shatters a heart. Survive.</p>
+          <span class="text-2xl 2xl:text-5xl bg-purple-50 text-purple-500 w-12 h-12 2xl:w-24 2xl:h-24 flex flex-shrink-0 items-center justify-center rounded-xl 2xl:rounded-2xl group-hover:scale-110 group-hover:bg-purple-500 group-hover:text-white transition-all">💀</span>
+          <div class="pr-20 2xl:pr-32">
+            <h5 class="text-sm 2xl:text-3xl font-bold text-slate-900 group-hover:text-purple-600 transition-colors">Sudden Death</h5>
+            <p class="text-[11px] 2xl:text-lg text-slate-500 font-medium leading-tight mt-0.5 2xl:mt-2">3 Lives. No timer. One mistake shatters a heart. Survive.</p>
           </div>
         </button>
 
-        <button @click="initiateProtocol('library')" class="relative overflow-hidden group flex items-center gap-4 bg-white p-4 rounded-2xl border border-slate-200 hover:border-emerald-500 hover:shadow-xl hover:-translate-y-0.5 transition-all text-left w-full">
+        <button @click="initiateProtocol('flashcards')" class="relative overflow-hidden group flex items-center gap-4 2xl:gap-8 bg-white p-4 2xl:p-8 rounded-2xl 2xl:rounded-3xl border border-slate-200 hover:border-pink-500 hover:shadow-xl hover:-translate-y-0.5 transition-all text-left w-full">
+          <div class="absolute top-0 right-0 bg-gradient-to-r from-amber-400 to-orange-500 text-white text-[10px] 2xl:text-sm font-black px-3 py-1 2xl:px-6 2xl:py-2 rounded-bl-xl 2xl:rounded-bl-2xl tracking-widest uppercase shadow-[0_0_15px_rgba(245,158,11,0.5)]">
+            ⭐ Premium
+          </div>
+          <span class="text-2xl 2xl:text-5xl bg-pink-50 text-pink-500 w-12 h-12 2xl:w-24 2xl:h-24 flex flex-shrink-0 items-center justify-center rounded-xl 2xl:rounded-2xl group-hover:scale-110 group-hover:bg-pink-500 group-hover:text-white transition-all">🎴</span>
+          <div class="pr-16 2xl:pr-24">
+            <h5 class="text-sm 2xl:text-3xl font-bold text-slate-900 group-hover:text-pink-600 transition-colors">Flashcard Matrix</h5>
+            <p class="text-[11px] 2xl:text-lg text-slate-500 font-medium leading-tight mt-0.5 2xl:mt-2">Match terms to definitions. 6 pairs per round. Test your vocabulary.</p>
+          </div>
+        </button>
 
-
-
-          <div class="absolute top-0 right-0 bg-gradient-to-r from-emerald-400 to-green-500 text-white text-[10px] font-black px-4 py-1 rounded-bl-xl tracking-widest uppercase shadow-[0_0_15px_rgba(16,185,129,0.6)] animate-pulse">
+        <button @click="initiateProtocol('library')" class="relative overflow-hidden group flex items-center gap-4 2xl:gap-8 bg-white p-4 2xl:p-8 rounded-2xl 2xl:rounded-3xl border border-slate-200 hover:border-emerald-500 hover:shadow-xl hover:-translate-y-0.5 transition-all text-left w-full">
+          <div class="absolute top-0 right-0 bg-gradient-to-r from-emerald-400 to-green-500 text-white text-[10px] 2xl:text-sm font-black px-4 py-1 2xl:px-6 2xl:py-2 rounded-bl-xl 2xl:rounded-bl-2xl tracking-widest uppercase shadow-[0_0_15px_rgba(16,185,129,0.6)] animate-pulse">
             ⚡ Free Access
           </div>
-
-          <span class="text-2xl bg-emerald-50 text-emerald-500 w-12 h-12 flex flex-shrink-0 items-center justify-center rounded-xl group-hover:scale-110 group-hover:bg-emerald-500 group-hover:text-white transition-all">🧠</span>
-          <div class="pr-16">
-            <h5 class="text-sm font-bold text-slate-900 group-hover:text-emerald-600 transition-colors">The Knowledge Forge</h5>
-            <p class="text-[11px] text-slate-500 font-medium leading-tight mt-0.5">Access study guides, architectural diagrams, and video modules.</p>
+          <span class="text-2xl 2xl:text-5xl bg-emerald-50 text-emerald-500 w-12 h-12 2xl:w-24 2xl:h-24 flex flex-shrink-0 items-center justify-center rounded-xl 2xl:rounded-2xl group-hover:scale-110 group-hover:bg-emerald-500 group-hover:text-white transition-all">🧠</span>
+          <div class="pr-16 2xl:pr-24">
+            <h5 class="text-sm 2xl:text-3xl font-bold text-slate-900 group-hover:text-emerald-600 transition-colors">The Knowledge Forge</h5>
+            <p class="text-[11px] 2xl:text-lg text-slate-500 font-medium leading-tight mt-0.5 2xl:mt-2">Access study guides, architectural diagrams, and video modules.</p>
           </div>
         </button>
       </div>
     </div>
 
     <div v-if="currentView === 'onboarding'" class="min-h-[80vh] flex items-center justify-center p-4 animate-fade-in">
-      <div class="bg-white max-w-2xl w-full rounded-[2.5rem] shadow-2xl border border-slate-200 overflow-hidden relative">
+      <div class="bg-white max-w-2xl 2xl:max-w-5xl w-full rounded-[2.5rem] 2xl:rounded-[4rem] shadow-2xl border border-slate-200 overflow-hidden relative">
 
-        <div class="flex h-2 w-full bg-slate-100">
+        <div class="flex h-2 2xl:h-4 w-full bg-slate-100">
           <div
               class="bg-indigo-500 h-full transition-all duration-500 ease-out"
               :style="{ width: ((activeSlide + 1) / onboardingSlides.length) * 100 + '%' }"
           ></div>
         </div>
 
-        <div class="p-8 md:p-12">
-          <div class="min-h-[250px] flex flex-col items-center text-center animate-fade-in-up" :key="activeSlide">
-            <div class="w-24 h-24 bg-indigo-50 text-5xl rounded-full flex items-center justify-center mb-8 shadow-inner border border-indigo-100">
+        <div class="p-8 md:p-12 2xl:p-20">
+          <div class="min-h-[250px] 2xl:min-h-[400px] flex flex-col items-center text-center animate-fade-in-up" :key="activeSlide">
+            <div class="w-24 h-24 2xl:w-40 2xl:h-40 bg-indigo-50 text-5xl 2xl:text-7xl rounded-full flex items-center justify-center mb-8 2xl:mb-12 shadow-inner border border-indigo-100">
               {{ onboardingSlides[activeSlide].icon }}
             </div>
-            <h2 class="text-3xl font-black text-slate-900 tracking-tight mb-4">
+            <h2 class="text-3xl 2xl:text-6xl font-black text-slate-900 tracking-tight mb-4 2xl:mb-8">
               {{ onboardingSlides[activeSlide].title }}
             </h2>
-            <p class="text-lg text-slate-500 font-medium leading-relaxed max-w-lg">
+            <p class="text-lg 2xl:text-2xl text-slate-500 font-medium leading-relaxed max-w-lg 2xl:max-w-3xl">
               {{ onboardingSlides[activeSlide].text }}
             </p>
           </div>
 
-          <div class="flex items-center justify-between mt-12 pt-8 border-t border-slate-100">
+          <div class="flex items-center justify-between mt-12 2xl:mt-20 pt-8 2xl:pt-12 border-t border-slate-100">
 
-            <div class="flex gap-2">
+            <div class="flex gap-2 2xl:gap-4">
               <button
                   v-for="(slide, index) in onboardingSlides"
                   :key="index"
                   @click="activeSlide = index"
-                  class="h-2.5 rounded-full transition-all duration-300"
-                  :class="activeSlide === index ? 'w-8 bg-indigo-600' : 'w-2.5 bg-slate-200 hover:bg-slate-300'"
+                  class="h-2.5 2xl:h-4 rounded-full transition-all duration-300"
+                  :class="activeSlide === index ? 'w-8 2xl:w-12 bg-indigo-600' : 'w-2.5 2xl:w-4 bg-slate-200 hover:bg-slate-300'"
               ></button>
             </div>
 
-            <div class="flex gap-3">
+            <div class="flex gap-3 2xl:gap-6">
               <button
                   @click="prevSlide"
                   :class="activeSlide === 0 ? 'opacity-0 pointer-events-none' : 'opacity-100'"
-                  class="px-6 py-3 rounded-xl font-bold text-sm uppercase tracking-widest text-slate-500 bg-slate-100 hover:bg-slate-200 transition-all"
+                  class="px-6 py-3 2xl:px-10 2xl:py-5 rounded-xl 2xl:rounded-2xl font-bold text-sm 2xl:text-xl uppercase tracking-widest text-slate-500 bg-slate-100 hover:bg-slate-200 transition-all"
               >
                 Back
               </button>
               <button
                   @click="nextSlide"
-                  class="px-8 py-3 rounded-xl font-black text-sm uppercase tracking-widest text-white transition-all shadow-md hover:-translate-y-0.5"
+                  class="px-8 py-3 2xl:px-12 2xl:py-5 rounded-xl 2xl:rounded-2xl font-black text-sm 2xl:text-xl uppercase tracking-widest text-white transition-all shadow-md hover:-translate-y-0.5"
                   :class="activeSlide === onboardingSlides.length - 1 ? 'bg-emerald-500 hover:bg-emerald-400 shadow-emerald-500/30' : 'bg-indigo-600 hover:bg-indigo-500 shadow-indigo-500/30'"
               >
                 {{ activeSlide === onboardingSlides.length - 1 ? 'Enter the Forge' : 'Next' }}
@@ -263,66 +326,66 @@
       </div>
     </div>
 
-    <div v-if="currentView === 'landing'" class="max-w-7xl mx-auto px-4 md:px-8 lg:px-12">
-      <div class="text-center mb-12 md:mb-20 mt-8 md:mt-12">
-        <h1 class="text-4xl md:text-6xl lg:text-7xl font-extrabold text-gray-900 mb-4 md:mb-6 tracking-tight">AWS Certification Hub</h1>
-        <p class="text-lg md:text-2xl lg:text-3xl text-gray-600 font-medium">Select your path and master the cloud.</p>
+    <div v-if="currentView === 'landing'" class="max-w-7xl 2xl:max-w-[100rem] mx-auto px-4 md:px-8 lg:px-12 transition-all duration-500">
+      <div class="text-center mb-12 md:mb-20 2xl:mb-32 mt-8 md:mt-12 2xl:mt-20">
+        <h1 class="text-4xl md:text-6xl lg:text-7xl 2xl:text-[7rem] font-extrabold text-gray-900 mb-4 md:mb-6 2xl:mb-10 tracking-tight">AWS Certification Hub</h1>
+        <p class="text-lg md:text-2xl lg:text-3xl 2xl:text-5xl text-gray-600 font-medium">Select your path and master the cloud.</p>
       </div>
 
       <div v-for="(certs, categoryName) in groupedCerts" :key="categoryName">
-        <div v-if="certs.length > 0" class="mb-12">
-          <div class="flex items-center gap-4 mb-8">
-            <h2 class="text-2xl font-black text-slate-800 uppercase tracking-widest">{{ categoryName }}</h2>
+        <div v-if="certs.length > 0" class="mb-12 2xl:mb-20">
+          <div class="flex items-center gap-4 2xl:gap-8 mb-8 2xl:mb-12">
+            <h2 class="text-2xl 2xl:text-4xl font-black text-slate-800 uppercase tracking-widest">{{ categoryName }}</h2>
             <div class="h-px bg-slate-200 flex-grow"></div>
           </div>
-          <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
-            <div v-for="cert in certs" :key="cert.code" @click="selectCertification(cert)" class="group cursor-pointer bg-white rounded-[2.5rem] p-8 shadow-sm border border-slate-100 hover:shadow-2xl hover:-translate-y-2 transition-all flex flex-col items-center text-center">
-              <div class="h-28 w-28 md:h-40 md:w-40 mb-6 flex items-center justify-center relative">
+          <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8 2xl:gap-12">
+            <div v-for="cert in certs" :key="cert.code" @click="selectCertification(cert)" class="group cursor-pointer bg-white rounded-[2.5rem] 2xl:rounded-[3.5rem] p-8 2xl:p-12 shadow-sm border border-slate-100 hover:shadow-2xl hover:-translate-y-2 transition-all flex flex-col items-center text-center">
+              <div class="h-28 w-28 md:h-40 md:w-40 2xl:h-64 2xl:w-64 mb-6 2xl:mb-10 flex items-center justify-center relative">
                 <img v-if="cert.image" :src="cert.image" @error="cert.image = null" class="w-full h-full object-contain drop-shadow-2xl group-hover:scale-110 transition-transform duration-300" />
-                <div v-else :class="['w-full h-full rounded-3xl flex items-center justify-center text-5xl text-white shadow-lg', cert.color]">{{ cert.icon }}</div>
+                <div v-else :class="['w-full h-full rounded-3xl 2xl:rounded-[2.5rem] flex items-center justify-center text-5xl 2xl:text-8xl text-white shadow-lg', cert.color]">{{ cert.icon }}</div>
               </div>
-              <div class="space-y-2">
-                <h3 class="font-black text-slate-900 text-xl md:text-2xl leading-tight">{{ cert.name }}</h3>
-                <p class="text-blue-600 text-[10px] md:text-xs font-mono font-black uppercase tracking-[0.3em] opacity-60">{{ cert.code }}</p>
+              <div class="space-y-2 2xl:space-y-4">
+                <h3 class="font-black text-slate-900 text-xl md:text-2xl 2xl:text-4xl leading-tight">{{ cert.name }}</h3>
+                <p class="text-blue-600 text-[10px] md:text-xs 2xl:text-lg font-mono font-black uppercase tracking-[0.3em] opacity-60">{{ cert.code }}</p>
               </div>
             </div>
           </div>
         </div>
       </div>
 
-      <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        <div class="lg:col-span-2 bg-white rounded-3xl p-6 border border-gray-100 shadow-sm">
-          <h2 class="text-2xl font-bold mb-6">Recent Activity</h2>
+      <div class="grid grid-cols-1 lg:grid-cols-3 gap-8 2xl:gap-16">
+        <div class="lg:col-span-2 bg-white rounded-3xl 2xl:rounded-[3rem] p-6 2xl:p-12 border border-gray-100 shadow-sm">
+          <h2 class="text-2xl 2xl:text-4xl font-bold mb-6 2xl:mb-10">Recent Activity</h2>
           <div v-if="examHistory.length > 0">
-            <div class="overflow-x-auto -mx-6">
-              <div class="inline-block min-w-full align-middle px-6">
+            <div class="overflow-x-auto -mx-6 2xl:-mx-12">
+              <div class="inline-block min-w-full align-middle px-6 2xl:px-12">
                 <table class="min-w-[600px] w-full text-left border-collapse">
                   <thead class="bg-slate-50 border-b border-slate-100">
                   <tr>
-                    <th class="px-6 py-4 text-xs font-black uppercase tracking-widest text-slate-400 w-[30%]">Exam</th>
-                    <th class="px-6 py-4 text-center text-xs font-black uppercase tracking-widest text-slate-400 w-[15%]">Review</th>
-                    <th class="px-6 py-4 text-center text-xs font-black uppercase tracking-widest text-slate-400 w-[15%]">Score</th>
-                    <th class="px-6 py-4 text-right text-xs font-black uppercase tracking-widest text-slate-400 w-[25%]">Area</th>
-                    <th class="px-6 py-4 w-[15%]"></th>
+                    <th class="px-6 py-4 2xl:px-8 2xl:py-6 text-xs 2xl:text-lg font-black uppercase tracking-widest text-slate-400 w-[30%]">Exam</th>
+                    <th class="px-6 py-4 2xl:px-8 2xl:py-6 text-center text-xs 2xl:text-lg font-black uppercase tracking-widest text-slate-400 w-[15%]">Review</th>
+                    <th class="px-6 py-4 2xl:px-8 2xl:py-6 text-center text-xs 2xl:text-lg font-black uppercase tracking-widest text-slate-400 w-[15%]">Score</th>
+                    <th class="px-6 py-4 2xl:px-8 2xl:py-6 text-right text-xs 2xl:text-lg font-black uppercase tracking-widest text-slate-400 w-[25%]">Area</th>
+                    <th class="px-6 py-4 2xl:px-8 2xl:py-6 w-[15%]"></th>
                   </tr>
                   </thead>
                   <tbody class="divide-y divide-gray-50">
                   <tr v-for="attempt in examHistory" :key="attempt.id" class="hover:bg-slate-50/50 transition-colors">
-                    <td class="px-6 py-4">
-                      <div class="text-base font-bold text-slate-700 leading-tight">{{ attempt.examCode }}</div>
-                      <div class="text-xs text-slate-400 mt-0.5">{{ formatDate(attempt.completedAt) }}</div>
+                    <td class="px-6 py-4 2xl:px-8 2xl:py-6">
+                      <div class="text-base 2xl:text-2xl font-bold text-slate-700 leading-tight">{{ attempt.examCode }}</div>
+                      <div class="text-xs 2xl:text-base text-slate-400 mt-0.5 2xl:mt-2">{{ formatDate(attempt.completedAt) }}</div>
                     </td>
-                    <td class="px-6 py-4 text-center">
-                      <button @click="openReviewRoom(attempt.id)" class="text-xl">👁️</button>
+                    <td class="px-6 py-4 2xl:px-8 2xl:py-6 text-center">
+                      <button @click="openReviewRoom(attempt.id)" class="text-xl 2xl:text-3xl">👁️</button>
                     </td>
-                    <td class="px-6 py-4 text-center">
-                      <span :class="['px-3 py-1 rounded-lg font-black text-sm border', attempt.scorePercentage >= 75 ? 'bg-green-50 text-green-600 border-green-100' : 'bg-red-50 text-red-600 border-red-100']">{{ attempt.scorePercentage }}%</span>
+                    <td class="px-6 py-4 2xl:px-8 2xl:py-6 text-center">
+                      <span :class="['px-3 py-1 2xl:px-5 2xl:py-2 rounded-lg 2xl:rounded-xl font-black text-sm 2xl:text-xl border', attempt.scorePercentage >= 75 ? 'bg-green-50 text-green-600 border-green-100' : 'bg-red-50 text-red-600 border-red-100']">{{ attempt.scorePercentage }}%</span>
                     </td>
-                    <td class="px-6 py-4 text-right">
-                      <span class="bg-amber-50 text-amber-700 text-[10px] font-black uppercase px-2 py-1 rounded-md border border-amber-100">{{ attempt.weakestCategory || 'MIXED' }}</span>
+                    <td class="px-6 py-4 2xl:px-8 2xl:py-6 text-right">
+                      <span class="bg-amber-50 text-amber-700 text-[10px] 2xl:text-sm font-black uppercase px-2 py-1 2xl:px-4 2xl:py-2 rounded-md 2xl:rounded-lg border border-amber-100">{{ attempt.weakestCategory || 'MIXED' }}</span>
                     </td>
-                    <td class="px-6 py-4 text-center">
-                      <button @click="deleteAttempt(attempt.id)" class="text-slate-400 hover:text-red-600 hover:scale-125 transition-all text-lg" title="Delete this attempt">🗑️</button>
+                    <td class="px-6 py-4 2xl:px-8 2xl:py-6 text-center">
+                      <button @click="deleteAttempt(attempt.id)" class="text-slate-400 hover:text-red-600 hover:scale-125 transition-all text-lg 2xl:text-2xl" title="Delete this attempt">🗑️</button>
                     </td>
                   </tr>
                   </tbody>
@@ -330,41 +393,41 @@
               </div>
             </div>
           </div>
-          <div v-else class="text-center py-10 text-gray-400">Complete an exam to see your stats.</div>
+          <div v-else class="text-center py-10 2xl:py-20 text-gray-400 2xl:text-2xl">Complete an exam to see your stats.</div>
         </div>
 
-        <div class="bg-white rounded-[2rem] shadow-xl p-8 border border-slate-100 flex-1">
-          <h3 class="text-2xl font-black text-slate-900 mb-6 flex items-center gap-2">✨ Ascended Masters</h3>
-          <div v-if="leaderboardData.length > 0" class="space-y-3">
-            <div v-for="(master, index) in leaderboardData" :key="index" class="flex items-center justify-between p-4 bg-slate-50 border border-slate-100 rounded-xl hover:shadow-md transition-all">
-              <div class="flex items-center gap-4">
-                <div class="w-8 h-8 rounded-full flex items-center justify-center font-black text-sm shadow-sm" :class="index === 0 ? 'bg-gradient-to-br from-amber-200 to-amber-400 text-amber-900' : index === 1 ? 'bg-gradient-to-br from-slate-200 to-slate-400 text-slate-800' : index === 2 ? 'bg-gradient-to-br from-orange-200 to-orange-400 text-orange-900' : 'bg-blue-100 text-blue-600'">#{{ index + 1 }}</div>
+        <div class="bg-white rounded-[2rem] 2xl:rounded-[3rem] shadow-xl p-8 2xl:p-12 border border-slate-100 flex-1">
+          <h3 class="text-2xl 2xl:text-4xl font-black text-slate-900 mb-6 2xl:mb-10 flex items-center gap-2 2xl:gap-4">✨ Ascended Masters</h3>
+          <div v-if="leaderboardData.length > 0" class="space-y-3 2xl:space-y-6">
+            <div v-for="(master, index) in leaderboardData" :key="index" class="flex items-center justify-between p-4 2xl:p-6 bg-slate-50 border border-slate-100 rounded-xl 2xl:rounded-2xl hover:shadow-md transition-all">
+              <div class="flex items-center gap-4 2xl:gap-6">
+                <div class="w-8 h-8 2xl:w-12 2xl:h-12 rounded-full flex items-center justify-center font-black text-sm 2xl:text-xl shadow-sm" :class="index === 0 ? 'bg-gradient-to-br from-amber-200 to-amber-400 text-amber-900' : index === 1 ? 'bg-gradient-to-br from-slate-200 to-slate-400 text-slate-800' : index === 2 ? 'bg-gradient-to-br from-orange-200 to-orange-400 text-orange-900' : 'bg-blue-100 text-blue-600'">#{{ index + 1 }}</div>
                 <div>
-                  <p class="font-black text-slate-800">{{ master.fullName }}</p>
-                  <p class="text-[10px] font-bold text-slate-400 tracking-widest uppercase">{{ master.examCode }}</p>
+                  <p class="font-black text-slate-800 2xl:text-2xl">{{ master.fullName }}</p>
+                  <p class="text-[10px] 2xl:text-sm font-bold text-slate-400 tracking-widest uppercase 2xl:mt-1">{{ master.examCode }}</p>
                 </div>
               </div>
-              <div class="text-xl font-black" :class="master.scorePercentage === 100 ? 'text-emerald-500' : 'text-slate-700'">{{ master.scorePercentage }}%</div>
+              <div class="text-xl 2xl:text-4xl font-black" :class="master.scorePercentage === 100 ? 'text-emerald-500' : 'text-slate-700'">{{ master.scorePercentage }}%</div>
             </div>
           </div>
-          <div v-else class="text-center py-10">
-            <div class="text-5xl mb-4 opacity-50 animate-pulse">☁️</div>
-            <p class="text-slate-500 font-bold">No legends yet.</p>
-            <p class="text-sm text-slate-400 mt-1">Score 100% to claim the top spot!</p>
+          <div v-else class="text-center py-10 2xl:py-20">
+            <div class="text-5xl 2xl:text-7xl mb-4 2xl:mb-8 opacity-50 animate-pulse">☁️</div>
+            <p class="text-slate-500 font-bold 2xl:text-2xl">No legends yet.</p>
+            <p class="text-sm 2xl:text-xl text-slate-400 mt-1 2xl:mt-3">Score 100% to claim the top spot!</p>
           </div>
         </div>
       </div>
 
-      <div class="mt-12 grid grid-cols-1 lg:grid-cols-2 gap-8">
-        <div class="bg-white rounded-[2rem] p-8 shadow-sm border border-slate-100 flex flex-col h-full">
-          <div class="mb-6 flex justify-between items-start">
+      <div class="mt-12 2xl:mt-24 grid grid-cols-1 lg:grid-cols-2 gap-8 2xl:gap-16">
+        <div class="bg-white rounded-[2rem] 2xl:rounded-[3rem] p-8 2xl:p-12 shadow-sm border border-slate-100 flex flex-col h-full">
+          <div class="mb-6 2xl:mb-10 flex justify-between items-start">
             <div>
-              <h3 class="text-2xl font-black text-slate-800">Skill Radar</h3>
-              <p class="text-slate-500 text-sm mt-1">Your mastery across architectural domains.</p>
+              <h3 class="text-2xl 2xl:text-4xl font-black text-slate-800">Skill Radar</h3>
+              <p class="text-slate-500 text-sm 2xl:text-xl mt-1 2xl:mt-2">Your mastery across architectural domains.</p>
             </div>
             <select
                 v-model="selectedRadarCert"
-                class="bg-slate-50 border border-slate-200 text-slate-700 text-sm font-bold rounded-xl px-4 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500 cursor-pointer shadow-sm"
+                class="bg-slate-50 border border-slate-200 text-slate-700 text-sm 2xl:text-xl font-bold rounded-xl 2xl:rounded-2xl px-4 py-2 2xl:px-6 2xl:py-4 focus:outline-none focus:ring-2 focus:ring-indigo-500 cursor-pointer shadow-sm"
             >
               <optgroup label="Foundational & Associate">
                 <option value="CLF-C02">Cloud Practitioner (CLF-C02)</option>
@@ -384,51 +447,59 @@
               </optgroup>
             </select>
           </div>
-          <div class="flex-grow relative min-h-[300px] w-full flex justify-center items-center">
+          <div class="flex-grow relative min-h-[300px] 2xl:min-h-[600px] w-full flex justify-center items-center">
             <Radar :key="chartViewCode" :data="dynamicRadarData" :options="radarOptions" />
           </div>
         </div>
 
-        <div class="bg-white rounded-[2rem] p-8 shadow-sm border border-slate-100 flex flex-col h-full">
-          <div class="mb-6">
-            <h3 class="text-2xl font-black text-slate-800">Target Priorities</h3>
-            <p class="text-slate-500 text-sm mt-1">Recommended focus areas based on recent telemetry.</p>
+        <div class="bg-white rounded-[2rem] 2xl:rounded-[3rem] p-8 2xl:p-12 shadow-sm border border-slate-100 flex flex-col h-full">
+          <div class="mb-6 2xl:mb-10">
+            <h3 class="text-2xl 2xl:text-4xl font-black text-slate-800">Target Priorities</h3>
+            <p class="text-slate-500 text-sm 2xl:text-xl mt-1 2xl:mt-2">Recommended focus areas based on recent telemetry.</p>
           </div>
-          <div class="flex-grow flex flex-col justify-center space-y-4">
-            <div v-if="studyPriorities.length > 0" class="flex flex-col gap-3">
-              <div v-for="(priority, index) in studyPriorities" :key="priority.name" @click="jumpToForge(priority.name)" :class="index === 0 ? 'bg-red-50 border border-red-100 text-red-900 hover:bg-red-100' : 'bg-amber-50 border border-amber-100 text-amber-900 hover:bg-amber-100'" class="flex items-center justify-between p-4 rounded-xl shadow-sm transition-all hover:shadow-md cursor-pointer hover:-translate-y-1 group" title="Click to study this module in The Knowledge Forge">
-                <div class="flex items-center gap-3">
-                  <span class="w-6 h-6 rounded-full flex items-center justify-center text-xs font-black transition-transform group-hover:scale-110" :class="index === 0 ? 'bg-red-200 text-red-700' : 'bg-amber-200 text-amber-700'">!</span>
-                  <span class="font-bold text-sm group-hover:underline">{{ priority.name }}</span>
+          <div class="flex-grow flex flex-col justify-center space-y-4 2xl:space-y-8">
+            <div v-if="studyPriorities.length > 0" class="flex flex-col gap-3 2xl:gap-6">
+              <div v-for="(priority, index) in studyPriorities" :key="priority.name" @click="jumpToForge(priority.name)" :class="index === 0 ? 'bg-red-50 border border-red-100 text-red-900 hover:bg-red-100' : 'bg-amber-50 border border-amber-100 text-amber-900 hover:bg-amber-100'" class="flex items-center justify-between p-4 2xl:p-8 rounded-xl 2xl:rounded-2xl shadow-sm transition-all hover:shadow-md cursor-pointer hover:-translate-y-1 group" title="Click to study this module in The Knowledge Forge">
+                <div class="flex items-center gap-3 2xl:gap-6">
+                  <span class="w-6 h-6 2xl:w-10 2xl:h-10 rounded-full flex items-center justify-center text-xs 2xl:text-lg font-black transition-transform group-hover:scale-110" :class="index === 0 ? 'bg-red-200 text-red-700' : 'bg-amber-200 text-amber-700'">!</span>
+                  <span class="font-bold text-sm 2xl:text-2xl group-hover:underline">{{ priority.name }}</span>
                 </div>
-                <div class="flex items-center gap-4">
-                  <span class="font-black text-lg" :class="index === 0 ? 'text-red-600' : 'text-amber-600'">{{ priority.percentage }}%</span>
-                  <span class="opacity-0 group-hover:opacity-100 transition-opacity font-bold text-xl" :class="index === 0 ? 'text-red-500' : 'text-amber-500'">➔</span>
+                <div class="flex items-center gap-4 2xl:gap-8">
+                  <span class="font-black text-lg 2xl:text-4xl" :class="index === 0 ? 'text-red-600' : 'text-amber-600'">{{ priority.percentage }}%</span>
+                  <span class="opacity-0 group-hover:opacity-100 transition-opacity font-bold text-xl 2xl:text-4xl" :class="index === 0 ? 'text-red-500' : 'text-amber-500'">➔</span>
                 </div>
               </div>
             </div>
-            <div v-else class="text-center p-6 text-slate-400 text-sm font-bold">Insufficient telemetry data. Complete a simulation to generate priorities.</div>
-            <footer class="mt-24 border-t border-slate-200 bg-slate-50/50 pt-12 pb-8 rounded-t-[3rem]">
-              <div class="max-w-4xl mx-auto px-4 md:px-8 text-center flex flex-col items-center">
+            <div v-else class="text-center p-6 2xl:p-12 text-slate-400 text-sm 2xl:text-xl font-bold">Insufficient telemetry data. Complete a simulation to generate priorities.</div>
 
-                <div class="w-12 h-12 bg-indigo-600 text-white rounded-xl flex items-center justify-center text-xl font-black shadow-md shadow-indigo-500/20 mb-4 transform hover:scale-105 transition-transform">
-                  KF
+            <footer class="mt-24 2xl:mt-32 border-t border-slate-200 bg-slate-50/50 pt-12 pb-8 2xl:pt-20 2xl:pb-12 rounded-t-[3rem] 2xl:rounded-t-[4rem]">
+              <div class="max-w-4xl 2xl:max-w-6xl mx-auto px-4 md:px-8 text-center flex flex-col items-center">
+
+                <div class="mb-6 2xl:mb-8 transform hover:scale-105 transition-transform flex justify-center">
+                  <img
+                      src="/image/logo/anvil.png"
+                      alt="Knowledge Forge Academy"
+                      class="h-16 md:h-20 2xl:h-28 w-auto object-contain rounded-2xl shadow-lg border border-indigo-100"
+                  />
                 </div>
-                <h3 class="text-xl font-black text-slate-900 tracking-tight mb-1">Knowledge Forge Academy</h3>
-                <p class="text-sm font-medium text-slate-500 mb-6 flex items-center gap-2">
-                  <span>📍</span> 1000 Pearl Suite, McKinney, TX 75002
+
+                <h3 class="text-xl 2xl:text-4xl font-black text-slate-900 tracking-tight mb-1 2xl:mb-3">Knowledge Forge Academy</h3>
+                <p class="text-sm 2xl:text-2xl font-medium text-slate-500 mb-6 2xl:mb-12 flex items-center gap-2 2xl:gap-4">
+                  <span>📍</span> Allen, TX 75002
                 </p>
 
-                <a href="tel:222-222-2222" class="inline-flex justify-center items-center gap-3 bg-white text-indigo-600 hover:text-indigo-700 hover:bg-indigo-50 px-6 py-4 rounded-2xl font-black text-sm uppercase tracking-widest transition-all border border-slate-200 hover:border-indigo-200 shadow-sm hover:shadow-md group w-full sm:w-auto flex-1">
-                  <span class="text-xl group-hover:animate-bounce">📞</span>
-                  (222) 222-2222
-                </a>
+                <div class="flex flex-col sm:flex-row w-full gap-4 2xl:gap-8 justify-center">
+                  <a href="tel:222-222-2222" class="inline-flex justify-center items-center gap-3 2xl:gap-5 bg-white text-indigo-600 hover:text-indigo-700 hover:bg-indigo-50 px-6 py-4 2xl:px-10 2xl:py-6 rounded-2xl 2xl:rounded-3xl font-black text-sm 2xl:text-xl uppercase tracking-widest transition-all border border-slate-200 hover:border-indigo-200 shadow-sm hover:shadow-md group flex-1">
+                    <span class="text-xl 2xl:text-3xl group-hover:animate-bounce">📞</span>
+                    (222) 222-2222
+                  </a>
 
-                <a href="mailto:test@test.com" class="inline-flex justify-center items-center gap-3 bg-white text-indigo-600 hover:text-indigo-700 hover:bg-indigo-50 px-6 py-4 rounded-2xl font-black text-sm uppercase tracking-widest transition-all border border-slate-200 hover:border-indigo-200 shadow-sm hover:shadow-md group w-full sm:w-auto flex-1">
-                  <span class="text-xl group-hover:animate-pulse">✉️</span>
-                  test@test.com
-                </a>
-                <div class="mt-12 text-[10px] font-black uppercase tracking-widest text-slate-400 border-t border-slate-200/60 pt-6 w-full max-w-md">
+                  <a href="mailto:test@test.com" class="inline-flex justify-center items-center gap-3 2xl:gap-5 bg-white text-indigo-600 hover:text-indigo-700 hover:bg-indigo-50 px-6 py-4 2xl:px-10 2xl:py-6 rounded-2xl 2xl:rounded-3xl font-black text-sm 2xl:text-xl uppercase tracking-widest transition-all border border-slate-200 hover:border-indigo-200 shadow-sm hover:shadow-md group flex-1">
+                    <span class="text-xl 2xl:text-3xl group-hover:animate-pulse">✉️</span>
+                    test@test.com
+                  </a>
+                </div>
+                <div class="mt-12 2xl:mt-20 text-[10px] 2xl:text-sm font-black uppercase tracking-widest text-slate-400 border-t border-slate-200/60 pt-6 2xl:pt-10 w-full max-w-md 2xl:max-w-2xl">
                   © 2026 Knowledge Forge Academy. System fully operational.
                 </div>
 
@@ -440,393 +511,415 @@
 
     </div>
 
-    <div v-else-if="currentView === 'quiz'" class="max-w-5xl mx-auto px-4 md:px-8 lg:px-12">
-      <div v-if="showResults && !isHistoricalView" class="bg-white rounded-[2rem] shadow-2xl p-10 text-center border border-gray-100">
-        <div class="mb-10 text-center flex flex-col items-center">
-          <div class="mb-8 flex justify-center w-full px-2">
-            <img v-if="examResultMessage.image" :src="examResultMessage.image" class="w-full max-w-sm md:max-w-2xl h-auto object-cover rounded-2xl shadow-2xl border border-slate-100/50" alt="Result Animation" />
-            <div v-else class="text-7xl md:text-8xl">{{ examResultMessage.icon }}</div>
+    <div v-else-if="currentView === 'quiz'" class="max-w-5xl xl:max-w-7xl 2xl:max-w-[100rem] mx-auto px-4 md:px-8 lg:px-12 transition-all duration-500">
+      <div v-if="showResults && !isHistoricalView" class="bg-white rounded-[2rem] 2xl:rounded-[3rem] shadow-2xl p-10 2xl:p-20 text-center border border-gray-100">
+        <div class="mb-10 2xl:mb-16 text-center flex flex-col items-center">
+          <div class="mb-8 2xl:mb-12 flex justify-center w-full px-2">
+            <img v-if="examResultMessage.image" :src="examResultMessage.image" class="w-full max-w-sm md:max-w-2xl 2xl:max-w-4xl h-auto object-cover rounded-2xl 2xl:rounded-3xl shadow-2xl border border-slate-100/50" alt="Result Animation" />
+            <div v-else class="text-7xl md:text-8xl 2xl:text-[10rem]">{{ examResultMessage.icon }}</div>
           </div>
-          <h1 :class="['text-3xl md:text-5xl font-black mb-4 tracking-tight', examResultMessage.color]">{{ examResultMessage.title }}</h1>
-          <div class="bg-slate-50 border border-slate-100 p-6 rounded-2xl max-w-2xl mx-auto shadow-inner">
-            <p class="text-slate-600 font-mono text-sm md:text-base leading-relaxed italic">"{{ examResultMessage.text }}"</p>
+          <h1 :class="['text-3xl md:text-5xl 2xl:text-7xl font-black mb-4 2xl:mb-8 tracking-tight', examResultMessage.color]">{{ examResultMessage.title }}</h1>
+          <div class="bg-slate-50 border border-slate-100 p-6 2xl:p-10 rounded-2xl 2xl:rounded-3xl max-w-2xl 2xl:max-w-4xl mx-auto shadow-inner">
+            <p class="text-slate-600 font-mono text-sm md:text-base 2xl:text-2xl leading-relaxed italic">"{{ examResultMessage.text }}"</p>
           </div>
         </div>
-        <div class="grid grid-cols-2 gap-4 mb-8 text-left">
-          <div class="bg-blue-50 p-6 rounded-2xl text-center">
-            <p class="text-blue-600 text-[10px] font-black uppercase tracking-widest mb-1">Score</p>
-            <p class="text-4xl md:text-5xl font-black text-blue-900">{{ finalScore }}%</p>
+        <div class="grid grid-cols-2 gap-4 2xl:gap-8 mb-8 2xl:mb-16 text-left">
+          <div class="bg-blue-50 p-6 2xl:p-12 rounded-2xl 2xl:rounded-3xl text-center">
+            <p class="text-blue-600 text-[10px] 2xl:text-lg font-black uppercase tracking-widest mb-1 2xl:mb-4">Score</p>
+            <p class="text-4xl md:text-5xl 2xl:text-8xl font-black text-blue-900">{{ finalScore }}%</p>
           </div>
-          <div class="bg-amber-50 p-6 rounded-2xl text-center flex flex-col justify-center border border-amber-100 shadow-inner">
-            <div class="mb-3">
-              <p class="text-amber-600 text-[10px] font-black uppercase tracking-widest mb-1">Total Time</p>
-              <p class="text-3xl font-black text-amber-900">{{ formattedTotalTime }}</p>
+          <div class="bg-amber-50 p-6 2xl:p-12 rounded-2xl 2xl:rounded-3xl text-center flex flex-col justify-center border border-amber-100 shadow-inner">
+            <div class="mb-3 2xl:mb-6">
+              <p class="text-amber-600 text-[10px] 2xl:text-lg font-black uppercase tracking-widest mb-1 2xl:mb-2">Total Time</p>
+              <p class="text-3xl 2xl:text-6xl font-black text-amber-900">{{ formattedTotalTime }}</p>
             </div>
-            <div class="h-px bg-amber-200/50 w-full mb-3"></div>
+            <div class="h-px bg-amber-200/50 w-full mb-3 2xl:mb-6"></div>
             <div>
-              <p class="text-amber-600 text-[10px] font-black uppercase tracking-widest mb-1">Avg per Question</p>
-              <p class="text-xl font-black text-amber-800">{{ formattedAverageTime }}</p>
+              <p class="text-amber-600 text-[10px] 2xl:text-lg font-black uppercase tracking-widest mb-1 2xl:mb-2">Avg per Question</p>
+              <p class="text-xl 2xl:text-4xl font-black text-amber-800">{{ formattedAverageTime }}</p>
             </div>
           </div>
         </div>
-        <div class="flex flex-col gap-3">
-          <button @click="openReviewRoom(lastAttemptId)" class="bg-orange-500 hover:bg-amber-500 text-white py-4 rounded-2xl font-black shadow-lg hover:shadow-xl hover:-translate-y-1 transition-all duration-300">🔍 Review My Answers</button>
-          <button @click="handlePrint" class="bg-slate-800 hover:bg-slate-900 text-white py-4 rounded-2xl font-black shadow-lg hover:shadow-xl hover:-translate-y-1 transition-all duration-300">📄 Save Results as PDF</button>
-          <button @click="resetSession" class="bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-700 hover:to-indigo-600 text-white py-4 rounded-2xl font-black shadow-lg hover:shadow-xl hover:scale-[1.02] transition-all duration-300">Start New Session</button>
-          <button @click="goBackToLanding" class="bg-slate-100 hover:bg-slate-200 text-slate-600 hover:text-slate-800 py-4 rounded-2xl font-bold transition-colors duration-300 border border-slate-200">Return to Dashboard</button>
+        <div class="flex flex-col gap-3 2xl:gap-6">
+          <button @click="openReviewRoom(lastAttemptId)" class="bg-orange-500 hover:bg-amber-500 text-white py-4 2xl:py-8 rounded-2xl 2xl:rounded-3xl 2xl:text-2xl font-black shadow-lg hover:shadow-xl hover:-translate-y-1 transition-all duration-300">🔍 Review My Answers</button>
+          <button @click="handlePrint" class="bg-slate-800 hover:bg-slate-900 text-white py-4 2xl:py-8 rounded-2xl 2xl:rounded-3xl 2xl:text-2xl font-black shadow-lg hover:shadow-xl hover:-translate-y-1 transition-all duration-300">📄 Save Results as PDF</button>
+          <button @click="resetSession" class="bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-700 hover:to-indigo-600 text-white py-4 2xl:py-8 rounded-2xl 2xl:rounded-3xl 2xl:text-2xl font-black shadow-lg hover:shadow-xl hover:scale-[1.02] transition-all duration-300">Start New Session</button>
+          <button @click="goBackToLanding" class="bg-slate-100 hover:bg-slate-200 text-slate-600 hover:text-slate-800 py-4 2xl:py-8 rounded-2xl 2xl:rounded-3xl 2xl:text-2xl font-bold transition-colors duration-300 border border-slate-200">Return to Dashboard</button>
         </div>
       </div>
 
-      <div v-else-if="question && !showReviewModal" class="bg-white rounded-[2rem] shadow-xl overflow-hidden border border-slate-200 relative">
-        <div v-if="isPaused" class="absolute inset-0 bg-white/95 backdrop-blur-md z-50 flex flex-col items-center justify-center text-center p-8">
-          <div class="w-16 h-16 bg-orange-100 text-orange-600 rounded-full flex items-center justify-center text-3xl mb-4">⏸️</div>
-          <h2 class="text-2xl font-black text-slate-800">Exam Paused</h2>
-          <button @click="togglePause" class="mt-6 bg-slate-800 text-white px-8 py-3 rounded-2xl font-bold">Resume Exam</button>
+      <div v-else-if="question && !showReviewModal" class="bg-white rounded-[2rem] 2xl:rounded-[3rem] shadow-xl overflow-hidden border border-slate-200 relative">
+        <div v-if="isPaused" class="absolute inset-0 bg-white/95 backdrop-blur-md z-50 flex flex-col items-center justify-center text-center p-8 2xl:p-16">
+          <div class="w-16 h-16 2xl:w-24 2xl:h-24 bg-orange-100 text-orange-600 rounded-full flex items-center justify-center text-3xl 2xl:text-5xl mb-4 2xl:mb-8">⏸️</div>
+          <h2 class="text-2xl 2xl:text-5xl font-black text-slate-800">Exam Paused</h2>
+          <button @click="togglePause" class="mt-6 2xl:mt-10 bg-slate-800 text-white px-8 py-3 2xl:px-12 2xl:py-5 2xl:text-2xl rounded-2xl 2xl:rounded-3xl font-bold">Resume Exam</button>
         </div>
 
-        <div class="bg-blue-600 p-6 flex justify-between items-center text-white">
+        <div class="bg-blue-600 p-6 2xl:p-10 flex justify-between items-center text-white">
           <div>
-            <p class="text-[10px] font-black uppercase tracking-widest opacity-70">{{ question.category }}</p>
-            <h2 v-if="!isAmrapMode" class="text-lg font-bold">Question {{ sessionCount }} of {{ totalExamQuestions }}</h2>
-            <h2 v-else class="text-lg font-bold">Reps Completed: {{ amrapCorrectCount }}</h2>
+            <p class="text-[10px] 2xl:text-base font-black uppercase tracking-widest opacity-70">{{ question.category }}</p>
+            <h2 v-if="!isAmrapMode" class="text-lg 2xl:text-3xl font-bold">Question {{ sessionCount }} of {{ totalExamQuestions }}</h2>
+            <h2 v-else class="text-lg 2xl:text-3xl font-bold">Reps Completed: {{ amrapCorrectCount }}</h2>
           </div>
-          <div class="flex items-center gap-4">
-            <div v-if="isSuddenDeath" class="flex items-center gap-1.5 bg-slate-900/40 px-3 py-1.5 rounded-xl shadow-inner border border-white/10">
-              <span v-for="n in 3" :key="n" class="text-xl transition-all duration-500 ease-[cubic-bezier(0.34,1.56,0.64,1)]" :class="n <= healthPoints ? 'text-red-500 scale-100 drop-shadow-[0_0_8px_rgba(239,68,68,0.8)]' : 'opacity-20 scale-75 grayscale'">❤️</span>
+          <div class="flex items-center gap-4 2xl:gap-8">
+            <div v-if="isSuddenDeath" class="flex items-center gap-1.5 2xl:gap-3 bg-slate-900/40 px-3 py-1.5 2xl:px-6 2xl:py-3 rounded-xl 2xl:rounded-2xl shadow-inner border border-white/10">
+              <span v-for="n in 3" :key="n" class="text-xl 2xl:text-3xl transition-all duration-500 ease-[cubic-bezier(0.34,1.56,0.64,1)]" :class="n <= healthPoints ? 'text-red-500 scale-100 drop-shadow-[0_0_8px_rgba(239,68,68,0.8)]' : 'opacity-20 scale-75 grayscale'">❤️</span>
             </div>
-            <div v-else-if="isAmrapMode" class="flex items-center gap-2 bg-red-600/20 px-4 py-1.5 rounded-xl border border-red-500/50 shadow-[0_0_15px_rgba(220,38,38,0.3)]">
-              <span class="text-red-500 animate-pulse">⏱️</span>
-              <span class="font-mono font-black text-red-100 tracking-widest text-lg">{{ formattedAmrapTime }}</span>
+            <div v-else-if="isAmrapMode" class="flex items-center gap-2 2xl:gap-4 bg-red-600/20 px-4 py-1.5 2xl:px-8 2xl:py-3 rounded-xl 2xl:rounded-2xl border border-red-500/50 shadow-[0_0_15px_rgba(220,38,38,0.3)]">
+              <span class="text-red-500 animate-pulse 2xl:text-3xl">⏱️</span>
+              <span class="font-mono font-black text-red-100 tracking-widest text-lg 2xl:text-3xl">{{ formattedAmrapTime }}</span>
             </div>
-            <span v-else class="font-mono font-bold bg-blue-500/50 px-3 py-1 rounded-lg border border-blue-400/50">{{ formattedCurrentTime }}</span>
-            <button @click="togglePause" class="bg-white text-blue-600 px-3 py-1 rounded-lg text-xs font-black uppercase tracking-widest shadow-lg">{{ isPaused ? 'Resume' : 'Pause' }}</button>
-            <button @click="showGradeConfirmModal = true" class="bg-slate-900/40 hover:bg-slate-900/60 px-3 py-1 rounded-lg text-xs font-black uppercase tracking-widest shadow-lg transition-colors border border-white/10">🏁 Grade Now</button>
+            <span v-else class="font-mono font-bold 2xl:text-2xl bg-blue-500/50 px-3 py-1 2xl:px-6 2xl:py-2 rounded-lg 2xl:rounded-xl border border-blue-400/50">{{ formattedCurrentTime }}</span>
 
-            <button @click="abortQuiz" class="bg-red-500/20 hover:bg-red-500/40 text-red-100 px-3 py-1 rounded-lg text-xs font-black uppercase tracking-widest shadow-lg transition-colors border border-red-400/30">🚪 Exit</button>
+            <button @click="togglePause" class="bg-white text-blue-600 px-3 py-1 2xl:px-6 2xl:py-3 rounded-lg 2xl:rounded-xl text-xs 2xl:text-xl font-black uppercase tracking-widest shadow-lg">{{ isPaused ? 'Resume' : 'Pause' }}</button>
+            <button @click="showGradeConfirmModal = true" class="bg-slate-900/40 hover:bg-slate-900/60 px-3 py-1 2xl:px-6 2xl:py-3 rounded-lg 2xl:rounded-xl text-xs 2xl:text-xl font-black uppercase tracking-widest shadow-lg transition-colors border border-white/10">🏁 Grade Now</button>
+            <button @click="abortQuiz" class="bg-red-500/20 hover:bg-red-500/40 text-red-100 px-3 py-1 2xl:px-6 2xl:py-3 rounded-lg 2xl:rounded-xl text-xs 2xl:text-xl font-black uppercase tracking-widest shadow-lg transition-colors border border-red-400/30">🚪 Exit</button>
           </div>
         </div>
 
-        <div class="p-8">
-          <p class="text-xl md:text-3xl lg:text-3xl font-extrabold text-slate-800 mb-8 md:mb-12 leading-relaxed md:leading-tight">{{ question.questionText }}</p>
-          <button v-for="opt in question.options" :key="opt.id" @click="toggleAnswer(opt.id)" :class="['w-full text-left p-4 md:p-6 lg:p-8 rounded-2xl md:rounded-[2rem] border-2 transition-all flex items-center gap-4 md:gap-6', selectedAnswers.includes(opt.id) ? 'border-blue-500 bg-blue-50' : 'border-slate-100 bg-slate-50 hover:border-blue-200 hover:shadow-md']">
-            <div class="w-6 h-6 border-2 flex items-center justify-center flex-shrink-0" :class="[isMultipleAnswer(question) ? 'rounded-md' : 'rounded-full', selectedAnswers.includes(opt.id) ? 'border-blue-500 bg-blue-500 text-white' : 'border-slate-300 bg-white']">
-              <span v-if="isMultipleAnswer(question) && selectedAnswers.includes(opt.id)">✓</span>
-              <div v-if="!isMultipleAnswer(question) && selectedAnswers.includes(opt.id)" class="w-2.5 h-2.5 bg-white rounded-full"></div>
-            </div>
-            <span class="text-base md:text-lg lg:text-xl font-bold text-slate-700">{{ opt.text || opt.optionText || opt.value }}</span>
-          </button>
-          <button v-if="!showExplanation" @click="checkAnswer" :disabled="selectedAnswers.length === 0" class="w-full mt-8 py-4 rounded-2xl font-black text-white bg-blue-600 transition-all duration-300 ease-in-out hover:-translate-y-1 hover:shadow-[0_10px_40px_-10px_rgba(37,99,235,0.6)] active:translate-y-1 active:shadow-sm disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:translate-y-0">Submit Answer</button>
+        <div class="p-8 2xl:p-16">
+          <p class="text-xl md:text-3xl lg:text-3xl 2xl:text-5xl font-extrabold text-slate-800 mb-8 md:mb-12 2xl:mb-20 leading-relaxed md:leading-tight">{{ question.questionText }}</p>
 
-          <div v-if="showExplanation" class="mt-8">
-            <div :class="['p-4 rounded-2xl text-center font-black uppercase mb-4', feedbackClass]">{{ feedback }}</div>
-            <p class="bg-amber-50 p-5 rounded-2xl text-sm italic border border-amber-100 text-slate-700">{{ question.explanation }}</p>
-            <button @click="loadNextQuestion" class="w-full mt-4 bg-green-600 text-white py-4 rounded-2xl font-black shadow-lg">Next Question ➔</button>
-            <button @click="forceGradeExam" class="w-full mt-6 bg-slate-100 text-slate-500 py-3 rounded-2xl font-bold border-2 border-dashed border-slate-200 hover:bg-slate-200 hover:text-slate-700 transition-all">🏁 Grade Now</button>
+          <div class="space-y-4 2xl:space-y-8">
+            <button v-for="opt in question.options" :key="opt.id" @click="toggleAnswer(opt.id)" :class="['w-full text-left p-4 md:p-6 lg:p-8 2xl:p-12 rounded-2xl md:rounded-[2rem] 2xl:rounded-[3rem] border-2 transition-all flex items-center gap-4 md:gap-6 2xl:gap-10', selectedAnswers.includes(opt.id) ? 'border-blue-500 bg-blue-50' : 'border-slate-100 bg-slate-50 hover:border-blue-200 hover:shadow-md']">
+              <div class="w-6 h-6 2xl:w-10 2xl:h-10 border-2 flex items-center justify-center flex-shrink-0" :class="[isMultipleAnswer(question) ? 'rounded-md 2xl:rounded-lg' : 'rounded-full', selectedAnswers.includes(opt.id) ? 'border-blue-500 bg-blue-500 text-white' : 'border-slate-300 bg-white']">
+                <span v-if="isMultipleAnswer(question) && selectedAnswers.includes(opt.id)" class="2xl:text-2xl">✓</span>
+                <div v-if="!isMultipleAnswer(question) && selectedAnswers.includes(opt.id)" class="w-2.5 h-2.5 2xl:w-4 2xl:h-4 bg-white rounded-full"></div>
+              </div>
+              <span class="text-base md:text-lg lg:text-xl 2xl:text-3xl font-bold text-slate-700">{{ opt.text || opt.optionText || opt.value }}</span>
+            </button>
+          </div>
+
+          <button v-if="!showExplanation" @click="checkAnswer" :disabled="selectedAnswers.length === 0" class="w-full mt-8 2xl:mt-16 py-4 2xl:py-8 rounded-2xl 2xl:rounded-[2rem] font-black 2xl:text-3xl text-white bg-blue-600 transition-all duration-300 ease-in-out hover:-translate-y-1 hover:shadow-[0_10px_40px_-10px_rgba(37,99,235,0.6)] active:translate-y-1 active:shadow-sm disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:translate-y-0">Submit Answer</button>
+
+          <div v-if="showExplanation" class="mt-8 2xl:mt-16 animate-fade-in-up">
+            <div :class="['p-4 2xl:p-8 rounded-2xl 2xl:rounded-3xl text-center font-black uppercase mb-4 2xl:mb-8 2xl:text-3xl', feedbackClass]">{{ feedback }}</div>
+            <p class="bg-amber-50 p-5 2xl:p-10 rounded-2xl 2xl:rounded-3xl text-sm 2xl:text-2xl italic leading-relaxed border border-amber-100 text-slate-700">{{ question.explanation }}</p>
+
+            <button @click="loadNextQuestion" class="w-full mt-4 2xl:mt-8 bg-green-600 text-white py-4 2xl:py-8 rounded-2xl 2xl:rounded-[2rem] font-black 2xl:text-3xl shadow-lg hover:shadow-xl hover:bg-green-500 transition-all">Next Question ➔</button>
+            <button @click="forceGradeExam" class="w-full mt-6 2xl:mt-8 bg-slate-100 text-slate-500 py-3 2xl:py-6 rounded-2xl 2xl:rounded-[2rem] font-bold 2xl:text-2xl border-2 border-dashed border-slate-200 hover:bg-slate-200 hover:text-slate-700 transition-all">🏁 Grade Now</button>
           </div>
         </div>
       </div>
     </div>
 
-    <div v-else-if="currentView === 'library'" class="max-w-7xl mx-auto px-4 md:px-8 py-6 animate-fade-in-up">
+    <div v-else-if="currentView === 'flashcards'" class="max-w-5xl xl:max-w-7xl 2xl:max-w-[100rem] mx-auto px-4 md:px-8 py-8 animate-fade-in transition-all duration-500">
+      <div class="bg-white rounded-[2rem] shadow-xl border border-slate-200 overflow-hidden relative">
 
-      <div class="mb-6">
-        <button @click="currentView = 'landing'" class="bg-slate-100 hover:bg-slate-200 text-slate-600 px-5 py-2.5 rounded-xl font-bold text-xs uppercase tracking-widest transition-colors border border-slate-200 inline-flex items-center shadow-sm">
+        <div class="bg-indigo-600 p-6 2xl:p-10 flex justify-between items-center text-white">
+          <div>
+            <p class="text-[10px] 2xl:text-sm font-black uppercase tracking-widest opacity-70">{{ selectedCert?.name || 'AWS' }}</p>
+            <h2 class="text-lg md:text-xl 2xl:text-3xl font-bold">Flashcard Matrix - Round {{ currentFlashcardRound + 1 }}</h2>
+          </div>
+          <button @click="abortQuiz" class="bg-red-500/20 hover:bg-red-500/40 text-red-100 px-4 py-2 2xl:px-6 2xl:py-3 rounded-lg text-xs 2xl:text-base font-black uppercase tracking-widest shadow-lg transition-colors border border-red-400/30">🚪 Exit</button>
+        </div>
+
+        <div class="p-8 md:p-12 2xl:p-20 bg-slate-50 relative min-h-[500px] 2xl:min-h-[800px]">
+
+          <div v-if="isFlashcardGameComplete" class="animate-fade-in-up max-w-3xl 2xl:max-w-5xl mx-auto">
+            <div class="text-center mb-8 2xl:mb-12">
+              <div class="text-6xl 2xl:text-8xl mb-4 2xl:mb-8">🏆</div>
+              <h2 class="text-3xl 2xl:text-5xl font-black text-slate-900 tracking-tight">Matrix Cleared</h2>
+              <p class="text-slate-500 2xl:text-xl font-medium mt-2 2xl:mt-4">You successfully matched all {{ allFetchedFlashcards.length }} terms.</p>
+            </div>
+
+            <div class="grid grid-cols-2 gap-4 2xl:gap-8 mb-8 2xl:mb-12">
+              <div class="bg-indigo-50 border border-indigo-100 p-6 2xl:p-10 rounded-2xl text-center">
+                <p class="text-[10px] 2xl:text-sm font-black uppercase tracking-widest text-indigo-400 mb-1 2xl:mb-3">Accuracy Score</p>
+                <p class="text-4xl 2xl:text-6xl font-black text-indigo-600">{{ flashcardFinalScore }}%</p>
+              </div>
+              <div class="bg-emerald-50 border border-emerald-100 p-6 2xl:p-10 rounded-2xl text-center">
+                <p class="text-[10px] 2xl:text-sm font-black uppercase tracking-widest text-emerald-400 mb-1 2xl:mb-3">Total Attempts</p>
+                <p class="text-4xl 2xl:text-6xl font-black text-emerald-600">{{ flashcardAttempts }}</p>
+              </div>
+            </div>
+
+            <div v-if="Object.keys(flashcardMisses).length > 0" class="bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-sm">
+              <div class="bg-slate-800 p-4 2xl:p-6">
+                <h3 class="text-white font-black text-sm 2xl:text-lg uppercase tracking-widest flex items-center gap-2">
+                  <span class="text-rose-500">⚠</span> Target Priorities (Terms Missed)
+                </h3>
+              </div>
+              <div class="divide-y divide-slate-100 max-h-96 2xl:max-h-[600px] overflow-y-auto custom-scrollbar">
+                <div v-for="miss in Object.values(flashcardMisses)" :key="miss.term" class="p-4 2xl:p-6 hover:bg-slate-50 transition-colors flex gap-4 2xl:gap-6">
+                  <div class="w-8 h-8 2xl:w-12 2xl:h-12 rounded-full bg-rose-100 text-rose-600 flex items-center justify-center font-black text-xs 2xl:text-lg flex-shrink-0">
+                    {{ miss.mistakes }}x
+                  </div>
+                  <div>
+                    <p class="font-black text-slate-800 2xl:text-2xl">{{ miss.term }}</p>
+                    <p class="text-sm 2xl:text-xl text-slate-500 mt-1 2xl:mt-3 leading-relaxed">{{ miss.definition }}</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div v-else class="bg-emerald-50 border border-emerald-200 rounded-2xl p-8 2xl:p-12 text-center text-emerald-700 font-bold 2xl:text-2xl">
+              Flawless Victory! You didn't make a single mistake.
+            </div>
+
+            <button @click="currentView = 'landing'" class="w-full mt-8 2xl:mt-12 bg-slate-800 hover:bg-slate-900 text-white py-4 2xl:py-6 2xl:text-xl rounded-xl font-black tracking-widest uppercase transition-all shadow-lg hover:shadow-xl hover:-translate-y-1">
+              Return to Dashboard
+            </button>
+          </div>
+
+          <div v-else class="grid grid-cols-1 md:grid-cols-2 gap-8 2xl:gap-16 relative">
+            <div class="space-y-4 2xl:space-y-6">
+              <h3 class="text-center text-xs md:text-sm 2xl:text-lg font-black text-slate-400 uppercase tracking-widest mb-4 2xl:mb-8">Terms</h3>
+              <button
+                  v-for="term in displayTerms" :key="'t-'+term.id"
+                  @click="selectTerm(term)"
+                  :disabled="matchedPairs.includes(term.id)"
+                  class="w-full p-4 2xl:p-8 rounded-xl 2xl:rounded-2xl font-bold text-left transition-all duration-300 border-2 shadow-sm text-base md:text-lg 2xl:text-2xl"
+                  :class="matchedPairs.includes(term.id) ? 'bg-emerald-50 border-emerald-200 text-emerald-400 opacity-50 scale-95' : selectedTerm?.id === term.id ? 'bg-indigo-600 border-indigo-700 text-white scale-105 shadow-lg' : 'bg-white border-slate-200 text-slate-700 hover:border-indigo-300 hover:shadow-md'"
+              >
+                {{ term.term }}
+              </button>
+            </div>
+
+            <div class="space-y-4 2xl:space-y-6">
+              <h3 class="text-center text-xs md:text-sm 2xl:text-lg font-black text-slate-400 uppercase tracking-widest mb-4 2xl:mb-8">Definitions</h3>
+              <button
+                  v-for="def in displayDefs" :key="'d-'+def.id"
+                  @click="selectDef(def)"
+                  :disabled="matchedPairs.includes(def.id)"
+                  class="w-full p-4 2xl:p-8 rounded-xl 2xl:rounded-2xl text-sm md:text-base 2xl:text-xl font-medium text-left transition-all duration-300 border-2 shadow-sm leading-relaxed"
+                  :class="matchedPairs.includes(def.id) ? 'bg-emerald-50 border-emerald-200 text-emerald-400 opacity-50 scale-95' : selectedDef?.id === def.id ? 'bg-pink-600 border-pink-700 text-white scale-105 shadow-lg' : 'bg-white border-slate-200 text-slate-600 hover:border-pink-300 hover:shadow-md'"
+              >
+                {{ def.definition }}
+              </button>
+            </div>
+          </div>
+
+          <div v-if="matchedPairs.length === 6 && displayTerms.length === 6 && !isFlashcardGameComplete" class="absolute inset-0 bg-white/90 backdrop-blur-sm z-50 flex flex-col items-center justify-center animate-fade-in rounded-b-[2rem]">
+            <div class="text-6xl 2xl:text-9xl mb-4 2xl:mb-8 animate-bounce">✨</div>
+            <h2 class="text-3xl 2xl:text-6xl font-black text-slate-900 mb-2 2xl:mb-4">Round Cleared!</h2>
+            <p class="text-emerald-600 2xl:text-2xl font-mono tracking-widest uppercase font-black mb-8 2xl:mb-12">+100 XP Awarded</p>
+            <button @click="currentFlashcardRound++; loadNextFlashcardRound()" class="bg-indigo-600 hover:bg-indigo-500 text-white px-8 py-4 2xl:px-12 2xl:py-6 rounded-2xl 2xl:rounded-3xl font-black 2xl:text-2xl uppercase tracking-widest shadow-lg shadow-indigo-500/30 transition-all hover:-translate-y-1">
+              Next Round ➔
+            </button>
+          </div>
+
+        </div>
+      </div>
+    </div>
+
+    <div v-else-if="currentView === 'library'" class="max-w-7xl xl:max-w-[90rem] 2xl:max-w-[110rem] mx-auto px-4 md:px-8 py-6 animate-fade-in-up">
+
+      <div class="mb-6 2xl:mb-10">
+        <button @click="currentView = 'landing'" class="bg-slate-100 hover:bg-slate-200 text-slate-600 px-5 py-2.5 2xl:px-8 2xl:py-4 rounded-xl 2xl:rounded-2xl font-bold text-xs 2xl:text-lg uppercase tracking-widest transition-colors border border-slate-200 inline-flex items-center shadow-sm">
           ← Return to Dashboard
         </button>
       </div>
 
-      <div class="flex flex-col md:flex-row justify-between items-center mb-6 gap-4 bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 px-6 py-4 rounded-2xl shadow-lg shadow-indigo-500/20 relative overflow-hidden text-white">
+      <div class="flex flex-col md:flex-row justify-between items-center mb-6 2xl:mb-12 gap-4 bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 px-6 py-4 2xl:px-10 2xl:py-8 rounded-2xl 2xl:rounded-3xl shadow-lg shadow-indigo-500/20 relative overflow-hidden text-white">
         <div class="absolute inset-0 bg-white/5 backdrop-blur-sm mix-blend-overlay"></div>
-        <div class="flex items-center gap-4 relative z-10">
-          <div class="w-12 h-12 bg-white/20 backdrop-blur-md rounded-xl flex items-center justify-center shadow-inner border border-white/30 transform hover:scale-105 transition-transform">
-            <span class="text-2xl">{{ selectedCert ? selectedCert.icon : '🧠' }}</span>
+        <div class="flex items-center gap-4 2xl:gap-8 relative z-10">
+          <div class="w-12 h-12 2xl:w-20 2xl:h-20 bg-white/20 backdrop-blur-md rounded-xl 2xl:rounded-2xl flex items-center justify-center shadow-inner border border-white/30 transform hover:scale-105 transition-transform">
+            <span class="text-2xl 2xl:text-4xl">{{ selectedCert ? selectedCert.icon : '🧠' }}</span>
           </div>
           <div>
-            <h2 class="text-xl font-black tracking-tight mb-0">
+            <h2 class="text-xl 2xl:text-4xl font-black tracking-tight mb-0">
               {{ selectedCert ? selectedCert.code + ' Knowledge Forge' : 'The Knowledge Forge' }}
             </h2>
-            <p class="text-indigo-100 font-medium text-[10px] uppercase tracking-widest flex items-center gap-1.5 mt-0.5">
-              <span class="w-1.5 h-1.5 rounded-full bg-green-400 animate-pulse shadow-[0_0_8px_rgba(74,222,128,1)]"></span>
+            <p class="text-indigo-100 font-medium text-[10px] 2xl:text-sm uppercase tracking-widest flex items-center gap-1.5 mt-0.5 2xl:mt-2">
+              <span class="w-1.5 h-1.5 2xl:w-2.5 2xl:h-2.5 rounded-full bg-green-400 animate-pulse shadow-[0_0_8px_rgba(74,222,128,1)]"></span>
               Premium Databanks Unlocked
             </p>
           </div>
         </div>
       </div>
 
-      <div class="flex p-2 bg-slate-200/50 rounded-3xl mb-10 w-full max-w-2xl mx-auto shadow-inner border border-slate-200">
-        <button @click="activeForgeTab = 'domains'" :class="activeForgeTab === 'domains' ? 'bg-white text-indigo-600 shadow-sm border border-slate-200' : 'text-slate-500 hover:text-slate-700'" class="flex-1 py-3 md:py-4 rounded-2xl text-[10px] md:text-sm font-black uppercase tracking-widest transition-all">
+      <div class="flex p-2 2xl:p-3 bg-slate-200/50 rounded-3xl 2xl:rounded-[2.5rem] mb-10 2xl:mb-16 w-full max-w-2xl 2xl:max-w-4xl mx-auto shadow-inner border border-slate-200">
+        <button @click="activeForgeTab = 'domains'" :class="activeForgeTab === 'domains' ? 'bg-white text-indigo-600 shadow-sm border border-slate-200' : 'text-slate-500 hover:text-slate-700'" class="flex-1 py-3 md:py-4 2xl:py-6 rounded-2xl 2xl:rounded-3xl text-[10px] md:text-sm 2xl:text-xl font-black uppercase tracking-widest transition-all">
           Study Nodes
         </button>
-        <button @click="activeForgeTab = 'videos'" :class="activeForgeTab === 'videos' ? 'bg-white text-blue-600 shadow-sm border border-slate-200' : 'text-slate-500 hover:text-slate-700'" class="flex-1 py-3 md:py-4 rounded-2xl text-[10px] md:text-sm font-black uppercase tracking-widest transition-all">
-          Video Matrix
+        <button @click="activeForgeTab = 'study_cards'" :class="activeForgeTab === 'study_cards' ? 'bg-white text-pink-600 shadow-sm border border-slate-200' : 'text-slate-500 hover:text-slate-700'" class="flex-1 py-3 md:py-4 2xl:py-6 rounded-2xl 2xl:rounded-3xl text-[10px] md:text-sm 2xl:text-xl font-black uppercase tracking-widest transition-all">
+          Flash Cards
         </button>
-        <button @click="activeForgeTab = 'cheatsheets'" :class="activeForgeTab === 'cheatsheets' ? 'bg-white text-emerald-600 shadow-sm border border-slate-200' : 'text-slate-500 hover:text-slate-700'" class="flex-1 py-3 md:py-4 rounded-2xl text-[10px] md:text-sm font-black uppercase tracking-widest transition-all">
-          Archives
+        <button @click="activeForgeTab = 'cheatsheets'" :class="activeForgeTab === 'cheatsheets' ? 'bg-white text-emerald-600 shadow-sm border border-slate-200' : 'text-slate-500 hover:text-slate-700'" class="flex-1 py-3 md:py-4 2xl:py-6 rounded-2xl 2xl:rounded-3xl text-[10px] md:text-sm 2xl:text-xl font-black uppercase tracking-widest transition-all">
+          Study Material
         </button>
       </div>
 
-      <div v-if="activeForgeTab === 'domains'" class="space-y-6 max-w-5xl mx-auto animate-fade-in">
+      <div v-if="activeForgeTab === 'domains'" class="space-y-6 2xl:space-y-10 max-w-5xl 2xl:max-w-7xl mx-auto animate-fade-in">
         <div v-for="(domain, index) in currentForgeDomains" :key="index"
-             class="bg-white rounded-3xl border border-slate-200 overflow-hidden transition-all"
+             class="bg-white rounded-3xl 2xl:rounded-[2.5rem] border border-slate-200 overflow-hidden transition-all"
              :class="(index !== 0 && !isPremiumUser) ? 'bg-slate-50 opacity-80 cursor-not-allowed' : 'shadow-sm hover:shadow-lg hover:border-indigo-300'">
 
-          <button @click.prevent="toggleDomain(index)" class="w-full px-6 py-6 md:px-10 md:py-8 flex items-center justify-between focus:outline-none group" :class="(index !== 0 && !isPremiumUser) ? 'cursor-not-allowed' : 'bg-white'">
-            <div class="flex items-center gap-5 md:gap-8">
+          <button @click.prevent="toggleDomain(index)" class="w-full px-6 py-6 md:px-10 md:py-8 2xl:px-16 2xl:py-12 flex items-center justify-between focus:outline-none group" :class="(index !== 0 && !isPremiumUser) ? 'cursor-not-allowed' : 'bg-white'">
+            <div class="flex items-center gap-5 md:gap-8 2xl:gap-12">
 
-              <div class="w-12 h-12 md:w-16 md:h-16 rounded-full flex items-center justify-center font-black text-lg md:text-xl transition-transform"
+              <div class="w-12 h-12 md:w-16 md:h-16 2xl:w-24 2xl:h-24 rounded-full flex items-center justify-center font-black text-lg md:text-xl 2xl:text-4xl transition-transform"
                    :class="(index !== 0 && !isPremiumUser) ? 'bg-slate-200 text-slate-400' : 'bg-indigo-50 text-indigo-500 group-hover:scale-110'">
                 <span v-if="index !== 0 && !isPremiumUser">🔒</span>
                 <span v-else>{{ index + 1 }}</span>
               </div>
 
               <div class="text-left">
-                <div class="flex items-center gap-3 md:gap-4 mb-1">
-                  <h3 class="text-lg md:text-2xl font-black tracking-tight" :class="(index !== 0 && !isPremiumUser) ? 'text-slate-500' : 'text-slate-900'">{{ domain.title }}</h3>
-                  <span v-if="index === 0" class="text-[9px] md:text-xs font-black text-emerald-500 bg-emerald-50 px-2 py-1 md:px-3 rounded-md border border-emerald-200 uppercase tracking-widest">🔓 Free</span>
-                  <span v-else-if="!isPremiumUser" class="text-[9px] md:text-xs font-black text-amber-500 bg-amber-50 px-2 py-1 md:px-3 rounded-md border border-amber-200 uppercase tracking-widest">⭐ Premium</span>
+                <div class="flex items-center gap-3 md:gap-4 2xl:gap-6 mb-1 2xl:mb-3">
+                  <h3 class="text-lg md:text-2xl 2xl:text-4xl font-black tracking-tight" :class="(index !== 0 && !isPremiumUser) ? 'text-slate-500' : 'text-slate-900'">{{ domain.title }}</h3>
+                  <span v-if="index === 0" class="text-[9px] md:text-xs 2xl:text-sm font-black text-emerald-500 bg-emerald-50 px-2 py-1 md:px-3 2xl:px-4 2xl:py-2 rounded-md border border-emerald-200 uppercase tracking-widest">🔓 Free</span>
+                  <span v-else-if="!isPremiumUser" class="text-[9px] md:text-xs 2xl:text-sm font-black text-amber-500 bg-amber-50 px-2 py-1 md:px-3 2xl:px-4 2xl:py-2 rounded-md border border-amber-200 uppercase tracking-widest">⭐ Premium</span>
                 </div>
-                <span class="text-xs md:text-sm font-black text-slate-400 uppercase tracking-widest">Exam Weight: <span :class="(index !== 0 && !isPremiumUser) ? 'text-slate-400' : 'text-indigo-500'">{{ domain.weight }}</span></span>
+                <span class="text-xs md:text-sm 2xl:text-xl font-black text-slate-400 uppercase tracking-widest">Exam Weight: <span :class="(index !== 0 && !isPremiumUser) ? 'text-slate-400' : 'text-indigo-500'">{{ domain.weight }}</span></span>
               </div>
             </div>
-            <span v-if="index === 0 || isPremiumUser" class="text-3xl text-slate-300 transition-transform duration-300" :class="expandedDomain === index ? 'rotate-180' : ''">↓</span>
+            <span v-if="index === 0 || isPremiumUser" class="text-3xl 2xl:text-5xl text-slate-300 transition-transform duration-300" :class="expandedDomain === index ? 'rotate-180' : ''">↓</span>
           </button>
 
-          <div v-show="expandedDomain === index" class="px-6 pb-6 pt-2 md:px-10 md:pb-10 md:pt-4 border-t border-slate-100 bg-slate-50">
-            <div class="mb-6 md:mb-8">
-              <h4 class="text-xs md:text-sm font-black text-slate-500 uppercase tracking-widest mb-4">Core Topics:</h4>
-              <ul class="space-y-3">
-                <li v-for="(topic, tIndex) in domain.topics" :key="tIndex" class="flex items-start gap-3 text-base md:text-lg text-slate-600 font-medium">
-                  <span class="text-indigo-400 mt-1">•</span> {{ topic }}
+          <div v-show="expandedDomain === index" class="px-6 pb-6 pt-2 md:px-10 md:pb-10 md:pt-4 2xl:px-16 2xl:pb-16 2xl:pt-6 border-t border-slate-100 bg-slate-50">
+            <div class="mb-6 md:mb-8 2xl:mb-12">
+              <h4 class="text-xs md:text-sm 2xl:text-xl font-black text-slate-500 uppercase tracking-widest mb-4 2xl:mb-6">Core Topics:</h4>
+              <ul class="space-y-3 2xl:space-y-5">
+                <li v-for="(topic, tIndex) in domain.topics" :key="tIndex" class="flex items-start gap-3 2xl:gap-5 text-base md:text-lg 2xl:text-2xl text-slate-600 font-medium">
+                  <span class="text-indigo-400 mt-1 2xl:mt-2">•</span> {{ topic }}
                 </li>
               </ul>
             </div>
-            <div class="bg-indigo-100/50 border border-indigo-200 p-5 md:p-8 rounded-2xl flex gap-4 md:gap-6 items-start">
-              <span class="text-3xl md:text-4xl">💡</span>
+            <div class="bg-indigo-100/50 border border-indigo-200 p-5 md:p-8 2xl:p-12 rounded-2xl 2xl:rounded-3xl flex gap-4 md:gap-6 2xl:gap-10 items-start">
+              <span class="text-3xl md:text-4xl 2xl:text-6xl">💡</span>
               <div>
-                <span class="text-[10px] md:text-xs font-black text-indigo-600 uppercase tracking-widest block mb-2">Matrix Fact</span>
-                <p class="text-base md:text-lg font-semibold text-slate-700 leading-relaxed">{{ domain.keyFact }}</p>
+                <span class="text-[10px] md:text-xs 2xl:text-base font-black text-indigo-600 uppercase tracking-widest block mb-2 2xl:mb-4">Matrix Fact</span>
+                <p class="text-base md:text-lg 2xl:text-2xl font-semibold text-slate-700 leading-relaxed">{{ domain.keyFact }}</p>
               </div>
             </div>
           </div>
         </div>
       </div>
 
-      <div v-else-if="activeForgeTab === 'videos'" class="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-5xl mx-auto animate-fade-in">
-        <div v-for="(i, index) in 4" :key="i" class="bg-white rounded-3xl border border-slate-200 p-2 transition-all relative overflow-hidden"
+      <div v-else-if="activeForgeTab === 'study_cards'" class="max-w-5xl 2xl:max-w-7xl mx-auto animate-fade-in">
+
+        <div class="flex flex-col md:flex-row justify-between md:items-end gap-4 mb-8 2xl:mb-12">
+          <div>
+            <h3 class="text-2xl 2xl:text-4xl font-black text-slate-800">Flashcard Deck</h3>
+            <p class="text-slate-500 text-sm 2xl:text-xl mt-1">Review definitions before entering the Matrix.</p>
+          </div>
+          <select
+              v-model="librarySelectedDomain"
+              class="bg-white border-2 border-slate-200 text-slate-700 text-sm 2xl:text-xl font-bold rounded-xl 2xl:rounded-2xl px-4 py-3 2xl:px-6 2xl:py-4 focus:outline-none focus:ring-2 focus:ring-pink-500 cursor-pointer shadow-sm md:min-w-[300px]"
+          >
+            <option v-for="domain in libraryFlashcardDomains" :key="domain" :value="domain">
+              {{ domain === 'All' ? 'All Domains' : domain }}
+            </option>
+          </select>
+        </div>
+
+        <div v-if="filteredLibraryFlashcards.length > 0" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 2xl:gap-10">
+
+          <div
+              v-for="card in filteredLibraryFlashcards"
+              :key="card.id"
+              class="group h-64 2xl:h-80 w-full cursor-pointer [perspective:1000px]"
+              @click="card.flipped = !card.flipped"
+          >
+            <div
+                class="relative w-full h-full transition-all duration-500 [transform-style:preserve-3d] shadow-sm hover:shadow-xl rounded-3xl 2xl:rounded-[2.5rem]"
+                :class="card.flipped ? '[transform:rotateY(180deg)] shadow-pink-500/20' : ''"
+            >
+              <div class="absolute inset-0 [backface-visibility:hidden] bg-white border-2 border-slate-100 rounded-3xl 2xl:rounded-[2.5rem] p-6 2xl:p-10 flex flex-col justify-center items-center text-center">
+                <span class="text-[10px] 2xl:text-sm font-black uppercase tracking-widest text-slate-400 absolute top-6 2xl:top-8">Definition</span>
+                <p class="text-sm 2xl:text-xl font-medium text-slate-700 leading-relaxed">{{ card.definition }}</p>
+                <span class="text-[10px] 2xl:text-sm font-bold text-pink-400 absolute bottom-6 2xl:bottom-8 opacity-0 group-hover:opacity-100 transition-opacity">Click to flip ⤵</span>
+              </div>
+
+              <div class="absolute inset-0 [backface-visibility:hidden] [transform:rotateY(180deg)] bg-pink-600 border-2 border-pink-700 rounded-3xl 2xl:rounded-[2.5rem] p-6 2xl:p-10 flex flex-col justify-center items-center text-center shadow-inner">
+                <span class="text-[10px] 2xl:text-sm font-black uppercase tracking-widest text-pink-300 absolute top-6 2xl:top-8">Term</span>
+                <h3 class="text-2xl 2xl:text-5xl font-black text-white">{{ card.term }}</h3>
+                <span class="text-[10px] 2xl:text-sm font-bold text-pink-300 absolute bottom-6 2xl:bottom-8 opacity-0 group-hover:opacity-100 transition-opacity">Click to flip ⤵</span>
+              </div>
+            </div>
+          </div>
+
+        </div>
+
+        <div v-else class="text-center py-20 bg-white rounded-3xl border border-slate-200 border-dashed">
+          <div class="text-4xl 2xl:text-6xl mb-4 opacity-50">📭</div>
+          <p class="text-slate-500 font-bold 2xl:text-2xl">No flashcards found for this domain.</p>
+        </div>
+      </div>
+
+      <div v-else-if="activeForgeTab === 'videos'" class="grid grid-cols-1 md:grid-cols-2 gap-6 2xl:gap-12 max-w-5xl 2xl:max-w-7xl mx-auto animate-fade-in">
+        <div v-for="(i, index) in 4" :key="i" class="bg-white rounded-3xl 2xl:rounded-[2.5rem] border border-slate-200 p-2 2xl:p-4 transition-all relative overflow-hidden"
              :class="(index !== 0 && !isPremiumUser) ? 'opacity-80 cursor-not-allowed bg-slate-50' : 'shadow-sm group hover:shadow-xl hover:-translate-y-1'">
 
           <div v-if="index !== 0 && !isPremiumUser" class="absolute inset-0 z-30 bg-slate-900/10 backdrop-blur-[2px] flex items-center justify-center rounded-3xl">
-            <div class="bg-white/95 px-6 py-4 md:px-8 md:py-5 rounded-2xl shadow-xl border border-slate-200 flex flex-col items-center gap-2 transform transition-transform hover:scale-105">
-              <span class="text-3xl md:text-4xl">🔒</span>
-              <span class="text-xs md:text-sm font-black text-slate-800 uppercase tracking-widest">Premium Module</span>
+            <div class="bg-white/95 px-6 py-4 md:px-8 md:py-5 2xl:px-12 2xl:py-8 rounded-2xl shadow-xl border border-slate-200 flex flex-col items-center gap-2 2xl:gap-4 transform transition-transform hover:scale-105">
+              <span class="text-3xl md:text-4xl 2xl:text-6xl">🔒</span>
+              <span class="text-xs md:text-sm 2xl:text-lg font-black text-slate-800 uppercase tracking-widest">Premium Module</span>
             </div>
           </div>
 
-          <div class="bg-slate-900 h-48 rounded-2xl relative flex items-center justify-center overflow-hidden">
+          <div class="bg-slate-900 h-48 2xl:h-80 rounded-2xl 2xl:rounded-3xl relative flex items-center justify-center overflow-hidden">
             <div class="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent z-10"></div>
-            <div class="absolute top-3 left-3 z-20">
-              <span v-if="index === 0" class="bg-emerald-500 text-white text-[9px] md:text-xs font-black uppercase tracking-widest px-2 py-1 md:px-3 rounded shadow-md">🔓 Free</span>
-              <span v-else-if="!isPremiumUser" class="bg-gradient-to-r from-amber-400 to-orange-500 text-white text-[9px] md:text-xs font-black uppercase tracking-widest px-2 py-1 md:px-3 rounded shadow-md">⭐ Premium</span>
+            <div class="absolute top-3 left-3 2xl:top-6 2xl:left-6 z-20">
+              <span v-if="index === 0" class="bg-emerald-500 text-white text-[9px] md:text-xs 2xl:text-base font-black uppercase tracking-widest px-2 py-1 md:px-3 2xl:px-4 2xl:py-2 rounded shadow-md">🔓 Free</span>
+              <span v-else-if="!isPremiumUser" class="bg-gradient-to-r from-amber-400 to-orange-500 text-white text-[9px] md:text-xs 2xl:text-base font-black uppercase tracking-widest px-2 py-1 md:px-3 2xl:px-4 2xl:py-2 rounded shadow-md">⭐ Premium</span>
             </div>
-            <div class="w-16 h-16 bg-white/20 backdrop-blur-md rounded-full flex items-center justify-center z-20 transition-transform border border-white/30" :class="(index === 0 || isPremiumUser) ? 'cursor-pointer group-hover:scale-110' : ''">
-              <span class="text-2xl ml-1">▶️</span>
+            <div class="w-16 h-16 2xl:w-24 2xl:h-24 bg-white/20 backdrop-blur-md rounded-full flex items-center justify-center z-20 transition-transform border border-white/30" :class="(index === 0 || isPremiumUser) ? 'cursor-pointer group-hover:scale-110' : ''">
+              <span class="text-2xl 2xl:text-4xl ml-1 2xl:ml-2">▶️</span>
             </div>
-            <span class="absolute bottom-4 right-4 text-white font-mono text-xs md:text-sm z-20 bg-black/50 px-2 py-1 rounded-md">14:2{{ i }}</span>
+            <span class="absolute bottom-4 right-4 2xl:bottom-6 2xl:right-6 text-white font-mono text-xs md:text-sm 2xl:text-xl z-20 bg-black/50 px-2 py-1 2xl:px-4 2xl:py-2 rounded-md">14:2{{ i }}</span>
           </div>
-          <div class="p-5 md:p-6">
-            <span class="text-[10px] md:text-xs font-black text-blue-500 uppercase tracking-widest mb-1 md:mb-2 block">Module 0{{ i }}</span>
-            <h3 class="text-lg md:text-xl font-black mb-1 md:mb-2" :class="(index !== 0 && !isPremiumUser) ? 'text-slate-500' : 'text-slate-900'">Deep Dive: Core Services</h3>
-            <p class="text-sm md:text-base text-slate-500 font-medium">Learn how to provision and connect to foundational architecture.</p>
+          <div class="p-5 md:p-6 2xl:p-8">
+            <span class="text-[10px] md:text-xs 2xl:text-base font-black text-blue-500 uppercase tracking-widest mb-1 md:mb-2 2xl:mb-3 block">Module 0{{ i }}</span>
+            <h3 class="text-lg md:text-xl 2xl:text-3xl font-black mb-1 md:mb-2 2xl:mb-3" :class="(index !== 0 && !isPremiumUser) ? 'text-slate-500' : 'text-slate-900'">Deep Dive: Core Services</h3>
+            <p class="text-sm md:text-base 2xl:text-xl text-slate-500 font-medium">Learn how to provision and connect to foundational architecture.</p>
           </div>
         </div>
       </div>
 
-      <div v-else-if="activeForgeTab === 'cheatsheets'" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6 max-w-5xl mx-auto animate-fade-in">
+      <div v-else-if="activeForgeTab === 'cheatsheets'" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6 2xl:gap-12 max-w-5xl 2xl:max-w-7xl mx-auto animate-fade-in">
         <div v-for="(sheet, index) in ['Architecture Quick Start', 'Parameter Guide', 'Service Comparisons']" :key="sheet"
-             class="bg-white p-6 md:p-8 rounded-[2rem] border border-slate-200 transition-all text-center relative overflow-hidden"
+             class="bg-white p-6 md:p-8 2xl:p-12 rounded-[2rem] 2xl:rounded-[3rem] border border-slate-200 transition-all text-center relative overflow-hidden"
              :class="(index !== 0 && !isPremiumUser) ? 'opacity-80 cursor-not-allowed bg-slate-50' : 'shadow-sm hover:shadow-xl hover:-translate-y-1 hover:border-emerald-400 group cursor-pointer'">
 
-          <div v-if="index !== 0 && !isPremiumUser" class="absolute inset-0 z-30 bg-slate-900/5 backdrop-blur-[2px] flex flex-col items-center justify-center rounded-[2rem]">
-            <div class="bg-white/95 px-6 py-4 md:px-8 md:py-5 rounded-2xl shadow-xl border border-slate-200 flex flex-col items-center gap-2 transform transition-transform hover:scale-105">
-              <span class="text-3xl md:text-4xl">🔒</span>
-              <span class="text-xs md:text-sm font-black text-slate-800 uppercase tracking-widest">Premium Archive</span>
+          <div v-if="index !== 0 && !isPremiumUser" class="absolute inset-0 z-30 bg-slate-900/5 backdrop-blur-[2px] flex flex-col items-center justify-center rounded-[2rem] 2xl:rounded-[3rem]">
+            <div class="bg-white/95 px-6 py-4 md:px-8 md:py-5 2xl:px-12 2xl:py-8 rounded-2xl shadow-xl border border-slate-200 flex flex-col items-center gap-2 2xl:gap-4 transform transition-transform hover:scale-105">
+              <span class="text-3xl md:text-4xl 2xl:text-6xl">🔒</span>
+              <span class="text-xs md:text-sm 2xl:text-lg font-black text-slate-800 uppercase tracking-widest">Premium Archive</span>
             </div>
           </div>
 
-          <div class="absolute top-4 left-4 z-20">
-            <span v-if="index === 0" class="text-[9px] md:text-xs font-black text-emerald-500 bg-emerald-50 px-2 py-1 md:px-3 rounded-md border border-emerald-200 uppercase tracking-widest">🔓 Free</span>
+          <div class="absolute top-4 left-4 2xl:top-8 2xl:left-8 z-20">
+            <span v-if="index === 0" class="text-[9px] md:text-xs 2xl:text-sm font-black text-emerald-500 bg-emerald-50 px-2 py-1 md:px-3 2xl:px-4 2xl:py-2 rounded-md border border-emerald-200 uppercase tracking-widest">🔓 Free</span>
           </div>
 
-          <div class="absolute -top-10 -right-10 w-32 h-32 md:w-40 md:h-40 bg-emerald-50 rounded-full blur-2xl transition-colors" :class="(index === 0 || isPremiumUser) ? 'group-hover:bg-emerald-100' : ''"></div>
-          <div class="w-16 h-16 md:w-20 md:h-20 mx-auto bg-emerald-50 text-emerald-500 rounded-2xl flex items-center justify-center text-3xl md:text-4xl mb-4 md:mb-6 relative z-10 border border-emerald-100 transition-transform" :class="(index === 0 || isPremiumUser) ? 'group-hover:scale-110' : ''">
+          <div class="absolute -top-10 -right-10 w-32 h-32 md:w-40 md:h-40 2xl:w-64 2xl:h-64 bg-emerald-50 rounded-full blur-2xl transition-colors" :class="(index === 0 || isPremiumUser) ? 'group-hover:bg-emerald-100' : ''"></div>
+          <div class="w-16 h-16 md:w-20 md:h-20 2xl:w-32 2xl:h-32 mx-auto bg-emerald-50 text-emerald-500 rounded-2xl 2xl:rounded-[2rem] flex items-center justify-center text-3xl md:text-4xl 2xl:text-6xl mb-4 md:mb-6 2xl:mb-8 relative z-10 border border-emerald-100 transition-transform" :class="(index === 0 || isPremiumUser) ? 'group-hover:scale-110' : ''">
             📄
           </div>
-          <h3 class="text-md md:text-lg font-black relative z-10" :class="(index !== 0 && !isPremiumUser) ? 'text-slate-500' : 'text-slate-900'">{{ sheet }}</h3>
-          <p v-if="index === 0 || isPremiumUser" class="text-xs md:text-sm text-slate-400 mt-2 md:mt-3 font-bold uppercase tracking-widest relative z-10 hover:text-emerald-500">Download PDF ↓</p>
+          <h3 class="text-md md:text-lg 2xl:text-2xl font-black relative z-10" :class="(index !== 0 && !isPremiumUser) ? 'text-slate-500' : 'text-slate-900'">{{ sheet }}</h3>
+          <p v-if="index === 0 || isPremiumUser" class="text-xs md:text-sm 2xl:text-lg text-slate-400 mt-2 md:mt-3 2xl:mt-4 font-bold uppercase tracking-widest relative z-10 hover:text-emerald-500">Download PDF ↓</p>
         </div>
       </div>
 
     </div>
 
-    <div v-else-if="currentView === 'admin'" class="max-w-7xl mx-auto px-4 py-8 animate-fade-in admin-dashboard">
+    <div v-else-if="currentView === 'lessonViewer' && activeDomain" class="max-w-7xl xl:max-w-[90rem] 2xl:max-w-[110rem] mx-auto px-4 md:px-8 py-6 animate-fade-in-up">
 
-      <button @click="currentView = 'landing'" class="mb-6 bg-slate-100 hover:bg-slate-200 text-slate-600 px-5 py-2.5 rounded-xl font-bold text-xs uppercase tracking-widest transition-colors border border-slate-200 inline-flex items-center shadow-sm">
-        ← Return to Admin Hub
-      </button>
-
-      <div class="mb-8 bg-slate-800 p-6 md:p-8 rounded-2xl border border-slate-700 relative overflow-hidden shadow-xl text-left">
-        <h3 class="text-xl font-black text-white mb-2 flex items-center gap-3">
-          <span class="p-2 bg-indigo-500/20 text-indigo-400 rounded-lg">🗄️</span>
-          Mass Databank Injection
-        </h3>
-        <p class="text-sm text-slate-400 mb-6 max-w-2xl">Upload official AWS question sets (.csv) to update the Knowledge Forge. Ensure columns match the master schema.</p>
-
-        <div class="flex flex-col md:flex-row gap-4 items-start md:items-center">
-          <label class="block flex-1 w-full relative cursor-pointer group">
-            <input
-                type="file"
-                accept=".csv"
-                @change="handleFileSelect"
-                class="block w-full text-sm text-slate-400
-            file:mr-4 file:py-3 file:px-6
-            file:rounded-xl file:border-0
-            file:text-sm file:font-black file:uppercase file:tracking-widest
-            file:bg-indigo-500/10 file:text-indigo-400
-            group-hover:file:bg-indigo-500/20 file:transition-colors file:cursor-pointer
-            bg-slate-900 border border-slate-700 rounded-xl cursor-pointer"
-            />
-          </label>
-
-          <button
-              @click="uploadCsv"
-              :disabled="!selectedCsvFile"
-              class="px-8 py-3 rounded-xl font-black text-sm uppercase tracking-widest text-white transition-all w-full md:w-auto flex-shrink-0"
-              :class="selectedCsvFile ? 'bg-indigo-600 hover:bg-indigo-500 shadow-lg shadow-indigo-500/30 hover:-translate-y-0.5' : 'bg-slate-700 cursor-not-allowed opacity-50'"
-          >
-            Inject Data
-          </button>
-        </div>
-
-        <div v-if="uploadStatus" class="mt-6 pt-4 border-t border-slate-700">
-          <p class="text-sm font-bold flex items-center gap-2" :class="uploadStatus.includes('✅') ? 'text-emerald-400' : (uploadStatus.includes('❌') ? 'text-rose-400' : 'text-amber-400 animate-pulse')">
-            {{ uploadStatus }}
-          </p>
-        </div>
-      </div>
-      <div class="admin-header">
-        <h2>SYSTEM MAINFRAME: QUESTION DATABASE</h2>
-        <button @click="openAdminModal(null)" class="btn-create">+ INJECT NEW QUESTION</button>
-      </div>
-
-      <table class="admin-table">
-        <thead>
-        <tr>
-          <th>ID</th>
-          <th>Cert</th>
-          <th>Category</th>
-          <th>Question Text</th>
-          <th>Actions</th>
-        </tr>
-        </thead>
-        <tbody>
-        <tr v-for="q in allAdminQuestions" :key="q.id">
-          <td>{{ q.id }}</td>
-          <td><span class="badge">{{ q.examCode }}</span></td>
-          <td>{{ q.category }}</td>
-          <td class="truncate">{{ q.text }}</td>
-          <td class="action-buttons">
-            <button @click="openAdminModal(q)" class="btn-edit">EDIT</button>
-            <button @click="deleteAdminQuestion(q.id)" class="btn-delete">VAPORIZE</button>
-          </td>
-        </tr>
-        </tbody>
-      </table>
-
-      <div v-if="showAdminModal" class="admin-modal-overlay">
-        <div class="admin-modal-content max-h-[90vh] overflow-y-auto">
-          <h3>{{ isAdminEditing ? 'EDIT DATA NODE' : 'INJECT NEW DATA NODE' }}</h3>
-
-          <label>Certification Code</label>
-          <input v-model="adminForm.examCode" placeholder="e.g. SCS-C02" />
-
-          <label>Category</label>
-          <input v-model="adminForm.category" placeholder="e.g. Security" />
-
-          <label>Question Text</label>
-          <textarea v-model="adminForm.text" rows="3"></textarea>
-
-          <div class="flex justify-between items-end mb-1 mt-2">
-            <label class="!mb-0">Response Options (Check box if correct)</label>
-            <button
-                v-if="adminForm.options && adminForm.options.length < 6"
-                @click.prevent="addOption"
-                class="text-[10px] bg-indigo-100 text-indigo-700 px-2 py-1 rounded font-black uppercase tracking-widest hover:bg-indigo-200 transition-colors">
-              + Add Option
-            </button>
-          </div>
-
-          <div class="space-y-2 mb-4 bg-slate-50 p-4 rounded-xl border border-slate-200 shadow-inner">
-            <div v-for="(opt, index) in adminForm.options" :key="index" class="flex items-center gap-3">
-
-              <input
-                  type="checkbox"
-                  v-model="opt.isCorrect"
-                  class="w-5 h-5 text-emerald-500 rounded border-slate-300 focus:ring-emerald-500 cursor-pointer shadow-sm"
-                  :title="opt.isCorrect ? 'Marked as Correct' : 'Marked as Incorrect'"
-              />
-
-              <input
-                  v-model="opt.text"
-                  :placeholder="'Option ' + (index + 1) + ' text...'"
-                  class="flex-grow !mb-0 !mt-0"
-                  :class="opt.isCorrect ? 'border-emerald-500 bg-emerald-50/50' : 'border-slate-300 bg-white'"
-              />
-
-              <button
-                  v-if="adminForm.options && adminForm.options.length > 2"
-                  @click.prevent="removeOption(index)"
-                  class="w-8 h-8 flex items-center justify-center bg-red-100 text-red-600 rounded-lg font-black hover:bg-red-200 transition-colors flex-shrink-0"
-                  title="Remove Option">
-                ×
-              </button>
-            </div>
-          </div>
-          <label>Explanation</label>
-          <textarea v-model="adminForm.explanation" rows="2"></textarea>
-
-          <div class="modal-actions mt-4">
-            <button @click="showAdminModal = false" class="btn-cancel">CANCEL</button>
-            <button @click="saveAdminQuestion" class="btn-save">OVERWRITE MAINFRAME</button>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <div v-else-if="currentView === 'lessonViewer' && activeDomain" class="max-w-7xl mx-auto px-4 md:px-8 py-6 animate-fade-in-up">
-
-      <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8 border-b border-slate-200 pb-6">
+      <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8 2xl:mb-12 border-b border-slate-200 pb-6 2xl:pb-10">
         <div>
-          <button @click="currentView = 'library'" class="mb-3 text-[10px] font-black text-slate-400 hover:text-indigo-600 transition-colors uppercase tracking-widest flex items-center gap-1.5 group">
+          <button @click="currentView = 'library'" class="mb-3 2xl:mb-5 text-[10px] 2xl:text-sm font-black text-slate-400 hover:text-indigo-600 transition-colors uppercase tracking-widest flex items-center gap-1.5 2xl:gap-3 group">
             <span class="group-hover:-translate-x-1 transition-transform">←</span> Return to Databanks
           </button>
-          <h2 class="text-3xl font-black text-slate-900 tracking-tight flex items-center gap-3">
+          <h2 class="text-3xl 2xl:text-6xl font-black text-slate-900 tracking-tight flex items-center gap-3 2xl:gap-6">
             <span class="text-indigo-500">{{ activeDomain.icon }}</span>
             {{ activeDomain.name }}
           </h2>
         </div>
       </div>
 
-      <div class="flex flex-col lg:flex-row gap-8">
+      <div class="flex flex-col lg:flex-row gap-8 2xl:gap-16">
 
-        <div class="lg:w-2/3 flex flex-col gap-6">
+        <div class="lg:w-2/3 flex flex-col gap-6 2xl:gap-10">
 
-          <div class="aspect-video bg-slate-900 rounded-3xl shadow-2xl relative overflow-hidden group border border-slate-800">
+          <div class="aspect-video bg-slate-900 rounded-3xl 2xl:rounded-[3rem] shadow-2xl relative overflow-hidden group border border-slate-800">
 
             <div v-if="!isPlaying" class="absolute inset-0 flex flex-col items-center justify-center z-20">
-              <button @click="isPlaying = true" class="w-20 h-20 bg-indigo-600/90 hover:bg-indigo-500 backdrop-blur-md rounded-full flex items-center justify-center transition-all hover:scale-110 shadow-[0_0_30px_rgba(79,70,229,0.5)] cursor-pointer">
-                <span class="text-white text-3xl ml-2">▶</span>
+              <button @click="isPlaying = true" class="w-20 h-20 2xl:w-32 2xl:h-32 bg-indigo-600/90 hover:bg-indigo-500 backdrop-blur-md rounded-full flex items-center justify-center transition-all hover:scale-110 shadow-[0_0_30px_rgba(79,70,229,0.5)] cursor-pointer">
+                <span class="text-white text-3xl 2xl:text-6xl ml-2 2xl:ml-4">▶</span>
               </button>
-              <p class="text-slate-300 font-bold tracking-widest uppercase text-[10px] mt-6 bg-slate-900/50 px-4 py-1.5 rounded-full backdrop-blur-sm border border-slate-700">
+              <p class="text-slate-300 font-bold tracking-widest uppercase text-[10px] 2xl:text-sm mt-6 2xl:mt-10 bg-slate-900/50 px-4 py-1.5 2xl:px-6 2xl:py-2.5 rounded-full backdrop-blur-sm border border-slate-700">
                 {{ activeModule?.type === 'video' ? 'Initiate Video Protocol' : 'Access Databank Document' }}
               </p>
             </div>
@@ -845,23 +938,23 @@
 
               <div v-else class="w-full h-full flex flex-col bg-slate-100 overflow-hidden relative">
 
-                <div class="bg-white px-6 py-4 border-b border-slate-200 flex justify-between items-center z-10 shadow-sm shrink-0">
-                  <h3 class="font-black text-slate-800 text-lg flex items-center gap-2">
+                <div class="bg-white px-6 py-4 2xl:px-10 2xl:py-6 border-b border-slate-200 flex justify-between items-center z-10 shadow-sm shrink-0">
+                  <h3 class="font-black text-slate-800 text-lg 2xl:text-3xl flex items-center gap-2 2xl:gap-4">
                     📄 {{ activeModule?.title || 'Classified Document' }}
                   </h3>
-                  <div class="flex gap-3">
-                    <button @click="downloadDocumentPDF" class="flex items-center gap-2 bg-slate-800 hover:bg-slate-900 text-white px-4 py-2 rounded-lg font-bold text-xs uppercase tracking-widest transition-all hover:-translate-y-0.5 shadow-md">
+                  <div class="flex gap-3 2xl:gap-5">
+                    <button @click="downloadDocumentPDF" class="flex items-center gap-2 2xl:gap-3 bg-slate-800 hover:bg-slate-900 text-white px-4 py-2 2xl:px-6 2xl:py-3 rounded-lg 2xl:rounded-xl font-bold text-xs 2xl:text-lg uppercase tracking-widest transition-all hover:-translate-y-0.5 shadow-md">
                       ⬇️ Save PDF
                     </button>
-                    <button @click="completeActiveModule" class="flex items-center gap-2 bg-indigo-600 hover:bg-indigo-500 text-white px-4 py-2 rounded-lg font-bold text-xs uppercase tracking-widest transition-all hover:-translate-y-0.5 shadow-md shadow-indigo-500/30">
+                    <button @click="completeActiveModule" class="flex items-center gap-2 2xl:gap-3 bg-indigo-600 hover:bg-indigo-500 text-white px-4 py-2 2xl:px-6 2xl:py-3 rounded-lg 2xl:rounded-xl font-bold text-xs 2xl:text-lg uppercase tracking-widest transition-all hover:-translate-y-0.5 shadow-md shadow-indigo-500/30">
                       ✓ Claim XP
                     </button>
                   </div>
                 </div>
 
-                <div class="p-4 md:p-8 overflow-y-auto flex-grow flex justify-center bg-slate-100/50">
-                  <div class="bg-white w-full max-w-3xl p-8 md:p-12 rounded-xl shadow-md border border-slate-200 min-h-full">
-                    <div class="prose prose-slate max-w-none font-serif text-slate-700 whitespace-pre-wrap leading-relaxed">
+                <div class="p-4 md:p-8 2xl:p-12 overflow-y-auto flex-grow flex justify-center bg-slate-100/50">
+                  <div class="bg-white w-full max-w-3xl 2xl:max-w-5xl p-8 md:p-12 2xl:p-16 rounded-xl 2xl:rounded-2xl shadow-md border border-slate-200 min-h-full">
+                    <div class="prose prose-slate 2xl:prose-xl max-w-none font-serif text-slate-700 whitespace-pre-wrap leading-relaxed">
                       {{ activeModule?.content || 'Awaiting transmission... No document content found.' }}
                     </div>
                   </div>
@@ -874,59 +967,59 @@
             <div v-if="!isPlaying" class="absolute inset-0 bg-gradient-to-br from-indigo-900/40 via-slate-900 to-purple-900/40"></div>
           </div>
 
-          <div v-if="activeModule" class="bg-white p-6 rounded-3xl border border-slate-200 shadow-sm">
-        <span class="text-[10px] font-black text-indigo-600 tracking-widest uppercase bg-indigo-50 px-3 py-1 rounded-full mb-3 inline-block">
-          Current Objective
-        </span>
-            <h3 class="text-2xl font-black text-slate-900 mb-2">{{ activeModule.title }}</h3>
-            <p class="text-sm text-slate-500 font-medium leading-relaxed">
+          <div v-if="activeModule" class="bg-white p-6 2xl:p-10 rounded-3xl 2xl:rounded-[2.5rem] border border-slate-200 shadow-sm">
+      <span class="text-[10px] 2xl:text-sm font-black text-indigo-600 tracking-widest uppercase bg-indigo-50 px-3 py-1 2xl:px-5 2xl:py-2 rounded-full mb-3 2xl:mb-5 inline-block">
+        Current Objective
+      </span>
+            <h3 class="text-2xl 2xl:text-4xl font-black text-slate-900 mb-2 2xl:mb-4">{{ activeModule.title }}</h3>
+            <p class="text-sm 2xl:text-xl text-slate-500 font-medium leading-relaxed">
               Focus on understanding the core principles presented in this module. Take notes on key terminology as it will heavily influence your Sudden Death survival rate.
             </p>
           </div>
         </div>
 
         <div class="lg:w-1/3">
-          <div class="bg-white rounded-3xl border border-slate-200 shadow-sm sticky top-8 overflow-hidden flex flex-col max-h-[800px]">
+          <div class="bg-white rounded-3xl 2xl:rounded-[2.5rem] border border-slate-200 shadow-sm sticky top-8 overflow-hidden flex flex-col max-h-[800px] 2xl:max-h-[1200px]">
 
-            <div class="p-6 border-b border-slate-100 bg-slate-50/50">
-              <h4 class="text-sm font-black text-slate-900 uppercase tracking-widest">Training Modules</h4>
-              <p class="text-[11px] text-slate-500 mt-1 font-medium">{{ activeDomain?.modules?.length || 0 }} protocols available</p>
+            <div class="p-6 2xl:p-10 border-b border-slate-100 bg-slate-50/50">
+              <h4 class="text-sm 2xl:text-2xl font-black text-slate-900 uppercase tracking-widest">Training Modules</h4>
+              <p class="text-[11px] 2xl:text-base text-slate-500 mt-1 2xl:mt-2 font-medium">{{ activeDomain?.modules?.length || 0 }} protocols available</p>
             </div>
 
-            <div class="overflow-y-auto p-3 flex flex-col gap-2">
+            <div class="overflow-y-auto p-3 2xl:p-6 flex flex-col gap-2 2xl:gap-4">
               <button
                   v-for="(module, index) in activeDomain?.modules"
                   :key="module.id"
                   @click="activeModule = module"
-                  class="w-full flex items-start gap-4 p-4 rounded-2xl transition-all text-left group"
+                  class="w-full flex items-start gap-4 2xl:gap-6 p-4 2xl:p-6 rounded-2xl 2xl:rounded-3xl transition-all text-left group"
                   :class="activeModule?.id === module.id ? 'bg-indigo-50 border border-indigo-100 shadow-sm' : 'hover:bg-slate-50 border border-transparent hover:border-slate-100'"
               >
-                <div class="mt-0.5 shrink-0">
-                  <span v-if="activeModule?.id === module.id" class="flex h-6 w-6 items-center justify-center rounded-full bg-indigo-600 text-white shadow-md shadow-indigo-500/30 text-[10px]">▶</span>
-                  <span v-else-if="module.type === 'document'" class="flex h-6 w-6 items-center justify-center rounded-full bg-slate-100 text-slate-400 group-hover:text-slate-600 text-[10px]">📄</span>
-                  <span v-else class="flex h-6 w-6 items-center justify-center rounded-full bg-slate-100 text-slate-400 group-hover:text-slate-600 text-[10px]">📺</span>
+                <div class="mt-0.5 2xl:mt-1 shrink-0">
+                  <span v-if="activeModule?.id === module.id" class="flex h-6 w-6 2xl:w-10 2xl:h-10 items-center justify-center rounded-full bg-indigo-600 text-white shadow-md shadow-indigo-500/30 text-[10px] 2xl:text-base">▶</span>
+                  <span v-else-if="module.type === 'document'" class="flex h-6 w-6 2xl:w-10 2xl:h-10 items-center justify-center rounded-full bg-slate-100 text-slate-400 group-hover:text-slate-600 text-[10px] 2xl:text-base">📄</span>
+                  <span v-else class="flex h-6 w-6 2xl:w-10 2xl:h-10 items-center justify-center rounded-full bg-slate-100 text-slate-400 group-hover:text-slate-600 text-[10px] 2xl:text-base">📺</span>
                 </div>
 
                 <div class="flex-grow">
-                  <h5 class="text-sm font-bold leading-tight mb-1 flex items-center gap-2 flex-wrap" :class="activeModule?.id === module.id ? 'text-indigo-900' : 'text-slate-700 group-hover:text-slate-900'">
+                  <h5 class="text-sm 2xl:text-xl font-bold leading-tight mb-1 2xl:mb-2 flex items-center gap-2 flex-wrap" :class="activeModule?.id === module.id ? 'text-indigo-900' : 'text-slate-700 group-hover:text-slate-900'">
                     <span>{{ index + 1 }}. {{ module.title }}</span>
 
                     <span
-                        class="text-[9px] uppercase tracking-wider font-black px-1.5 py-0.5 rounded border"
+                        class="text-[9px] 2xl:text-xs uppercase tracking-wider font-black px-1.5 py-0.5 2xl:px-2 2xl:py-1 rounded border"
                         :class="module.type === 'video' ? 'bg-indigo-100 text-indigo-600 border-indigo-200' : 'bg-emerald-100 text-emerald-600 border-emerald-200'"
                     >
-          {{ module.type === 'video' ? '▶ Video' : '📄 Doc' }}
-        </span>
+        {{ module.type === 'video' ? '▶ Video' : '📄 Doc' }}
+      </span>
                   </h5>
 
-                  <span class="text-[10px] font-bold tracking-wider uppercase text-slate-400" :class="activeModule?.id === module.id ? 'text-indigo-400' : ''">
-        {{ module.duration }}
-      </span>
+                  <span class="text-[10px] 2xl:text-sm font-bold tracking-wider uppercase text-slate-400" :class="activeModule?.id === module.id ? 'text-indigo-400' : ''">
+      {{ module.duration }}
+    </span>
                 </div>
               </button>
 
-              <div v-if="!activeDomain?.modules || activeDomain.modules.length === 0" class="text-center p-8 text-slate-400">
-                <p class="text-xs font-bold uppercase tracking-widest">No modules loaded</p>
+              <div v-if="!activeDomain?.modules || activeDomain.modules.length === 0" class="text-center p-8 2xl:p-12 text-slate-400">
+                <p class="text-xs 2xl:text-lg font-bold uppercase tracking-widest">No modules loaded</p>
               </div>
 
             </div>
@@ -934,65 +1027,234 @@
           </div>
         </div>
 
+      </div>
+    </div>
+
+    <div v-else-if="currentView === 'admin'" class="max-w-7xl 2xl:max-w-[100rem] mx-auto px-4 py-8 animate-fade-in admin-dashboard">
+
+      <button @click="currentView = 'landing'" class="mb-6 2xl:mb-10 bg-slate-100 hover:bg-slate-200 text-slate-600 px-5 py-2.5 2xl:px-8 2xl:py-4 rounded-xl 2xl:rounded-2xl font-bold text-xs 2xl:text-base uppercase tracking-widest transition-colors border border-slate-200 inline-flex items-center shadow-sm">
+        ← Return to Admin Hub
+      </button>
+
+      <div class="mb-8 2xl:mb-12 bg-slate-800 p-6 md:p-8 2xl:p-12 rounded-2xl 2xl:rounded-[2rem] border border-slate-700 relative overflow-hidden shadow-xl text-left">
+        <h3 class="text-xl 2xl:text-3xl font-black text-white mb-2 2xl:mb-4 flex items-center gap-3">
+          <span class="p-2 2xl:p-3 bg-indigo-500/20 text-indigo-400 rounded-lg 2xl:rounded-xl">🗄️</span>
+          Mass Databank Injection
+        </h3>
+        <p class="text-sm 2xl:text-xl text-slate-400 mb-6 2xl:mb-10 max-w-2xl 2xl:max-w-4xl">Upload official AWS question sets (.csv) to update the Knowledge Forge. Ensure columns match the master schema.</p>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-8 2xl:gap-12">
+
+          <div class="bg-slate-900/50 p-4 2xl:p-8 rounded-xl 2xl:rounded-2xl border border-slate-700">
+            <h4 class="text-xs 2xl:text-base font-black text-indigo-400 uppercase tracking-widest mb-3 2xl:mb-5">Questions CSV (9 Columns)</h4>
+            <div class="flex flex-col gap-3 2xl:gap-5">
+              <input type="file" accept=".csv" @change="handleFileSelect" class="text-xs 2xl:text-base text-slate-400 file:mr-4 file:py-2 2xl:file:py-3 file:px-4 2xl:file:px-6 file:rounded-lg 2xl:file:rounded-xl file:border-0 file:text-xs 2xl:file:text-sm file:font-black file:uppercase file:bg-indigo-500/20 file:text-indigo-400 bg-slate-950 border border-slate-800 rounded-lg 2xl:rounded-xl cursor-pointer w-full" />
+              <button @click="uploadCsv" :disabled="!selectedCsvFile" class="py-2 2xl:py-4 rounded-lg 2xl:rounded-xl font-black text-xs 2xl:text-lg uppercase tracking-widest transition-all w-full" :class="selectedCsvFile ? 'bg-indigo-600 text-white hover:bg-indigo-500 shadow-lg shadow-indigo-500/30' : 'bg-slate-800 text-slate-500 cursor-not-allowed'">
+                Inject Questions
+              </button>
+            </div>
+            <p v-if="uploadStatus" class="text-[10px] 2xl:text-sm font-bold mt-2 2xl:mt-4" :class="uploadStatus.includes('✅') ? 'text-emerald-400' : 'text-amber-400'">{{ uploadStatus }}</p>
+          </div>
+
+          <div class="bg-slate-900/50 p-4 2xl:p-8 rounded-xl 2xl:rounded-2xl border border-slate-700">
+            <h4 class="text-xs 2xl:text-base font-black text-pink-400 uppercase tracking-widest mb-3 2xl:mb-5">Flashcards CSV (4 Columns)</h4>
+            <div class="flex flex-col gap-3 2xl:gap-5">
+              <input type="file" accept=".csv" @change="handleFlashcardSelect" class="text-xs 2xl:text-base text-slate-400 file:mr-4 file:py-2 2xl:file:py-3 file:px-4 2xl:file:px-6 file:rounded-lg 2xl:file:rounded-xl file:border-0 file:text-xs 2xl:file:text-sm file:font-black file:uppercase file:bg-pink-500/20 file:text-pink-400 bg-slate-950 border border-slate-800 rounded-lg 2xl:rounded-xl cursor-pointer w-full" />
+              <button @click="uploadFlashcardCsv" :disabled="!selectedFlashcardCsv" class="py-2 2xl:py-4 rounded-lg 2xl:rounded-xl font-black text-xs 2xl:text-lg uppercase tracking-widest transition-all w-full" :class="selectedFlashcardCsv ? 'bg-pink-600 text-white hover:bg-pink-500 shadow-lg shadow-pink-500/30' : 'bg-slate-800 text-slate-500 cursor-not-allowed'">
+                Inject Flashcards
+              </button>
+            </div>
+            <p v-if="flashcardUploadStatus" class="text-[10px] 2xl:text-sm font-bold mt-2 2xl:mt-4" :class="flashcardUploadStatus.includes('✅') ? 'text-emerald-400' : 'text-amber-400'">{{ flashcardUploadStatus }}</p>
+          </div>
+
+        </div>
+
+        <div v-if="uploadStatus" class="mt-6 2xl:mt-10 pt-4 2xl:pt-6 border-t border-slate-700">
+          <p class="text-sm 2xl:text-xl font-bold flex items-center gap-2" :class="uploadStatus.includes('✅') ? 'text-emerald-400' : (uploadStatus.includes('❌') ? 'text-rose-400' : 'text-amber-400 animate-pulse')">
+            {{ uploadStatus }}
+          </p>
+        </div>
+      </div>
+
+      <div class="admin-header 2xl:mb-8">
+        <h2 class="2xl:text-3xl">SYSTEM MAINFRAME: QUESTION DATABASE</h2>
+        <button @click="openAdminModal(null)" class="btn-create 2xl:text-lg 2xl:px-6 2xl:py-3">+ INJECT NEW QUESTION</button>
+      </div>
+
+      <table class="admin-table 2xl:text-lg">
+        <thead>
+        <tr>
+          <th class="2xl:p-4">ID</th>
+          <th class="2xl:p-4">Cert</th>
+          <th class="2xl:p-4">Category</th>
+          <th class="2xl:p-4">Question Text</th>
+          <th class="2xl:p-4">Actions</th>
+        </tr>
+        </thead>
+        <tbody>
+        <tr v-for="q in allAdminQuestions" :key="q.id">
+          <td class="2xl:p-4">{{ q.id }}</td>
+          <td class="2xl:p-4"><span class="badge 2xl:text-sm">{{ q.certCode }}</span></td>
+          <td class="2xl:p-4">{{ q.domain }}</td>
+          <td class="truncate 2xl:p-4">{{ q.questionText }}</td>
+          <td class="action-buttons 2xl:p-4">
+            <button @click="openAdminModal(q)" class="btn-edit 2xl:px-4 2xl:py-2">EDIT</button>
+            <button @click="deleteAdminQuestion(q.id)" class="btn-delete 2xl:px-4 2xl:py-2">VAPORIZE</button>
+          </td>
+        </tr>
+        </tbody>
+      </table>
+
+      <div class="admin-header mt-12 2xl:mt-24 2xl:mb-8">
+        <h2 class="2xl:text-3xl">SYSTEM MAINFRAME: FLASHCARD DATABASE</h2>
+      </div>
+
+      <table class="admin-table 2xl:text-lg">
+        <thead>
+        <tr>
+          <th class="2xl:p-4">ID</th>
+          <th class="2xl:p-4">Cert</th>
+          <th class="2xl:p-4">Category</th>
+          <th class="2xl:p-4">Term</th>
+          <th class="2xl:p-4">Definition</th>
+          <th class="2xl:p-4">Actions</th>
+        </tr>
+        </thead>
+        <tbody>
+        <tr v-for="f in allAdminFlashcards" :key="'f-'+f.id">
+          <td class="2xl:p-4">{{ f.id }}</td>
+          <td class="2xl:p-4"><span class="badge 2xl:text-sm">{{ f.examCode }}</span></td>
+          <td class="2xl:p-4">{{ f.category }}</td>
+          <td class="font-bold text-indigo-600 2xl:p-4">{{ f.term }}</td>
+          <td class="truncate 2xl:p-4" style="max-width: 400px;">{{ f.definition }}</td>
+          <td class="action-buttons 2xl:p-4">
+            <button @click="deleteAdminFlashcard(f.id)" class="btn-delete 2xl:px-4 2xl:py-2">VAPORIZE</button>
+          </td>
+        </tr>
+        <tr v-if="allAdminFlashcards.length === 0">
+          <td colspan="6" class="text-center text-slate-400 py-8 2xl:py-16 font-bold uppercase tracking-widest text-xs 2xl:text-base">
+            No flashcards in databank. Inject CSV to begin.
+          </td>
+        </tr>
+        </tbody>
+      </table>
+
+      <div v-if="showAdminModal" class="admin-modal-overlay">
+        <div class="admin-modal-content max-h-[90vh] overflow-y-auto 2xl:max-w-4xl 2xl:p-12">
+          <h3 class="2xl:text-3xl 2xl:mb-8">{{ isAdminEditing ? 'EDIT DATA NODE' : 'INJECT NEW DATA NODE' }}</h3>
+
+          <label class="2xl:text-xl">Certification Code</label>
+          <input v-model="adminForm.examCode" placeholder="e.g. SCS-C02" class="2xl:text-xl 2xl:p-4 2xl:mb-6" />
+
+          <label class="2xl:text-xl">Category</label>
+          <input v-model="adminForm.category" placeholder="e.g. Security" class="2xl:text-xl 2xl:p-4 2xl:mb-6" />
+
+          <label class="2xl:text-xl">Question Text</label>
+          <textarea v-model="adminForm.text" rows="3" class="2xl:text-xl 2xl:p-4 2xl:mb-6"></textarea>
+
+          <div class="flex justify-between items-end mb-1 mt-2 2xl:mb-4 2xl:mt-6">
+            <label class="!mb-0 2xl:text-xl">Response Options (Check box if correct)</label>
+            <button
+                v-if="adminForm.options && adminForm.options.length < 6"
+                @click.prevent="addOption"
+                class="text-[10px] 2xl:text-sm bg-indigo-100 text-indigo-700 px-2 py-1 2xl:px-4 2xl:py-2 rounded font-black uppercase tracking-widest hover:bg-indigo-200 transition-colors">
+              + Add Option
+            </button>
+          </div>
+
+          <div class="space-y-2 2xl:space-y-4 mb-4 2xl:mb-8 bg-slate-50 p-4 2xl:p-8 rounded-xl border border-slate-200 shadow-inner">
+            <div v-for="(opt, index) in adminForm.options" :key="index" class="flex items-center gap-3 2xl:gap-6">
+
+              <input
+                  type="checkbox"
+                  v-model="opt.isCorrect"
+                  class="w-5 h-5 2xl:w-8 2xl:h-8 text-emerald-500 rounded border-slate-300 focus:ring-emerald-500 cursor-pointer shadow-sm"
+                  :title="opt.isCorrect ? 'Marked as Correct' : 'Marked as Incorrect'"
+              />
+
+              <input
+                  v-model="opt.text"
+                  :placeholder="'Option ' + (index + 1) + ' text...'"
+                  class="flex-grow !mb-0 !mt-0 2xl:text-xl 2xl:p-3"
+                  :class="opt.isCorrect ? 'border-emerald-500 bg-emerald-50/50' : 'border-slate-300 bg-white'"
+              />
+
+              <button
+                  v-if="adminForm.options && adminForm.options.length > 2"
+                  @click.prevent="removeOption(index)"
+                  class="w-8 h-8 2xl:w-12 2xl:h-12 flex items-center justify-center bg-red-100 text-red-600 rounded-lg 2xl:rounded-xl font-black 2xl:text-2xl hover:bg-red-200 transition-colors flex-shrink-0"
+                  title="Remove Option">
+                ×
+              </button>
+            </div>
+          </div>
+          <label class="2xl:text-xl">Explanation</label>
+          <textarea v-model="adminForm.explanation" rows="2" class="2xl:text-xl 2xl:p-4 2xl:mb-8"></textarea>
+
+          <div class="modal-actions mt-4 2xl:mt-8 flex gap-4">
+            <button @click="showAdminModal = false" class="btn-cancel 2xl:text-xl 2xl:px-8 2xl:py-4">CANCEL</button>
+            <button @click="saveAdminQuestion" class="btn-save 2xl:text-xl 2xl:px-8 2xl:py-4">OVERWRITE MAINFRAME</button>
+          </div>
+        </div>
       </div>
     </div>
 
     <div v-if="showGuestLimitModal" class="fixed inset-0 bg-slate-900/80 backdrop-blur-md z-[400] flex items-center justify-center p-4">
-      <div class="bg-slate-900 border border-cyan-500/50 rounded-[2rem] w-full max-w-md overflow-hidden shadow-[0_0_30px_rgba(6,182,212,0.3)] relative p-10 text-center">
-        <div class="text-5xl mb-4 animate-pulse">🛑</div>
-        <h2 class="text-2xl font-black text-cyan-400 mb-4 font-mono uppercase tracking-widest">Free Compute Exhausted</h2>
-        <p class="text-slate-300 mb-8 font-mono text-sm leading-relaxed italic">"You've taken your first step into a larger world..."<br><br><span class="not-italic text-slate-400 text-xs">However, unauthorized access to the deeper Jedi Archives is restricted. Register your biometric signature to unlock the full simulator and save your history.</span></p>
-        <div class="flex flex-col gap-3">
-          <button @click="showGuestLimitModal = false; showAuthModal = true; isSignup = true" class="w-full bg-cyan-600 text-white py-4 rounded-xl font-black shadow-[0_0_15px_rgba(6,182,212,0.5)] hover:bg-cyan-500 hover:scale-[1.02] transition-all uppercase tracking-widest text-sm">Create Account</button>
-          <button @click="showGuestLimitModal = false; goBackToLanding()" class="w-full bg-slate-800 text-slate-400 py-4 rounded-xl font-bold border border-slate-700 hover:bg-slate-700 hover:text-white transition-all uppercase tracking-widest text-xs">Return to Base</button>
+      <div class="bg-slate-900 border border-cyan-500/50 rounded-[2rem] w-full max-w-md 2xl:max-w-2xl overflow-hidden shadow-[0_0_30px_rgba(6,182,212,0.3)] relative p-10 2xl:p-16 text-center">
+        <div class="text-5xl 2xl:text-7xl mb-4 2xl:mb-8 animate-pulse">🛑</div>
+        <h2 class="text-2xl 2xl:text-4xl font-black text-cyan-400 mb-4 2xl:mb-6 font-mono uppercase tracking-widest">Free Compute Exhausted</h2>
+        <p class="text-slate-300 mb-8 2xl:mb-12 font-mono text-sm 2xl:text-xl leading-relaxed italic">"You've taken your first step into a larger world..."<br><br><span class="not-italic text-slate-400 text-xs 2xl:text-base">However, unauthorized access to the deeper Jedi Archives is restricted. Register your biometric signature to unlock the full simulator and save your history.</span></p>
+        <div class="flex flex-col gap-3 2xl:gap-5">
+          <button @click="showGuestLimitModal = false; showAuthModal = true; isSignup = true" class="w-full bg-cyan-600 text-white py-4 2xl:py-6 rounded-xl 2xl:rounded-2xl font-black shadow-[0_0_15px_rgba(6,182,212,0.5)] hover:bg-cyan-500 hover:scale-[1.02] transition-all uppercase tracking-widest text-sm 2xl:text-xl">Create Account</button>
+          <button @click="showGuestLimitModal = false; goBackToLanding()" class="w-full bg-slate-800 text-slate-400 py-4 2xl:py-6 rounded-xl 2xl:rounded-2xl font-bold border border-slate-700 hover:bg-slate-700 hover:text-white transition-all uppercase tracking-widest text-xs 2xl:text-lg">Return to Base</button>
         </div>
       </div>
     </div>
 
-    <div v-if="showReviewModal" class="max-w-7xl mx-auto px-4 md:px-8 relative z-50">
-      <div class="bg-white rounded-[2rem] shadow-2xl overflow-hidden border border-slate-100">
-        <div class="bg-slate-50 p-10 border-b border-slate-200">
-          <h1 class="text-4xl md:text-5xl font-black text-slate-950 tracking-tight">Exam Review</h1>
-          <p class="text-slate-600 mt-1 uppercase text-xs font-bold tracking-widest">Analyzing Missed Concepts</p>
+    <div v-if="showReviewModal" class="max-w-7xl 2xl:max-w-[100rem] mx-auto px-4 md:px-8 relative z-50">
+      <div class="bg-white rounded-[2rem] 2xl:rounded-[3rem] shadow-2xl overflow-hidden border border-slate-100">
+        <div class="bg-slate-50 p-10 2xl:p-16 border-b border-slate-200">
+          <h1 class="text-4xl md:text-5xl 2xl:text-7xl font-black text-slate-950 tracking-tight">Exam Review</h1>
+          <p class="text-slate-600 mt-1 2xl:mt-3 uppercase text-xs 2xl:text-xl font-bold tracking-widest">Analyzing Missed Concepts</p>
         </div>
-        <div class="p-8 md:p-12 max-h-[75vh] overflow-y-auto space-y-12">
-          <div v-for="(q, index) in reviewQuestions" :key="q.id" class="relative pl-12">
-            <div class="flex justify-between items-center mb-6">
-              <div class="flex items-center gap-3">
-                <div class="absolute left-0 top-0 w-8 h-8 rounded-full bg-gradient-to-br from-blue-600 to-blue-500 text-white flex items-center justify-center font-black text-sm shadow-md">{{ index + 1 }}</div>
-                <h3 class="text-xl md:text-2xl font-extrabold text-slate-900 leading-tight">Question Details</h3>
+        <div class="p-8 md:p-12 2xl:p-20 max-h-[75vh] 2xl:max-h-[80vh] overflow-y-auto space-y-12 2xl:space-y-20 custom-scrollbar">
+          <div v-for="(q, index) in reviewQuestions" :key="q.id" class="relative pl-12 2xl:pl-20">
+            <div class="flex justify-between items-center mb-6 2xl:mb-10">
+              <div class="flex items-center gap-3 2xl:gap-6">
+                <div class="absolute left-0 top-0 w-8 h-8 2xl:w-12 2xl:h-12 rounded-full bg-gradient-to-br from-blue-600 to-blue-500 text-white flex items-center justify-center font-black text-sm 2xl:text-xl shadow-md">{{ index + 1 }}</div>
+                <h3 class="text-xl md:text-2xl 2xl:text-4xl font-extrabold text-slate-900 leading-tight">Question Details</h3>
               </div>
-              <span :class="userResults[q.id] ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'" class="font-black uppercase text-xs tracking-wider px-3 py-1 rounded-full flex items-center gap-1.5">{{ userResults[q.id] ? '✓ Correct' : '✗ Incorrect' }}</span>
+              <span :class="userResults[q.id] ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'" class="font-black uppercase text-xs 2xl:text-lg tracking-wider px-3 py-1 2xl:px-5 2xl:py-2 rounded-full flex items-center gap-1.5 2xl:gap-3">{{ userResults[q.id] ? '✓ Correct' : '✗ Incorrect' }}</span>
             </div>
-            <p class="text-slate-800 text-lg leading-relaxed mb-8">{{ q.questionText }}</p>
-            <div class="bg-blue-50/50 p-6 md:p-8 rounded-3xl border border-blue-100 shadow-inner relative">
-              <svg class="absolute -top-4 -left-4 w-10 h-10 text-blue-200 opacity-60" fill="currentColor" viewBox="0 0 24 24"><path d="M13 14.725c0-5.141 3.892-10.519 10-11.725l.943 1.956c-3.18 1.018-4.943 3.903-4.943 6.451 0 2.067 1.341 3.067 2.499 3.067 1.366 0 2.501 1.258 2.501 2.91 0 2.228-2.028 4.616-5.123 4.616-3.745 0-5.877-2.926-5.877-7.275zm-12 0c0-5.141 3.892-10.519 10-11.725l.943 1.956c-3.18 1.018-4.943 3.903-4.943 6.451 0 2.067 1.341 3.067 2.499 3.067 1.366 0 2.501 1.258 2.501 2.91 0 2.228-2.028 4.616-5.123 4.616-3.745 0-5.877-2.926-5.877-7.275z"/></svg>
-              <p class="text-blue-600 text-[11px] font-black uppercase tracking-widest mb-1.5">Detailed Explanation</p>
-              <p class="text-sm md:text-base italic leading-relaxed text-blue-900/90">{{ q.explanation }}</p>
+            <p class="text-slate-800 text-lg 2xl:text-3xl leading-relaxed mb-8 2xl:mb-12">{{ q.questionText }}</p>
+            <div class="bg-blue-50/50 p-6 md:p-8 2xl:p-12 rounded-3xl 2xl:rounded-[2.5rem] border border-blue-100 shadow-inner relative">
+              <svg class="absolute -top-4 -left-4 2xl:-top-6 2xl:-left-6 w-10 h-10 2xl:w-16 2xl:h-16 text-blue-200 opacity-60" fill="currentColor" viewBox="0 0 24 24"><path d="M13 14.725c0-5.141 3.892-10.519 10-11.725l.943 1.956c-3.18 1.018-4.943 3.903-4.943 6.451 0 2.067 1.341 3.067 2.499 3.067 1.366 0 2.501 1.258 2.501 2.91 0 2.228-2.028 4.616-5.123 4.616-3.745 0-5.877-2.926-5.877-7.275zm-12 0c0-5.141 3.892-10.519 10-11.725l.943 1.956c-3.18 1.018-4.943 3.903-4.943 6.451 0 2.067 1.341 3.067 2.499 3.067 1.366 0 2.501 1.258 2.501 2.91 0 2.228-2.028 4.616-5.123 4.616-3.745 0-5.877-2.926-5.877-7.275z"/></svg>
+              <p class="text-blue-600 text-[11px] 2xl:text-base font-black uppercase tracking-widest mb-1.5 2xl:mb-3">Detailed Explanation</p>
+              <p class="text-sm md:text-base 2xl:text-2xl italic leading-relaxed text-blue-900/90">{{ q.explanation }}</p>
             </div>
-            <div class="h-px bg-slate-100 mt-12 w-full"></div>
+            <div class="h-px bg-slate-100 mt-12 2xl:mt-20 w-full"></div>
           </div>
         </div>
-        <div class="bg-slate-50 p-8 border-t border-slate-200 mt-4 rounded-b-[2rem]">
-          <div class="flex flex-col md:flex-row justify-center items-center gap-4">
-            <button @click="handlePrint" class="w-full md:w-auto flex items-center justify-center gap-2 bg-slate-800 hover:bg-slate-950 text-white py-4 px-10 rounded-2xl font-black shadow-lg hover:shadow-xl hover:-translate-y-1 transition-all duration-300">Export to PDF</button>
-            <button @click="closeReview" class="w-full md:w-auto bg-blue-600 hover:bg-blue-700 text-white py-4 px-12 rounded-2xl font-black shadow-lg hover:shadow-xl hover:-translate-y-1 transition-all duration-300">✓ Got it! Close Review</button>
+        <div class="bg-slate-50 p-8 2xl:p-12 border-t border-slate-200 mt-4 2xl:mt-8 rounded-b-[2rem] 2xl:rounded-b-[3rem]">
+          <div class="flex flex-col md:flex-row justify-center items-center gap-4 2xl:gap-8">
+            <button @click="handlePrint" class="w-full md:w-auto flex items-center justify-center gap-2 2xl:gap-4 bg-slate-800 hover:bg-slate-950 text-white py-4 px-10 2xl:py-6 2xl:px-16 rounded-2xl 2xl:rounded-[2rem] font-black 2xl:text-2xl shadow-lg hover:shadow-xl hover:-translate-y-1 transition-all duration-300">Export to PDF</button>
+            <button @click="closeReview" class="w-full md:w-auto bg-blue-600 hover:bg-blue-700 text-white py-4 px-12 2xl:py-6 2xl:px-20 rounded-2xl 2xl:rounded-[2rem] font-black 2xl:text-2xl shadow-lg hover:shadow-xl hover:-translate-y-1 transition-all duration-300">✓ Got it! Close Review</button>
           </div>
         </div>
       </div>
     </div>
 
     <div v-if="showSuccessHologram" class="fixed inset-0 z-[500] flex items-center justify-center bg-slate-900/90 backdrop-blur-md">
-      <div class="relative bg-black border-2 border-cyan-400 shadow-[0_0_50px_rgba(34,211,238,0.4)] rounded-[2.5rem] p-12 max-w-lg text-center overflow-hidden">
+      <div class="relative bg-black border-2 border-cyan-400 shadow-[0_0_50px_rgba(34,211,238,0.4)] rounded-[2.5rem] 2xl:rounded-[4rem] p-12 2xl:p-20 max-w-lg 2xl:max-w-2xl text-center overflow-hidden">
 
         <div class="absolute inset-0 bg-[linear-gradient(transparent_0%,rgba(34,211,238,0.05)_50%,transparent_100%)] bg-[length:100%_4px] animate-[scan_2s_linear_infinite]"></div>
 
         <div class="relative z-10">
-          <div class="text-6xl mb-6 animate-bounce">✨</div>
-          <h2 class="text-cyan-400 font-mono font-black text-2xl mb-4 tracking-[0.2em] uppercase italic">Identity Initialized</h2>
-          <p class="text-white font-mono text-lg leading-relaxed mb-8 italic opacity-90">"{{ welcomeMessage }}"</p>
+          <div class="text-6xl 2xl:text-8xl mb-6 2xl:mb-10 animate-bounce">✨</div>
+          <h2 class="text-cyan-400 font-mono font-black text-2xl 2xl:text-4xl mb-4 2xl:mb-6 tracking-[0.2em] uppercase italic">Identity Initialized</h2>
+          <p class="text-white font-mono text-lg 2xl:text-2xl leading-relaxed mb-8 2xl:mb-12 italic opacity-90">"{{ welcomeMessage }}"</p>
 
-          <button @click="showSuccessHologram = false" class="w-full bg-cyan-900/40 hover:bg-cyan-400 text-cyan-400 hover:text-black border border-cyan-400 py-4 rounded-xl font-black tracking-widest uppercase transition-all duration-300 shadow-[0_0_15px_rgba(34,211,238,0.2)] hover:shadow-[0_0_30px_rgba(34,211,238,0.6)] group">
+          <button @click="showSuccessHologram = false" class="w-full bg-cyan-900/40 hover:bg-cyan-400 text-cyan-400 hover:text-black border border-cyan-400 py-4 2xl:py-6 rounded-xl 2xl:rounded-2xl font-black 2xl:text-xl tracking-widest uppercase transition-all duration-300 shadow-[0_0_15px_rgba(34,211,238,0.2)] hover:shadow-[0_0_30px_rgba(34,211,238,0.6)] group">
             <span class="group-hover:animate-pulse">Enter Databanks</span>
           </button>
 
@@ -1001,33 +1263,33 @@
     </div>
 
     <div v-if="showGradeConfirmModal" class="fixed inset-0 z-[100] flex items-center justify-center bg-black/80 backdrop-blur-md p-4 transition-all">
-      <div class="relative bg-slate-950 rounded-2xl shadow-[0_0_50px_-12px_rgba(220,38,38,0.5)] max-w-lg w-full overflow-hidden border border-slate-800 transform scale-100 animate-[fadeIn_0.2s_ease-out]">
-        <div class="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-red-600 via-orange-500 to-red-600 animate-pulse"></div>
-        <div class="p-6 md:p-8 flex items-start gap-5 border-b border-slate-800/60 bg-gradient-to-b from-red-950/20 to-transparent">
-          <div class="w-14 h-14 rounded-xl bg-red-500/10 border border-red-500/20 flex items-center justify-center flex-shrink-0 relative overflow-hidden">
+      <div class="relative bg-slate-950 rounded-2xl 2xl:rounded-[2rem] shadow-[0_0_50px_-12px_rgba(220,38,38,0.5)] max-w-lg 2xl:max-w-3xl w-full overflow-hidden border border-slate-800 transform scale-100 animate-[fadeIn_0.2s_ease-out]">
+        <div class="absolute top-0 left-0 w-full h-1 2xl:h-2 bg-gradient-to-r from-red-600 via-orange-500 to-red-600 animate-pulse"></div>
+        <div class="p-6 md:p-8 2xl:p-12 flex items-start gap-5 2xl:gap-8 border-b border-slate-800/60 bg-gradient-to-b from-red-950/20 to-transparent">
+          <div class="w-14 h-14 2xl:w-20 2xl:h-20 rounded-xl 2xl:rounded-2xl bg-red-500/10 border border-red-500/20 flex items-center justify-center flex-shrink-0 relative overflow-hidden">
             <div class="absolute inset-0 bg-red-500/20 animate-ping opacity-50"></div>
-            <span class="text-3xl relative z-10">⚠️</span>
+            <span class="text-3xl 2xl:text-5xl relative z-10">⚠️</span>
           </div>
           <div>
-            <h3 class="text-2xl font-black text-slate-100 tracking-tight uppercase">System Override</h3>
-            <div class="flex items-center gap-2 mt-2 text-red-500 font-mono text-[10px] md:text-xs tracking-widest uppercase bg-red-500/10 px-2 py-1 rounded inline-flex">
-              <span class="w-2 h-2 rounded-full bg-red-500 animate-pulse"></span>Warning: Premature Termination
+            <h3 class="text-2xl 2xl:text-4xl font-black text-slate-100 tracking-tight uppercase">System Override</h3>
+            <div class="flex items-center gap-2 2xl:gap-3 mt-2 2xl:mt-4 text-red-500 font-mono text-[10px] md:text-xs 2xl:text-sm tracking-widest uppercase bg-red-500/10 px-2 py-1 2xl:px-3 2xl:py-1.5 rounded inline-flex">
+              <span class="w-2 h-2 2xl:w-3 2xl:h-3 rounded-full bg-red-500 animate-pulse"></span>Warning: Premature Termination
             </div>
           </div>
         </div>
-        <div class="p-6 md:p-8 font-mono text-sm">
-          <div class="text-slate-400 mb-6 leading-relaxed space-y-2">
+        <div class="p-6 md:p-8 2xl:p-12 font-mono text-sm 2xl:text-xl">
+          <div class="text-slate-400 mb-6 2xl:mb-10 leading-relaxed space-y-2 2xl:space-y-4">
             <p>> Analyzing current session state...</p>
             <p>> <span class="text-amber-400">Warning: Unresolved parameters detected.</span></p>
             <p>> Halting the simulation now will result in all uncommitted queries being flagged as <span class="text-red-400 font-bold bg-red-500/10 px-1">CRITICAL_FAILURES</span>.</p>
           </div>
-          <div class="bg-slate-900 border border-slate-800 p-4 rounded-lg">
+          <div class="bg-slate-900 border border-slate-800 p-4 2xl:p-6 rounded-lg 2xl:rounded-xl">
             <p class="text-slate-300 font-bold tracking-wide">Execute final telemetry calculation anyway?</p>
           </div>
         </div>
-        <div class="bg-slate-950 p-6 md:p-8 border-t border-slate-800 flex flex-col md:flex-row justify-end gap-4">
-          <button @click="showGradeConfirmModal = false" class="px-6 py-3 rounded-xl font-mono text-sm font-bold text-slate-400 hover:text-white hover:bg-slate-800 transition-colors border border-transparent hover:border-slate-700">[ ESC ] ABORT</button>
-          <button @click="executeGradingSequence" class="group relative px-8 py-3 rounded-xl font-mono text-sm font-black text-red-100 bg-red-600 overflow-hidden shadow-[0_0_20px_rgba(220,38,38,0.4)] hover:shadow-[0_0_30px_rgba(220,38,38,0.6)] transition-all">
+        <div class="bg-slate-950 p-6 md:p-8 2xl:p-12 border-t border-slate-800 flex flex-col md:flex-row justify-end gap-4 2xl:gap-6">
+          <button @click="showGradeConfirmModal = false" class="px-6 py-3 2xl:px-8 2xl:py-4 rounded-xl 2xl:rounded-2xl font-mono text-sm 2xl:text-lg font-bold text-slate-400 hover:text-white hover:bg-slate-800 transition-colors border border-transparent hover:border-slate-700">[ ESC ] ABORT</button>
+          <button @click="executeGradingSequence" class="group relative px-8 py-3 2xl:px-10 2xl:py-4 rounded-xl 2xl:rounded-2xl font-mono text-sm 2xl:text-lg font-black text-red-100 bg-red-600 overflow-hidden shadow-[0_0_20px_rgba(220,38,38,0.4)] hover:shadow-[0_0_30px_rgba(220,38,38,0.6)] transition-all">
             <div class="absolute inset-0 bg-white/20 translate-y-full group-hover:translate-y-0 transition-transform duration-300 ease-in-out"></div>
             <span class="relative z-10">> EXECUTE_GRADE</span>
           </button>
@@ -1038,56 +1300,56 @@
     <div v-if="showPremiumModal" class="fixed inset-0 z-50 flex items-center justify-center p-4">
       <div class="absolute inset-0 bg-slate-900/60 backdrop-blur-sm" @click="showPremiumModal = false"></div>
 
-      <div class="relative bg-white rounded-3xl shadow-2xl w-full max-w-4xl overflow-hidden animate-fade-in-up flex flex-col md:flex-row">
+      <div class="relative bg-white rounded-3xl 2xl:rounded-[3rem] shadow-2xl w-full max-w-4xl 2xl:max-w-6xl overflow-hidden animate-fade-in-up flex flex-col md:flex-row">
 
-        <div class="bg-slate-900 p-8 md:p-12 text-white md:w-1/2 flex flex-col justify-center relative overflow-hidden">
-          <div class="absolute top-0 right-0 w-64 h-64 bg-indigo-500/20 rounded-full blur-3xl -translate-y-1/2 translate-x-1/3"></div>
+        <div class="bg-slate-900 p-8 md:p-12 2xl:p-20 text-white md:w-1/2 flex flex-col justify-center relative overflow-hidden">
+          <div class="absolute top-0 right-0 w-64 h-64 2xl:w-96 2xl:h-96 bg-indigo-500/20 rounded-full blur-3xl -translate-y-1/2 translate-x-1/3"></div>
 
-          <h2 class="text-3xl md:text-4xl font-black mb-4 leading-tight">
+          <h2 class="text-3xl md:text-4xl 2xl:text-6xl font-black mb-4 2xl:mb-8 leading-tight">
             Unlock the <span class="text-transparent bg-clip-text bg-gradient-to-r from-indigo-400 to-purple-400">Knowledge Forge</span>
           </h2>
-          <p class="text-slate-400 font-medium mb-8">
+          <p class="text-slate-400 font-medium mb-8 2xl:mb-12 2xl:text-xl">
             Stop guessing. Get the exact architectural breakdowns, video modules, and survival guides you need to dominate your AWS certification.
           </p>
 
-          <ul class="space-y-4 font-medium text-sm text-slate-300">
-            <li class="flex items-center gap-3"><span class="flex h-6 w-6 rounded-full bg-emerald-500/20 text-emerald-400 items-center justify-center text-xs">✓</span> Unlimited Video Modules</li>
-            <li class="flex items-center gap-3"><span class="flex h-6 w-6 rounded-full bg-emerald-500/20 text-emerald-400 items-center justify-center text-xs">✓</span> High-Res Architecture Diagrams</li>
-            <li class="flex items-center gap-3"><span class="flex h-6 w-6 rounded-full bg-emerald-500/20 text-emerald-400 items-center justify-center text-xs">✓</span> Downloadable Cheat Sheets</li>
+          <ul class="space-y-4 2xl:space-y-6 font-medium text-sm 2xl:text-xl text-slate-300">
+            <li class="flex items-center gap-3 2xl:gap-5"><span class="flex h-6 w-6 2xl:h-8 2xl:w-8 rounded-full bg-emerald-500/20 text-emerald-400 items-center justify-center text-xs 2xl:text-sm">✓</span> Unlimited Video Modules</li>
+            <li class="flex items-center gap-3 2xl:gap-5"><span class="flex h-6 w-6 2xl:h-8 2xl:w-8 rounded-full bg-emerald-500/20 text-emerald-400 items-center justify-center text-xs 2xl:text-sm">✓</span> High-Res Architecture Diagrams</li>
+            <li class="flex items-center gap-3 2xl:gap-5"><span class="flex h-6 w-6 2xl:h-8 2xl:w-8 rounded-full bg-emerald-500/20 text-emerald-400 items-center justify-center text-xs 2xl:text-sm">✓</span> Downloadable Cheat Sheets</li>
           </ul>
         </div>
 
-        <div class="p-8 md:p-12 md:w-1/2 bg-slate-50 flex flex-col justify-center gap-6">
-          <button @click="showPremiumModal = false" class="absolute top-4 right-4 text-slate-400 hover:text-slate-600 transition-colors">
-            <span class="text-2xl font-black">×</span>
+        <div class="p-8 md:p-12 2xl:p-20 md:w-1/2 bg-slate-50 flex flex-col justify-center gap-6 2xl:gap-10">
+          <button @click="showPremiumModal = false" class="absolute top-4 right-4 2xl:top-8 2xl:right-8 text-slate-400 hover:text-slate-600 transition-colors">
+            <span class="text-2xl 2xl:text-4xl font-black">×</span>
           </button>
 
-          <div class="relative bg-white rounded-2xl p-6 border-2 border-indigo-500 shadow-[0_0_30px_rgba(99,102,241,0.15)] transition-all hover:-translate-y-1 group cursor-pointer" @click="initiateCheckout('trial')">
-            <div class="absolute -top-3 left-1/2 -translate-x-1/2 bg-indigo-500 text-white text-[10px] font-black uppercase tracking-widest px-3 py-1 rounded-full">
+          <div class="relative bg-white rounded-2xl 2xl:rounded-3xl p-6 2xl:p-10 border-2 border-indigo-500 shadow-[0_0_30px_rgba(99,102,241,0.15)] transition-all hover:-translate-y-1 group cursor-pointer" @click="initiateCheckout('trial')">
+            <div class="absolute -top-3 2xl:-top-4 left-1/2 -translate-x-1/2 bg-indigo-500 text-white text-[10px] 2xl:text-sm font-black uppercase tracking-widest px-3 py-1 2xl:px-5 2xl:py-2 rounded-full">
               Most Popular
             </div>
-            <div class="flex justify-between items-end mb-2">
-              <h3 class="text-lg font-black text-slate-800">7-Day Trial</h3>
+            <div class="flex justify-between items-end mb-2 2xl:mb-4">
+              <h3 class="text-lg 2xl:text-3xl font-black text-slate-800">7-Day Trial</h3>
               <div class="text-right">
-                <span class="text-3xl font-black text-indigo-600">$1</span>
+                <span class="text-3xl 2xl:text-5xl font-black text-indigo-600">$1</span>
               </div>
             </div>
-            <p class="text-sm text-slate-500 font-medium mb-4">Test the waters. Renews at $10.99/mo. Cancel anytime.</p>
-            <button class="w-full py-3 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl font-bold tracking-wide transition-all shadow-md group-hover:shadow-indigo-500/30">
+            <p class="text-sm 2xl:text-xl text-slate-500 font-medium mb-4 2xl:mb-6">Test the waters. Renews at $10.99/mo. Cancel anytime.</p>
+            <button class="w-full py-3 2xl:py-5 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl 2xl:rounded-2xl font-bold 2xl:text-xl tracking-wide transition-all shadow-md group-hover:shadow-indigo-500/30">
               Start $1 Trial
             </button>
           </div>
 
-          <div class="bg-white rounded-2xl p-6 border border-slate-200 transition-all hover:-translate-y-1 hover:border-slate-300 hover:shadow-lg cursor-pointer" @click="initiateCheckout('monthly')">
-            <div class="flex justify-between items-end mb-2">
-              <h3 class="text-lg font-bold text-slate-700">Monthly Pro</h3>
+          <div class="bg-white rounded-2xl 2xl:rounded-3xl p-6 2xl:p-10 border border-slate-200 transition-all hover:-translate-y-1 hover:border-slate-300 hover:shadow-lg cursor-pointer" @click="initiateCheckout('monthly')">
+            <div class="flex justify-between items-end mb-2 2xl:mb-4">
+              <h3 class="text-lg 2xl:text-3xl font-bold text-slate-700">Monthly Pro</h3>
               <div class="text-right">
-                <span class="text-2xl font-black text-slate-800">$10.99</span>
-                <span class="text-xs text-slate-400 font-bold">/mo</span>
+                <span class="text-2xl 2xl:text-4xl font-black text-slate-800">$10.99</span>
+                <span class="text-xs 2xl:text-lg text-slate-400 font-bold">/mo</span>
               </div>
             </div>
-            <p class="text-sm text-slate-500 font-medium mb-4">Jump straight into the deep end. Cancel anytime.</p>
-            <button class="w-full py-3 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl font-bold tracking-wide transition-all">
+            <p class="text-sm 2xl:text-xl text-slate-500 font-medium mb-4 2xl:mb-6">Jump straight into the deep end. Cancel anytime.</p>
+            <button class="w-full py-3 2xl:py-5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl 2xl:rounded-2xl font-bold 2xl:text-xl tracking-wide transition-all">
               Subscribe Monthly
             </button>
           </div>
@@ -1097,24 +1359,24 @@
     </div>
 
     <div v-if="showUpgradePrompt" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/80 backdrop-blur-sm animate-fade-in">
-      <div class="bg-white rounded-3xl p-8 max-w-md w-full shadow-2xl relative border border-slate-100 text-center animate-fade-in-up">
+      <div class="bg-white rounded-3xl 2xl:rounded-[3rem] p-8 2xl:p-16 max-w-md 2xl:max-w-2xl w-full shadow-2xl relative border border-slate-100 text-center animate-fade-in-up">
 
-        <div class="w-20 h-20 bg-indigo-50 text-indigo-600 rounded-full flex items-center justify-center text-4xl mx-auto mb-6 shadow-inner">
+        <div class="w-20 h-20 2xl:w-32 2xl:h-32 bg-indigo-50 text-indigo-600 rounded-full flex items-center justify-center text-4xl 2xl:text-6xl mx-auto mb-6 2xl:mb-10 shadow-inner">
           🚀
         </div>
 
-        <h2 class="text-2xl font-black text-slate-800 mb-3">Unlock Knowledge Forge</h2>
+        <h2 class="text-2xl 2xl:text-4xl font-black text-slate-800 mb-3 2xl:mb-6">Unlock Knowledge Forge</h2>
 
-        <p class="text-slate-600 mb-8 font-medium leading-relaxed">
-          Premium access is required to enter the Forge. Start your 7-day trial for just <span class="font-black text-indigo-600 text-lg">$1</span>, then $10.99/mo. Cancel anytime.
+        <p class="text-slate-600 mb-8 2xl:mb-12 font-medium 2xl:text-xl leading-relaxed">
+          Premium access is required to enter the Forge. Start your 7-day trial for just <span class="font-black text-indigo-600 text-lg 2xl:text-2xl">$1</span>, then $10.99/mo. Cancel anytime.
         </p>
 
-        <div class="flex gap-4 mt-4">
-          <button @click="showUpgradePrompt = false" class="flex-1 py-3.5 bg-slate-100 hover:bg-slate-200 text-slate-600 rounded-xl font-bold transition-colors">
+        <div class="flex gap-4 2xl:gap-6 mt-4">
+          <button @click="showUpgradePrompt = false" class="flex-1 py-3.5 2xl:py-5 2xl:text-xl bg-slate-100 hover:bg-slate-200 text-slate-600 rounded-xl 2xl:rounded-2xl font-bold transition-colors">
             Cancel
           </button>
 
-          <button @click="handleSignUpClick" class="flex-1 py-3.5 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl font-bold shadow-md shadow-indigo-500/30 transition-all hover:-translate-y-0.5">
+          <button @click="handleSignUpClick" class="flex-1 py-3.5 2xl:py-5 2xl:text-xl bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl 2xl:rounded-2xl font-bold shadow-md shadow-indigo-500/30 transition-all hover:-translate-y-0.5">
             Sign Up
           </button>
         </div>
@@ -1122,33 +1384,32 @@
       </div>
     </div>
 
-    <div v-if="showAlreadyPremiumModal" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/80 backdrop-blur-sm"
-    >
-      <div class="bg-white rounded-3xl p-8 max-w-md w-full shadow-2xl border border-slate-100 text-center animate-fade-in-up">
+    <div v-if="showAlreadyPremiumModal" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/80 backdrop-blur-sm">
+      <div class="bg-white rounded-3xl 2xl:rounded-[3rem] p-8 2xl:p-16 max-w-md 2xl:max-w-2xl w-full shadow-2xl border border-slate-100 text-center animate-fade-in-up">
 
-        <div class="text-6xl mb-4">🌟</div>
-        <h3 class="text-2xl font-bold text-slate-800 mb-2">You're Already Premium!</h3>
-        <p class="text-slate-500 mb-8 leading-relaxed">
+        <div class="text-6xl 2xl:text-8xl mb-4 2xl:mb-8">🌟</div>
+        <h3 class="text-2xl 2xl:text-4xl font-bold text-slate-800 mb-2 2xl:mb-4">You're Already Premium!</h3>
+        <p class="text-slate-500 mb-8 2xl:mb-12 2xl:text-xl leading-relaxed">
           Your account is already fully upgraded. You have unrestricted access to the Knowledge Forge and all Premium features.
         </p>
 
-        <div class="flex flex-col space-y-3">
+        <div class="flex flex-col space-y-3 2xl:space-y-6">
           <button
               @click="showAlreadyPremiumModal = false"
-              class="w-full bg-blue-600 text-white font-bold py-3 px-4 rounded-xl hover:bg-blue-700 transition-all duration-200 transform hover:-translate-y-0.5 shadow-lg shadow-blue-500/30"
+              class="w-full bg-blue-600 text-white font-bold py-3 px-4 2xl:py-5 2xl:text-xl rounded-xl 2xl:rounded-2xl hover:bg-blue-700 transition-all duration-200 transform hover:-translate-y-0.5 shadow-lg shadow-blue-500/30"
           >
             Return to Dashboard
           </button>
 
           <button
               @click="() => {
-          showAlreadyPremiumModal = false;
-          // Clears memory to simulate logging out
-          localStorage.removeItem('aws_jwt');
-          localStorage.removeItem('aws_user');
-          window.location.reload();
-        }"
-              class="w-full bg-slate-100 text-slate-600 font-bold py-3 px-4 rounded-xl hover:bg-slate-200 transition-colors"
+        showAlreadyPremiumModal = false;
+        // Clears memory to simulate logging out
+        localStorage.removeItem('aws_jwt');
+        localStorage.removeItem('aws_user');
+        window.location.reload();
+      }"
+              class="w-full bg-slate-100 text-slate-600 font-bold py-3 px-4 2xl:py-5 2xl:text-xl rounded-xl 2xl:rounded-2xl hover:bg-slate-200 transition-colors"
           >
             Log Out / Switch Account
           </button>
@@ -1180,24 +1441,24 @@
 </template>
 
 <script setup>
-  import { ref, onMounted, computed, watch, onUnmounted } from 'vue';
+import { ref, onMounted, computed, watch, onUnmounted } from 'vue';
   import { jsPDF } from "jspdf";
   import autoTable from 'jspdf-autotable';
   import { Radar } from 'vue-chartjs';
   import { Chart as ChartJS, RadialLinearScale, PointElement, LineElement, Filler, Tooltip, Legend } from 'chart.js';
 
-  ChartJS.register(RadialLinearScale, PointElement, LineElement, Filler, Tooltip, Legend);
+ChartJS.register(RadialLinearScale, PointElement, LineElement, Filler, Tooltip, Legend);
 
-  // 1. THE MACRO: defineProps must always be the very first thing
-  const props = defineProps({
+// 1. THE MACRO: defineProps must always be the very first thing
+const props = defineProps({
   isLoggedIn: { type: Boolean, default: false },
   isPremium: { type: Boolean, default: false },
   username: { type: String, default: '' }
 });
 
-  const currentUser = ref(null);
+const currentUser = ref(null);
 
-  watch(() => [props.isLoggedIn, props.username, props.isPremium],([isLoggedIn, username, isPremium]) => {
+watch(() => [props.isLoggedIn, props.username, props.isPremium],([isLoggedIn, username, isPremium]) => {
 
         // A. Rebuild the user
         if (isLoggedIn && username) {
@@ -1247,11 +1508,11 @@
         }
       },
       { immediate: true }
-  ); // 🚨 THIS IS THE FIX! You were missing this closing parenthesis and semicolon!
+  );
 
-  // 🚨 WATCHER 2: "The Seamless Bridge"
+// 🚨 WATCHER 2: "The Seamless Bridge"
 
-  watch(currentUser, (newUser) => {
+watch(currentUser, (newUser) => {
     // If a user just logged in, they are NOT premium yet, AND they have the memory flag...
     if (newUser && !newUser.isPremium && localStorage.getItem('aws_pending_checkout') === 'true') {
 
@@ -1296,6 +1557,7 @@ const userTotalXp = ref(0);
 const isSuddenDeath = ref(true);
 const healthPoints = ref(3);
 const isDead = computed(() => healthPoints.value <= 0);
+const token = localStorage.getItem('aws_jwt');
 
 // --- AMRAP (TIME ATTACK) MECHANIC ---
 const isAmrapMode = ref(true); // Toggle ON for testing!
@@ -1323,6 +1585,9 @@ const startTime = ref(null);
 const totalExamTime = ref(0);
 const savedScores = localStorage.getItem('aws_radar_scores');
 const categoryScores = ref(savedScores ? JSON.parse(savedScores) : {});
+const showAgreementModal = ref(false);
+const hasAcceptedTerms = ref(false);
+const pendingPlanType = ref(null);
 
 // --- Platform State ---
 const currentView = ref(window.location.hash.replace('#', '') || 'landing');
@@ -1332,9 +1597,30 @@ const selectedCert = ref(null);
 const showGuestLimitModal = ref(false);
 const hallOfFame = ref([]);
 
-  // --- 🧠 THE KNOWLEDGE FORGE STATE ---
-  const activeForgeTab = ref('domains'); // 'domains', 'videos', or 'cheatsheets'
-  const expandedDomain = ref(null); // Tracks which accordion is currently open
+// --- 🧠 THE KNOWLEDGE FORGE STATE ---
+const activeForgeTab = ref('domains'); // 'domains', 'videos', or 'cheatsheets'
+const expandedDomain = ref(null); // Tracks which accordion is currently open
+
+// --- 🎴 FLASHCARD MATRIX STATE ---
+const allFlashcards = ref([]);
+const currentFlashcardRound = ref(0);
+const displayTerms = ref([]);
+const displayDefs = ref([]);
+const selectedTerm = ref(null);
+const selectedDef = ref(null);
+const matchedPairs = ref([]);
+const selectedFlashcardCsv = ref(null);
+const flashcardUploadStatus = ref('');
+const allAdminFlashcards = ref([]);
+const flashcardAttempts = ref(0);         // Every pair they click counts as 1 attempt
+const flashcardMisses = ref({});          // A dictionary of terms they fumbled
+const isFlashcardGameComplete = ref(false); // Triggers the final Results screen
+
+// --- 🎴 STUDY CARDS (LIBRARY) STATE ---
+const librarySelectedDomain = ref('All');
+const libraryFlashcards = ref([]);
+
+const flashcardFinalScore = ref(0);
 
 // --- Timer Logic ---
 const timer = ref(0);
@@ -1406,6 +1692,7 @@ const isMusicPlaying = ref(false); // Background lo-fi track
 const showReviewModal = ref(false);
 
 const allExamQuestions = ref([]);
+const allFetchedFlashcards = ref([]);
 
 // --- The functions start here
 
@@ -1592,37 +1879,52 @@ const studyPriorities = computed(() => {
 const radarOptions = {
   responsive: true,
   maintainAspectRatio: false,
+
+  // 🚨 THE FIX 1: Push the entire chart inward so the labels don't hit the walls
+  layout: {
+    padding: {
+      left: 30,
+      right: 30,
+      top: 20,
+      bottom: 20
+    }
+  },
+
   scales: {
     r: {
-      // THE SPOKES (The lines coming out from the center)
       angleLines: {
-        color: 'rgba(0, 0, 0, 5)',
-        lineWidth: 1 // <-- Make the spokes thicker or thinner
-      },
-
-      // THE WEB (The concentric polygon rings)
-      grid: {
-        color: 'rgba(0, 0, 0, 5)',
-        circular: true, // <-- Change to 'true' for a circle instead of a polygon!
+        color: 'rgba(0, 0, 0, 0.1)', // Fixed the opacity so the spokes are visible!
         lineWidth: 1
       },
-
-      // THE FONTS (The category names around the outside)
+      grid: {
+        color: 'rgba(0, 0, 0, 0.1)', // Fixed the opacity here too
+        circular: true,
+        lineWidth: 1
+      },
       pointLabels: {
         font: {
-          size: 13, // <-- Change font size
-          family: "'Inter', 'Helvetica Neue', sans-serif", // <-- Change font family
-          weight: '800' // <-- Make it bolder
+          size: 11, // Dropped slightly from 13 for better ultra-wide scaling
+          family: "'Inter', 'Helvetica Neue', sans-serif",
+          weight: '800'
         },
-        color: '#334155' // <-- Change the text color (Tailwind slate-700)
-      },
+        color: '#334155',
 
-      // THE RINGS (Locking the scale from 0 to 100)
+        // 🚨 THE FIX 2: The Auto-Wrapper. If a label is longer than 18 characters, stack it!
+        callback: function(label) {
+          if (label.length > 18) {
+            const words = label.split(' ');
+            const half = Math.ceil(words.length / 2);
+            // Returns an array, which Chart.js automatically renders as multiple lines
+            return [words.slice(0, half).join(' '), words.slice(half).join(' ')];
+          }
+          return label;
+        }
+      },
       ticks: {
-        display: false, // <-- Change to 'true' to see the numbers (20, 40, 60, 80) on the rings
+        display: false,
         min: 0,
         max: 100,
-        stepSize: 20 // <-- Creates exactly 5 concentric rings
+        stepSize: 20
       }
     }
   },
@@ -1710,6 +2012,10 @@ const resetSession = () => {
   selectedAnswers.value = [];
   missedQuestionIds.value = [];
   lastAttemptId.value = null;
+
+  //Reset the master clocks!
+  totalExamSeconds.value = 0;
+  currentQuestionSeconds.value = 0;
 
   // 2. Turn off all the end-of-quiz UI screens
   showResults.value = false;
@@ -1952,58 +2258,39 @@ const radarDatabase = {
     'AIF-C01': ['Fundamentals of AI & ML', 'Fundamentals of Generative AI', 'Applications of Foundation Models', 'Responsible AI & Security']
   };
 
-const fetchRadarData = async (certCode) => {
-    // If no user is logged in yet, just draw zeroes
-    if (!currentUser.value || !currentUser.value.id) {
-      liveUserScores.value = new Array(radarDatabase[certCode].length).fill(0);
-      return;
-    }
-
-    try {
-      const token = localStorage.getItem('aws_jwt');
-
-      // 🚨 FIX: Using currentUser.value.id instead of a hardcoded 1!
-      const response = await fetch(`http://localhost:8080/api/radar/user/${currentUser.value.id}/cert/${certCode}`, {
-        headers: { 'Authorization': `Bearer ${token}` } // 🚨 ADDED VIP PASS
-      });
-
-      if (response.ok) {
-        const data = await response.json();
-        liveUserScores.value = data.scores;
-      } else {
-        liveUserScores.value = new Array(radarDatabase[certCode].length).fill(0);
-      }
-    } catch (error) {
-      console.error("Cannot connect to Java backend:", error);
-    }
-  };
-
-watch(selectedRadarCert, (newCertCode) => {
-    fetchRadarData(newCertCode);
-  });
-
-onMounted(() => {
-    fetchRadarData(selectedRadarCert.value);
-  });
-
 const dynamicRadarData = computed(() => {
-    // Grab the correct labels for the selected cert
-    const currentLabels = radarDatabase[selectedRadarCert.value] || radarDatabase['CLF-C02'];
+  // 🚨 THE FIX: Dynamically read the exact categories and scores directly from your database!
+  const labels = Object.keys(categoryScores.value || {});
+  const dataPoints = Object.values(categoryScores.value || {});
 
+  // Fallback default shape if they haven't taken an exam yet
+  if (labels.length === 0) {
     return {
-      labels: currentLabels,
+      labels: ['Compute', 'Storage', 'Database', 'Security'],
       datasets: [{
         label: 'Skill Proficiency (%)',
         backgroundColor: 'rgba(79, 70, 229, 0.2)',
         borderColor: 'rgba(79, 70, 229, 1)',
-        pointBackgroundColor: 'rgba(16, 185, 129, 1)',
-        pointBorderColor: '#fff',
-        pointHoverBackgroundColor: '#fff',
-        pointHoverBorderColor: 'rgba(16, 185, 129, 1)',
-        data: liveUserScores.value // 🔥 THIS IS NOW LIVE DATA FROM JAVA!
+        data: [0, 0, 0, 0]
       }]
     };
-  });
+  }
+
+  // Draw the real, dynamic chart
+  return {
+    labels: labels,
+    datasets: [{
+      label: 'Skill Proficiency (%)',
+      backgroundColor: 'rgba(79, 70, 229, 0.2)',
+      borderColor: 'rgba(79, 70, 229, 1)',
+      pointBackgroundColor: 'rgba(16, 185, 129, 1)',
+      pointBorderColor: '#fff',
+      pointHoverBackgroundColor: '#fff',
+      pointHoverBorderColor: 'rgba(16, 185, 129, 1)',
+      data: dataPoints
+    }]
+  };
+});
 
 // --- COMPLETE MODULE PROGRESSION ---
 const completeActiveModule = async () => {
@@ -2127,22 +2414,32 @@ const formattedCurrentTime = computed(() => {
 
 // 2. The total time shown on the Results screen
 const formattedTotalTime = computed(() => {
-  const m = Math.floor(totalExamSeconds.value / 60).toString().padStart(2, '0');
-  const s = (totalExamSeconds.value % 60).toString().padStart(2, '0');
+  // 🚨 THE FIX: Calculate "Time Spent" based on the game mode
+  let secondsSpent = totalExamSeconds.value;
+
+  if (isAmrapMode.value) {
+    // AMRAP starts at 600 (10 mins). Time spent is 600 minus whatever is left!
+    secondsSpent = 600 - amrapTimeLeft.value;
+  }
+
+  const m = Math.floor(secondsSpent / 60).toString().padStart(2, '0');
+  const s = (secondsSpent % 60).toString().padStart(2, '0');
   return `${m}:${s}`;
 });
 
 // 3. The average time per question shown on the Results screen
 const formattedAverageTime = computed(() => {
-  // Figure out how many questions were in this specific exam
-  const activeQs = (allQuestionsInSession.value && allQuestionsInSession.value.length > 0)
-      ? allQuestionsInSession.value
-      : questions.value;
+  // 1. Get the correct total time
+  let secondsSpent = totalExamSeconds.value;
+  if (isAmrapMode.value) {
+    secondsSpent = 600 - amrapTimeLeft.value;
+  }
 
-  const totalQs = activeQs.length || 1;
+  // 2. Get the correct amount of questions actually answered
+  const attemptedCount = Object.keys(selectedAnswersRecord.value).length || 1;
 
-  // Calculate average
-  const avgSeconds = Math.round(totalExamSeconds.value / totalQs);
+  // 3. Do the math
+  const avgSeconds = Math.round(secondsSpent / attemptedCount);
 
   const m = Math.floor(avgSeconds / 60).toString().padStart(2, '0');
   const s = (avgSeconds % 60).toString().padStart(2, '0');
@@ -2195,9 +2492,26 @@ const fetchQuestion = async () => {
     if (!text) return;
 
     const data = JSON.parse(text);
+
+    // 🚨 THE TRANSLATOR: Convert Java's flat fields into Vue's Option array!
+    if (!data.options) {
+      const builtOptions = [];
+      const correctAnswers = data.correctOption ? data.correctOption.split('||') : [];
+
+      if (data.optionA) builtOptions.push({ id: 'A', text: data.optionA, isCorrect: correctAnswers.includes(data.optionA) });
+      if (data.optionB) builtOptions.push({ id: 'B', text: data.optionB, isCorrect: correctAnswers.includes(data.optionB) });
+      if (data.optionC) builtOptions.push({ id: 'C', text: data.optionC, isCorrect: correctAnswers.includes(data.optionC) });
+      if (data.optionD) builtOptions.push({ id: 'D', text: data.optionD, isCorrect: correctAnswers.includes(data.optionD) });
+      if (data.optionE) builtOptions.push({ id: 'E', text: data.optionE, isCorrect: correctAnswers.includes(data.optionE) });
+      if (data.optionF) builtOptions.push({ id: 'F', text: data.optionF, isCorrect: correctAnswers.includes(data.optionF) });
+
+      data.options = builtOptions;
+    }
+
+    // 4. Assign the newly translated data to the screen
     question.value = data;
 
-    // 4. THE FIX: Log this ID into our memory bank so it never shows up again!
+    // 5. Log this ID into our memory bank so it never shows up again!
     seenQuestionIds.value.push(data.id);
 
     // Reset state for the new question
@@ -2258,12 +2572,27 @@ const loadNextQuestion = async () => {
 
       const text = await response.text();
       if (!text) return;
-      const newQuestion = JSON.parse(text);
 
-      // 4. Log this new question in the memory bank so it doesn't repeat
-      seenQuestionIds.value.push(newQuestion.id);
+      const data = JSON.parse(text);
 
-      question.value = newQuestion;
+      // 🚨 THE TRANSLATOR: Convert Java's flat fields into Vue's Option array!
+      if (!data.options) {
+        const builtOptions = [];
+        const correctAnswers = data.correctOption ? data.correctOption.split('||') : [];
+
+        if (data.optionA) builtOptions.push({ id: 'A', text: data.optionA, isCorrect: correctAnswers.includes(data.optionA) });
+        if (data.optionB) builtOptions.push({ id: 'B', text: data.optionB, isCorrect: correctAnswers.includes(data.optionB) });
+        if (data.optionC) builtOptions.push({ id: 'C', text: data.optionC, isCorrect: correctAnswers.includes(data.optionC) });
+        if (data.optionD) builtOptions.push({ id: 'D', text: data.optionD, isCorrect: correctAnswers.includes(data.optionD) });
+        if (data.optionE) builtOptions.push({ id: 'E', text: data.optionE, isCorrect: correctAnswers.includes(data.optionE) });
+        if (data.optionF) builtOptions.push({ id: 'F', text: data.optionF, isCorrect: correctAnswers.includes(data.optionF) });
+
+        data.options = builtOptions;
+      }
+
+      // 4. Assign the new data and reset the board
+      question.value = data;
+      seenQuestionIds.value.push(data.id); // Log it so it doesn't repeat
       selectedAnswers.value = [];
       showExplanation.value = false;
       sessionCount.value++; // Keep track of total reps attempted
@@ -2334,6 +2663,11 @@ const checkAnswer = () => {
     feedbackClass.value = "bg-red-100 text-red-800 border-2 border-red-200";
   }
 
+  // Tell the AMRAP referee to count the rep!
+  if (isAmrapMode.value) {
+    amrapCorrectCount.value++;
+  }
+
   // --- THE SUDDEN DEATH ENGINE ---
   if (isSuddenDeath.value) {
     if (!isRight) {
@@ -2343,6 +2677,10 @@ const checkAnswer = () => {
 
       // Fatal Blow - Terminate the Exam instantly
       if (isDead.value) {
+        // Push the fatal question into the array so the Results screen can grade it.
+        if (question.value && !questions.value.some(q => q.id === question.value.id)) {
+          questions.value.push(question.value);
+        }
         // Instantly force the grade and boot them to the results screen
         forceGradeExam();
         return;
@@ -2446,22 +2784,23 @@ const autoSaveSession = () => {
 };
 
 const analyzeCategoryMastery = async () => {
-  // 1. Get the active questions
   const activeQs = (allQuestionsInSession.value && allQuestionsInSession.value.length > 0)
       ? allQuestionsInSession.value
       : questions.value;
 
-  // 2. Build the payload for Spring Boot
   const updates = [];
 
   activeQs.forEach(q => {
+    const catName = q.domain || q.category || 'General';
+    const gotItRight = userResults.value[q.id] === true;
+
     updates.push({
-      category: q.category,
-      isCorrect: userResults.value[q.id] === true
+      category: catName,
+      // 🚨 THE FIX: Send both names so Java's parser can't possibly miss it!
+      isCorrect: gotItRight,
+      correct: gotItRight
     });
   });
-
-  // 3. Send the raw attempt data to the server
   if (currentUser.value && currentUser.value.username) {
     try {
       const actualToken = localStorage.getItem('aws_jwt');
@@ -2475,18 +2814,12 @@ const analyzeCategoryMastery = async () => {
       });
 
       if (response.ok) {
-        console.log("Mastery data successfully synced to Jedi Archives.");
-        // 4. Re-download the newly calculated lifetime stats from the database!
+        console.log("✅ Mastery data successfully synced to Jedi Archives.");
         await fetchRadarStats();
-      } else {
-        console.error("Backend rejected the radar update.");
       }
-
     } catch (error) {
       console.error("Failed to sync radar stats:", error);
     }
-  } else {
-    console.warn("Guest mode: Radar stats not saved to database.");
   }
 };
 
@@ -2548,77 +2881,102 @@ const submitExam = async () => {
   }
 };
 
-  const saveResults = async () => {
-    analyzeCategoryMastery();
+const saveResults = async () => {
+  analyzeCategoryMastery();
 
-    try {
-      const activeQs = (allQuestionsInSession.value && allQuestionsInSession.value.length > 0)
-          ? allQuestionsInSession.value
-          : questions.value;
+  try {
+    const results = Object.values(userResults.value);
+    const attemptedCount = results.length || 1;
+    const correctAnswers = results.filter(result => result === true).length;
+    const finalDbScore = Math.round((correctAnswers / attemptedCount) * 100);
 
-      const total = activeQs.length || 1;
-      let correctCount = 0;
-      let missedIds = [];
+    let missedIds = [];
+    const activeQs = (allQuestionsInSession.value && allQuestionsInSession.value.length > 0)
+        ? allQuestionsInSession.value
+        : questions.value;
 
-      activeQs.forEach(q => {
-        if (userResults.value[q.id] === true) {
-          correctCount++;
-        } else {
-          missedIds.push(q.id);
-          userResults.value[q.id] = false;
-        }
-      });
+    activeQs.forEach(q => {
+      if (userResults.value[q.id] === false) {
+        missedIds.push(q.id);
+      }
+    });
 
-      const finalScore = Math.round((correctCount / total) * 100);
-      const token = localStorage.getItem('aws_jwt'); // 🚨 GRAB THE VIP PASS
+    const token = localStorage.getItem('aws_jwt');
 
-      const historyData = {
-        userId: currentUser.value.id,
-        examCode: selectedCert.value?.code || 'AWS-CERT',
-        scorePercentage: finalScore,
-        totalQuestions: total,
-        correctCount: correctCount,
-        missedQuestionIds: missedIds.join(','),
-        timeSpentSeconds: totalExamSeconds.value
-      };
+    const historyData = {
+      user: { id: currentUser.value.id },
+      userId: currentUser.value.id,
+      examCode: selectedCert.value?.code || 'AWS-CERT',
+      scorePercentage: finalDbScore,
+      totalQuestions: attemptedCount,
+      correctCount: correctAnswers,
+      missedQuestionIds: missedIds.join(','),
+      timeSpentSeconds: isAmrapMode.value ? (600 - amrapTimeLeft.value) : totalExamSeconds.value
+    };
 
-      const response = await fetch('http://localhost:8080/api/questions/history/save', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}` // 🚨 SEND THE VIP PASS TO JAVA!
-        },
-        body: JSON.stringify(historyData)
-      });
+    const response = await fetch(`http://localhost:8080/api/questions/history/save?userId=${currentUser.value.id}`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`
+      },
+      body: JSON.stringify(historyData)
+    });
 
-    } catch (error) {
-      console.error("Failed to save history to database:", error);
+    // 🚨 THE UNMASKER: If Java refuses to save the exam, tell us why!
+    if (!response.ok) {
+      const errText = await response.text();
+      console.error("JAVA REJECTED EXAM SAVE:", errText);
+      alert("Database rejected the score! Error: " + errText);
+    } else {
+      console.log("✅ Exam History Saved Successfully!");
+      // Instantly update the UI tables so you don't have to refresh
+      if (typeof fetchHistory === 'function') fetchHistory();
+      if (typeof fetchLeaderboard === 'function') fetchLeaderboard();
     }
-  };
 
-  const fetchHistory = async () => {
-    const userId = currentUser.value?.id;
+  } catch (error) {
+    console.error("Failed to save history to database:", error);
+  }
+};
 
-    if (!userId) {
-      examHistory.value = [];
+const fetchHistory = async () => {
+  try {
+    const token = localStorage.getItem('aws_jwt');
+
+    // 🚨 The Ghost ID Tripwire
+    if (!token || !currentUser.value) return;
+    if (!currentUser.value.id) {
+      console.warn("⚠️ Data Bridge Paused: Awaiting official User ID from Java...");
       return;
     }
 
-    try {
-      const token = localStorage.getItem('aws_jwt'); // 🚨 GRAB THE VIP PASS
+    // Direct Data Bridge: Pulling via the official DB ID
+    const response = await fetch(`http://localhost:8080/api/questions/history?userId=${currentUser.value.id}`, {
+      method: 'GET',
+      headers: { 'Authorization': `Bearer ${token}` }
+    });
 
-      const response = await fetch(`http://localhost:8080/api/questions/history?userId=${userId}`, {
-        headers: { 'Authorization': `Bearer ${token}` } // 🚨 SEND THE VIP PASS TO JAVA!
-      });
-
-      if (response.ok) {
-        const data = await response.json();
-        examHistory.value = data;
-      }
-    } catch (error) {
-      console.error("Failed to fetch history:", error);
+    if (response.ok) {
+      examHistory.value = await response.json();
+      console.log(`📡 EXM HISTORY: Bridge established. ${examHistory.value.length} nodes received.`);
+    } else {
+      examHistory.value = [];
+      console.error("Failed to establish history data bridge. Server returned an error.");
     }
-  };
+
+  } catch (error) {
+    console.error("Vaporization failure in history databank:", error);
+  }
+};
+
+watch(examHistory, (newHistory) => {
+  // If we have history, recalculate Target Priorities & Radar instantly.
+  if (newHistory && newHistory.length > 0) {
+    console.log("Telemetry databank updated. Recalculating radar and priorities...");
+    analyzeCategoryMastery();
+  }
+}, { immediate: true });
 
 const adminForm = ref({
     id: null,
@@ -2651,7 +3009,9 @@ const removeOption = (index) => {
 const fetchAdminQuestions = async () => {
   try {
     const token = localStorage.getItem('aws_jwt');
-    const response = await fetch(`${API_BASE_URL}/api/admin/questions`, {
+    if (!token) return;
+
+    const response = await fetch('http://localhost:8080/api/questions/all', {
       headers: { 'Authorization': `Bearer ${token}` }
     });
     if (response.ok) {
@@ -2671,6 +3031,25 @@ const saveAdminQuestion = async () => {
 
   const method = isAdminEditing.value ? 'PUT' : 'POST';
 
+// 🚨 THE TRANSLATOR: Convert the UI array back into Java's flat format
+const correctOpt = adminForm.value.options.find(o => o.isCorrect);
+
+const javaPayload =
+    {
+    id: adminForm.value.id,
+    certCode: adminForm.value.examCode,
+    domain: adminForm.value.category,
+    questionText: adminForm.value.text,
+    optionA: adminForm.value.options[0]?.text || '',
+    optionB: adminForm.value.options[1]?.text || '',
+    optionC: adminForm.value.options[2]?.text || '',
+    optionD: adminForm.value.options[3]?.text || '',
+    optionE: adminForm.value.options[4]?.text || '', // 🚨 ADDED
+    optionF: adminForm.value.options[5]?.text || '', // 🚨 ADDED
+    correctOption: correctOpt ? correctOpt.text : '',
+    explanation: adminForm.value.explanation
+  };
+
   try {
     const response = await fetch(url, {
       method: method,
@@ -2678,12 +3057,14 @@ const saveAdminQuestion = async () => {
         'Authorization': `Bearer ${token}`,
         'Content-Type': 'application/json'
       },
-      body: JSON.stringify(adminForm.value)
+      body: JSON.stringify(javaPayload) // 🚨 Send the translated payload!
     });
 
     if (response.ok) {
       await fetchAdminQuestions(); // Refresh the table!
       showAdminModal.value = false; // Close the modal
+    } else {
+      console.error("Java rejected the payload.");
     }
   } catch (error) {
     console.error("Failed to save question:", error);
@@ -2775,37 +3156,35 @@ const streakDisplay = computed(() => {
 });
 
 // --- THE PROTOCOL ROUTER ---
-  // 🛡️ THE MASTER GATEKEEPER
 const initiateProtocol = (targetView) => {
     const gameConfig = arcadeConfig[targetView];
 
-    // If the view isn't in our roster (like the 'landing' page), just let them go
     if (!gameConfig) {
       currentView.value = targetView;
       return;
     }
 
     // --- GATE 1: THE PREMIUM WALL ---
-    if (gameConfig.requiresPremium && !isPremiumUser) {
+    if (gameConfig.requiresPremium && !isPremiumUser.value) {
       if (typeof playSound === 'function') playSound('wrong');
 
-      showUpgradePrompt.value = true;
+      // 🚨 THE FIX: Save exactly which game they were trying to play!
+      localStorage.setItem('aws_intended_protocol', targetView);
 
+      showUpgradePrompt.value = true;
       return;
     }
 
     // --- GATE 2: THE 3-STRIKE TRACKER (For Free/Unregistered Users) ---
-    if (!isPremiumUser && gameConfig.maxFreePlays) {
+    // 🚨 THE FIX: Added .value here too!
+    if (!isPremiumUser.value && gameConfig.maxFreePlays) {
       // 1. Read their local stamp card (default to 0 if it doesn't exist)
       const strikes = parseInt(localStorage.getItem(`aws_${targetView}_strikes`) || '0');
 
       // 2. Are they out of strikes?
       if (strikes >= gameConfig.maxFreePlays) {
         if (typeof playSound === 'function') playSound('wrong');
-
-        // 🚨 SAME HERE! Fire the beautiful modal when they run out of free plays!
         showUpgradePrompt.value = true;
-
         return; // Abort!
       }
 
@@ -2817,8 +3196,8 @@ const initiateProtocol = (targetView) => {
     // --- VIP ACCESS GRANTED ---
     // If they passed the gates (or are Premium), let them play!
     if (typeof playSound === 'function') playSound('click');
-    // 🚨 THE NEW WIRING: If it's a quiz game, boot the engine! If not, just change the view.
-    if (['standard', 'amrap', 'sudden_death'].includes(targetView)) {
+
+    if (['standard', 'amrap', 'sudden_death', 'flashcards'].includes(targetView)) {
       bootQuizEngine(targetView);
     } else {
       currentView.value = targetView;
@@ -2827,12 +3206,171 @@ const initiateProtocol = (targetView) => {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
+const fetchFlashcards = async () => {
+  const codeToFetch = selectedCert.value?.code;
+  if (!codeToFetch) return;
+
+  try {
+    const token = localStorage.getItem('aws_jwt');
+    const response = await fetch(`http://localhost:8080/api/questions/flashcards/game?examCode=${codeToFetch}`, {
+      headers: { 'Authorization': `Bearer ${token}` }
+    });
+
+    if (response.ok) {
+      const rawCards = await response.json();
+      if (rawCards.length === 0) {
+        alert("No flashcards found in the Matrix.");
+        return;
+      }
+
+      // 1. Reset Telemetry for a new game
+      flashcardAttempts.value = 0;
+      flashcardMisses.value = {};
+      isFlashcardGameComplete.value = false;
+
+      // 2. Save all cards and shuffle the master deck
+      allFetchedFlashcards.value = rawCards.sort(() => Math.random() - 0.5);
+
+      // 3. Start Round 1
+      currentFlashcardRound.value = 0;
+      loadNextFlashcardRound();
+    }
+  } catch (error) {
+    console.error("Flashcard API Offline:", error);
+  }
+};
+
+const loadNextFlashcardRound = () => {
+  matchedPairs.value = [];
+  selectedTerm.value = null;
+  selectedDef.value = null;
+
+  // 🚨 THE LIMITER: Change this to 5 when you are done testing!
+  const MAX_ROUNDS = 1;
+
+  const startIndex = currentFlashcardRound.value * 6;
+  const roundCards = allFetchedFlashcards.value.slice(startIndex, startIndex + 6);
+
+  // 🚨 THE TRIGGER: End the game if the database is empty OR they hit the Max Rounds!
+  if (roundCards.length === 0 || currentFlashcardRound.value >= MAX_ROUNDS) {
+
+    // 1. Trigger the Results Screen
+    isFlashcardGameComplete.value = true;
+
+    // 2. Dynamic Accuracy Math (Only grade them on the cards they actually played)
+    const cardsPlayed = Math.min(allFetchedFlashcards.value.length, currentFlashcardRound.value * 6);
+
+    if (flashcardAttempts.value > 0) {
+      flashcardFinalScore.value = Math.round((cardsPlayed / flashcardAttempts.value) * 100);
+    } else {
+      flashcardFinalScore.value = 0; // Failsafe
+    }
+
+    // 3. Award XP
+    if (currentUser.value) {
+      const xpEarned = Math.round(flashcardFinalScore.value * 1.5);
+      userTotalXp.value += xpEarned;
+      if (typeof playSound === 'function') playSound('correct');
+    }
+    return;
+  }
+
+  // If the game isn't over, deal the next cards!
+  displayTerms.value = [...roundCards].sort(() => Math.random() - 0.5);
+  displayDefs.value = [...roundCards].sort(() => Math.random() - 0.5);
+};
+
+const selectTerm = (term) => {
+  if (matchedPairs.value.includes(term.id)) return;
+  selectedTerm.value = term;
+  checkFlashcardMatch();
+};
+
+const selectDef = (def) => {
+  if (matchedPairs.value.includes(def.id)) return;
+  selectedDef.value = def;
+  checkFlashcardMatch();
+};
+
+const checkFlashcardMatch = () => {
+  if (selectedTerm.value && selectedDef.value) {
+
+    // 📈 TELEMETRY: Every time they click a pair, it's 1 attempt!
+    flashcardAttempts.value++;
+
+    if (selectedTerm.value.id === selectedDef.value.id) {
+      // ✅ MATCH
+      matchedPairs.value.push(selectedTerm.value.id);
+      selectedTerm.value = null;
+      selectedDef.value = null;
+    } else {
+      // ❌ FAILED MATCH: Log it in the telemetry dictionary!
+      const missedId = selectedTerm.value.id;
+      if (!flashcardMisses.value[missedId]) {
+        // If they haven't missed it before, save the full term and definition
+        flashcardMisses.value[missedId] = {
+          term: selectedTerm.value.term,
+          definition: selectedTerm.value.definition,
+          mistakes: 0
+        };
+      }
+      // Add a strike to this specific term
+      flashcardMisses.value[missedId].mistakes++;
+
+      setTimeout(() => {
+        selectedTerm.value = null;
+        selectedDef.value = null;
+      }, 600);
+    }
+  }
+};
+
+// 1. Fetch exactly the cards needed for the Library
+const fetchLibraryFlashcards = async (certCode) => {
+  if (!certCode) return;
+  try {
+    const token = localStorage.getItem('aws_jwt');
+    const response = await fetch(`http://localhost:8080/api/questions/flashcards/game?examCode=${certCode}`, {
+      headers: { 'Authorization': `Bearer ${token}` }
+    });
+
+    if (response.ok) {
+      const rawCards = await response.json();
+
+      // 🚨 Inject the reactive 'flipped' variable into every card so they can flip individually!
+      libraryFlashcards.value = rawCards.map(card => ({
+        ...card,
+        flipped: false
+      }));
+    } else {
+      libraryFlashcards.value = [];
+    }
+  } catch (error) {
+    console.error("Failed to load library flashcards:", error);
+  }
+};
+
+// 2. Automatically extract unique domains to build the dropdown menu
+const libraryFlashcardDomains = computed(() => {
+  const domains = new Set();
+  libraryFlashcards.value.forEach(card => {
+    if (card.category) domains.add(card.category);
+  });
+  return ['All', ...Array.from(domains).sort()];
+});
+
+// 3. Filter the cards based on what they click in the dropdown
+const filteredLibraryFlashcards = computed(() => {
+  if (librarySelectedDomain.value === 'All') {
+    return libraryFlashcards.value;
+  }
+  return libraryFlashcards.value.filter(c => c.category === librarySelectedDomain.value);
+});
+
 // 🚨 THE NEW ENGINE STARTER
 const bootQuizEngine = async (mode) => {
     // 1. Reset all previous state
     resetSession();
-
-    // 2. Set the active game mode
     activeProtocol.value = mode;
     isSuddenDeath.value = (mode === 'sudden_death');
     isAmrapMode.value = (mode === 'amrap');
@@ -2849,6 +3387,11 @@ const bootQuizEngine = async (mode) => {
       totalExamQuestions.value = 65; // Standard AWS Exam length
       startTimer();
     }
+    else if (mode === 'flashcards') {
+    currentView.value = 'flashcards';
+    await fetchFlashcards();
+    return;
+    }
 
     // 4. Change the screen to the unified quiz UI
     currentView.value = 'quiz';
@@ -2856,6 +3399,22 @@ const bootQuizEngine = async (mode) => {
     // 5. Fetch the very first question!
     await fetchQuestion();
   };
+
+// --- 🎴 DYNAMIC FLASHCARD ENGINE ---
+
+const deleteAdminFlashcard = async (id) => {
+  if (!confirm("⚠ VAPORIZE FLASHCARD? This cannot be undone.")) return;
+  try {
+    const token = localStorage.getItem('aws_jwt');
+    const response = await fetch(`http://localhost:8080/api/questions/flashcards/${id}`, {
+      method: 'DELETE',
+      headers: { 'Authorization': `Bearer ${token}` }
+    });
+    if (response.ok) fetchAdminFlashcards();
+  } catch (error) {
+    console.error("Failed to vaporize:", error);
+  }
+};
 
 // 1. Add the Certifications list
 const certifications = ref([
@@ -3128,7 +3687,7 @@ const uploadCsv = async () => {
       // 🚨 CRITICAL FIX: Grab the user's security token from the browser!
       const token = localStorage.getItem('aws_jwt');
 
-      const response = await fetch('http://localhost:8080/api/admin/questions/upload', {
+      const response = await fetch('http://localhost:8080/api/questions/upload', {
         method: 'POST',
         headers: {
           // 🚨 Include the token so Spring Boot doesn't block the upload!
@@ -3139,7 +3698,7 @@ const uploadCsv = async () => {
 
       if (response.ok) {
         const result = await response.json();
-        uploadStatus.value = `✅ Success: Injected ${result.count} new questions!`;
+        uploadStatus.value = result.message;
         selectedCsvFile.value = null;
 
         // Refresh the admin table instantly
@@ -3154,6 +3713,42 @@ const uploadCsv = async () => {
       uploadStatus.value = '❌ Server connection lost.';
     }
   };
+
+const handleFlashcardSelect = (event) => {
+  selectedFlashcardCsv.value = event.target.files[0];
+  flashcardUploadStatus.value = '';
+};
+
+const uploadFlashcardCsv = async () => {
+  if (!selectedFlashcardCsv.value) return;
+  const formData = new FormData();
+  formData.append('file', selectedFlashcardCsv.value);
+  flashcardUploadStatus.value = 'Injecting flashcards into matrix...';
+
+  try {
+    const token = localStorage.getItem('aws_jwt');
+    const response = await fetch('http://localhost:8080/api/questions/flashcards/upload', {
+      method: 'POST',
+      headers: { 'Authorization': `Bearer ${token}` },
+      body: formData,
+    });
+
+    if (response.ok) {
+      const result = await response.json();
+      flashcardUploadStatus.value = `✅ ${result.message}`;
+      selectedFlashcardCsv.value = null;
+      if (typeof fetchAdminFlashcards === 'function') fetchAdminFlashcards();
+    } else {
+      // 🚨 THE UNMASKER: If Java rejects the file, catch the raw text so we can read it!
+      const errorText = await response.text();
+      console.error("RAW JAVA ERROR:", errorText);
+      flashcardUploadStatus.value = `❌ Upload Failed. Press F12 and check the Console.`;
+    }
+  } catch (error) {
+    console.error("Network Crash:", error);
+    flashcardUploadStatus.value = '❌ Server connection lost.';
+  }
+};
 
 // This computed property automatically groups them so you don't have to!
 const groupedCerts = computed(() => {
@@ -3540,8 +4135,40 @@ const downloadDocumentPDF = () => {
     }
   };
 
-  // 🚨 FIX 2: Added the VIP Pass to the XP tracker
-  const awardExperiencePoints = async () => {
+// 2. THE EXECUTOR: Fires ONLY after they check the box and agree
+const proceedToStripe = async () => {
+    if (!hasAcceptedTerms.value) return; // Failsafe
+
+    const token = localStorage.getItem('aws_jwt');
+    showAgreementModal.value = false; // Hide the contract
+
+    // Optional: Show a loading state here if you have one
+
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/payment/checkout`, {
+        method: 'POST',
+        headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' }
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        localStorage.setItem('aws_awaiting_stripe_return', 'true');
+        localStorage.setItem('aws_return_view', currentView.value);
+        if (selectedCert.value) {
+          localStorage.setItem('aws_return_cert', JSON.stringify(selectedCert.value));
+        }
+        window.location.href = data.checkoutUrl; // Warp to Stripe!
+      } else {
+        const errorData = await response.json();
+        alert(errorData.error || "Payment gateway error.");
+      }
+    } catch (error) {
+      console.error("Payment pipeline severed:", error);
+    }
+  };
+
+// 🚨 FIX 2: Added the VIP Pass to the XP tracker
+const awardExperiencePoints = async () => {
     if (!currentUser.value) return;
 
     const correctCount = Math.round((finalScore.value / 100) * totalExamQuestions.value);
@@ -3625,13 +4252,16 @@ const correctCount = computed(() => {
 
 // 2. Automatically calculate the percentage based on the formula above
 const finalScore = computed(() => {
-  // THE FIX: Ensure the percentage math also uses the correct array!
-  const activeQuestions = (allQuestionsInSession.value && allQuestionsInSession.value.length > 0)
-      ? allQuestionsInSession.value
-      : questions.value;
+  // 1. Grab every answer the user ACTUALLY clicked "Submit" on
+  const results = Object.values(userResults.value);
+  const attemptedCount = results.length;
 
-  const totalQs = activeQuestions?.length || 1;
-  return Math.round((correctCount.value / totalQs) * 100);
+  // 2. Failsafe for 0 questions
+  if (attemptedCount === 0) return 0;
+
+  // 3. Count the exact number of correct answers and calculate
+  const correctAnswers = results.filter(result => result === true).length;
+  return Math.round((correctAnswers / attemptedCount) * 100);
 });
 
 // 3. Determine if they passed the AWS standard (72%)
@@ -3782,7 +4412,7 @@ const triggerPremiumPaywall = () => {
 
 // 2. Handles the actual checkout process when they click "Sign Up" inside the modal
 const handleSignUpClick = async () => {
-    showUpgradePrompt.value = false; // Hide the prompt so it gets out of the way
+    showUpgradePrompt.value = false; // Hide the upgrade prompt so it gets out of the way
 
     try {
       const token = localStorage.getItem('aws_jwt');
@@ -3795,43 +4425,17 @@ const handleSignUpClick = async () => {
         return;
       }
 
-      // They are logged in! Call your Java backend to get the Stripe URL
-      const response = await fetch(`${API_BASE_URL}/api/payment/checkout`, {
-        method: 'POST',
-        headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' }
-      });
-
-      if (response.ok) {
-        const data = await response.json();
-
-        // Save their exact location in the app before they leave for Stripe
-        localStorage.setItem('aws_awaiting_stripe_return', 'true');
-        localStorage.setItem('aws_return_view', currentView.value);
-        if (selectedCert.value) {
-          localStorage.setItem('aws_return_cert', JSON.stringify(selectedCert.value));
-        }
-
-        // THE WARP GATE: Sends them to Stripe!
-        window.location.href = data.checkoutUrl;
-
-      } else if (response.status === 400) {
-        // 🚨 THE INTERCEPTOR: Java caught a double-charge!
-        const errorData = await response.json();
-        if (errorData.error === "User is already a Premium member.") {
-          showAlreadyPremiumModal.value = true; // Pop your "Already Premium" modal
-        } else {
-          console.error("Payment Error:", errorData.error);
-        }
-      } else {
-        console.error("Matrix Error: Could not reach the payment gateway.");
-      }
+      // 🚨 THE FIX: Route them to the Legal Agreement instead of directly to Stripe!
+      pendingPlanType.value = 'monthly'; // Or whatever default plan you want them to buy
+      hasAcceptedTerms.value = false;    // Force them to check the box
+      showAgreementModal.value = true;   // Show the legal terminal
 
     } catch (error) {
-      console.error("Payment pipeline severed:", error);
+      console.error("Payment routing error:", error);
     }
   };
 
-// 2. Fires when they pick a plan inside the Paywall
+// 3. Fires when they pick a plan inside the Paywall
 const initiateCheckout = async (planType) => {
     const token = localStorage.getItem('aws_jwt');
 
@@ -3969,122 +4573,149 @@ const isPlaying = ref(false); // Controls the video player state
 // --- 2. THE BOOT SEQUENCE ---
 onMounted(async () => {
 
-    // 🚨 1. THE STRIPE INTERCEPTOR (Must run first!)
-    const urlParams = new URLSearchParams(window.location.search);
+  // 🚨 1. THE STRIPE INTERCEPTOR (Must run first!)
+  const urlParams = new URLSearchParams(window.location.search);
 
-    if (urlParams.get('success') === 'true') {
-      const returnView = localStorage.getItem('aws_return_view');
-      const returnCert = localStorage.getItem('aws_return_cert');
+  if (urlParams.get('success') === 'true') {
+    const returnView = localStorage.getItem('aws_return_view');
+    const returnCertStr = localStorage.getItem('aws_return_cert');
 
-      if (returnView) currentView.value = returnView;
-      if (returnCert) selectedCert.value = JSON.parse(returnCert);
+    if (returnView && returnView !== 'undefined') currentView.value = returnView;
 
-      welcomeMessage.value = "Payment Secured! Premium Databanks Unlocked.";
-      showSuccessHologram.value = true;
+    // SAFETY SHIELD: Safely parse the returning cert
+    if (returnCertStr && returnCertStr !== 'undefined') {
+      try { selectedCert.value = JSON.parse(returnCertStr); } catch(e) {}
+    }
 
-      setTimeout(() => {
-        showSuccessHologram.value = false;
-      }, 4500);
+    welcomeMessage.value = "Payment Secured! Premium Databanks Unlocked.";
+    showSuccessHologram.value = true;
+    setTimeout(() => { showSuccessHologram.value = false; }, 4500);
 
-      // 🚨 THE FIX: Force Vue to fetch your updated Premium status from Java!
-      const actualToken = localStorage.getItem('aws_jwt');
-      const savedUser = JSON.parse(localStorage.getItem('aws_user'));
+    const actualToken = localStorage.getItem('aws_jwt');
+    const savedUserStr = localStorage.getItem('aws_user');
 
-      if (savedUser && savedUser.username && actualToken) {
-        // Fetch the fresh user profile from the database
+    // SAFETY SHIELD: Safely parse the user
+    if (savedUserStr && savedUserStr !== 'undefined' && actualToken) {
+      try {
+        const savedUser = JSON.parse(savedUserStr);
+        savedUser.isPremium = true;
+        currentUser.value = savedUser;
+        localStorage.setItem('aws_user', JSON.stringify(savedUser));
+
         fetch(`http://localhost:8080/api/users/${savedUser.username}`, {
           headers: { 'Authorization': `Bearer ${actualToken}` }
         })
-            .then(res => res.json())
+            .then(res => res.ok ? res.json() : null)
             .then(updatedUser => {
-              // Overwrite the old Free profile with the new Premium one!
-              currentUser.value = updatedUser;
-              localStorage.setItem('aws_user', JSON.stringify(updatedUser));
-              console.log("Identity re-synced. Premium Status: " + updatedUser.isPremium);
+              if (updatedUser) {
+                currentUser.value = updatedUser;
+                localStorage.setItem('aws_user', JSON.stringify(updatedUser));
+              }
             })
-            .catch(err => console.error("Failed to sync updated profile:", err));
-      }
+            .catch(err => console.warn("Local Premium Override Active."));
 
-      // Clean up the URL (Removes the ?success=true)
-      window.history.replaceState({}, document.title, window.location.pathname);
-
-      // Erase the temporary Stripe memory
-      localStorage.removeItem('aws_awaiting_stripe_return');
-      localStorage.removeItem('aws_return_view');
-      localStorage.removeItem('aws_return_cert');
-
-    } else if (urlParams.get('canceled') === 'true') {
-      alert("Payment was canceled. You have not been charged.");
-      window.history.replaceState({}, document.title, window.location.pathname);
-    } else if (localStorage.getItem('aws_awaiting_stripe_return') === 'true') {
-      // Failsafe: Instant restore if the URL params were somehow missed
-      const savedView = localStorage.getItem('aws_return_view');
-      if (savedView) {
-        currentView.value = savedView;
+        const intendedProtocol = localStorage.getItem('aws_intended_protocol');
+        if (intendedProtocol && intendedProtocol !== 'undefined') {
+          setTimeout(() => {
+            bootQuizEngine(intendedProtocol);
+            localStorage.removeItem('aws_intended_protocol');
+          }, 4500);
+        } else if (returnView && returnView !== 'undefined') {
+          currentView.value = returnView;
+        }
+      } catch (error) {
+        console.error("Corrupted Stripe user memory wiped.", error);
+        localStorage.removeItem('aws_user');
       }
     }
 
-    // 2. Set the initial URL state so the browser back button works
-    history.replaceState({ view: currentView.value }, '', `#${currentView.value}`);
+    window.history.replaceState({}, document.title, window.location.pathname);
+    localStorage.removeItem('aws_awaiting_stripe_return');
+    localStorage.removeItem('aws_return_view');
+    localStorage.removeItem('aws_return_cert');
 
-    // 🚨 3. THE MEMORY RESTORE: Remember their certification BEFORE we load anything else!
-    const savedCertCode = localStorage.getItem('aws_active_cert');
-    if (savedCertCode && certifications.value) {
-      const foundCert = certifications.value.find(c => c.code === savedCertCode);
-      if (foundCert) {
-        selectedCert.value = foundCert; // Restore the Certification
+  } else if (urlParams.get('canceled') === 'true') {
+    alert("Payment was canceled. You have not been charged.");
+    window.history.replaceState({}, document.title, window.location.pathname);
+  } else if (localStorage.getItem('aws_awaiting_stripe_return') === 'true') {
+    const savedView = localStorage.getItem('aws_return_view');
+    if (savedView && savedView !== 'undefined') currentView.value = savedView;
+  }
 
-        // Restore the specific Domain (if they were in the Knowledge Forge)
-        const savedDomainName = localStorage.getItem('aws_active_domain');
-        if (savedDomainName && foundCert.domains) {
-          const foundDomain = foundCert.domains.find(d => d.name === savedDomainName);
-          if (foundDomain) {
-            activeDomain.value = foundDomain;
+  history.replaceState({ view: currentView.value }, '', `#${currentView.value}`);
 
-            // Restore the exact Video/Doc Module they were reading
-            const savedModuleId = localStorage.getItem('aws_active_module');
-            if (savedModuleId && foundDomain.modules) {
-              const foundModule = foundDomain.modules.find(m => m.id === savedModuleId);
-              if (foundModule) {
-                activeModule.value = foundModule;
-              }
-            }
+  // 🚨 3. THE MEMORY RESTORE
+  const savedCertCode = localStorage.getItem('aws_active_cert');
+  if (savedCertCode && savedCertCode !== 'undefined' && certifications.value) {
+    const foundCert = certifications.value.find(c => c.code === savedCertCode);
+    if (foundCert) {
+      selectedCert.value = foundCert;
+      const savedDomainName = localStorage.getItem('aws_active_domain');
+      if (savedDomainName && savedDomainName !== 'undefined' && foundCert.domains) {
+        const foundDomain = foundCert.domains.find(d => d.name === savedDomainName);
+        if (foundDomain) {
+          activeDomain.value = foundDomain;
+          const savedModuleId = localStorage.getItem('aws_active_module');
+          if (savedModuleId && savedModuleId !== 'undefined' && foundDomain.modules) {
+            const foundModule = foundDomain.modules.find(m => m.id === savedModuleId);
+            if (foundModule) activeModule.value = foundModule;
           }
         }
       }
     }
+  }
 
-    // 4. Always fetch global data for the dashboard immediately
-    if (typeof fetchHallOfFame === 'function') {
-      fetchHallOfFame();
-    }
-    if (typeof fetchLeaderboard === 'function') {
-      fetchLeaderboard();
-    }
+  if (typeof fetchHallOfFame === 'function') fetchHallOfFame();
+  if (typeof fetchLeaderboard === 'function') fetchLeaderboard();
 
-    // 5. Check the browser's permanent memory for a returning user
-    const savedUser = localStorage.getItem('aws_user');
+  // 🚨 5. THE CRASH ZONE FIX: Check the browser's permanent memory
+  const returningUserStr = localStorage.getItem('aws_user');
 
-    if (savedUser) {
-      currentUser.value = JSON.parse(savedUser);
-      showAuthModal.value = false; // Hide the login screen!
+  if (returningUserStr && returningUserStr !== 'undefined') {
+    try {
+      // 1. Load what we have immediately for a fast UI
+      const localUser = JSON.parse(returningUserStr);
+      currentUser.value = localUser;
+      showAuthModal.value = false;
 
-      // Fetch their personal history now that we know who they are
-      if (typeof fetchHistory === 'function') {
-        await fetchHistory();
+      // 🚨 THE MASTER SYNC: Ask Java for your true database profile (which contains your official ID!)
+      const actualToken = localStorage.getItem('aws_jwt');
+      if (actualToken && localUser.username) {
+        fetch(`http://localhost:8080/api/users/${localUser.username}`, {
+          headers: { 'Authorization': `Bearer ${actualToken}` }
+        })
+            .then(res => res.ok ? res.json() : null)
+            .then(dbUser => {
+              if (dbUser) {
+                // 2. Save the true profile (with the ID) to Vue and Local Storage
+                currentUser.value = dbUser;
+                localStorage.setItem('aws_user', JSON.stringify(dbUser));
+
+                console.log("✅ Identity Synced with Mainframe. User ID:", dbUser.id);
+
+                // 3. NOW that we have the official ID, fire the data bridges!
+                if (typeof fetchHistory === 'function') fetchHistory();
+                if (typeof fetchRadarStats === 'function') fetchRadarStats();
+               }
+            })
+            .catch(err => console.error("Mainframe sync failed:", err));
       }
 
-      // Load their lifetime stats into the Matrix Radar
-      if (typeof fetchRadarStats === 'function') {
-        await fetchRadarStats();
-      }
+      // Load the public data
+      if (typeof fetchAdminQuestions === 'function') fetchAdminQuestions();
+      if (typeof fetchAdminFlashcards === 'function') fetchAdminFlashcards();
+      if (selectedCert.value && typeof fetchQuestion === 'function') fetchQuestion();
 
-      // Resume quiz if they refreshed the page while looking at a cert
-      if (selectedCert.value && typeof fetchQuestion === 'function') {
-        fetchQuestion();
-      }
+    } catch (error) {
+      console.error("Corrupt user memory detected. Wiping local storage.");
+      localStorage.removeItem('aws_user');
     }
-  });
+  } else {
+    if (returningUserStr === 'undefined') {
+      localStorage.removeItem('aws_user');
+    }
+  }
+});
 
 watch(currentView, (newView) => {
   // Only push to history if it's actually a new screen
@@ -4093,7 +4724,7 @@ watch(currentView, (newView) => {
   }
 });
 
-// 3. Hijack the Browser's Back/Forward Arrows
+//Hijack the Browser's Back/Forward Arrows
 window.addEventListener('popstate', (event) => {
   if (event.state && event.state.view) {
     // If they click 'Back', read the history and change the Vue screen to match
@@ -4507,5 +5138,29 @@ onUnmounted(() => stopTimer());
   transition: all 0.2s;
 }
 .btn-save:hover { background: #059669; }
+
+/* ⚖️ LEGAL TERMINAL SCROLLBAR */
+.custom-scrollbar {
+  scrollbar-width: thin; /* Firefox */
+  scrollbar-color: #334155 #0f172a; /* Firefox thumb and track */
+}
+
+.custom-scrollbar::-webkit-scrollbar {
+  width: 6px; /* Chrome, Edge, Safari */
+}
+
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: #0f172a; /* Tailwind slate-950 */
+  border-radius: 10px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: #334155; /* Tailwind slate-700 */
+  border-radius: 10px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: #475569; /* Tailwind slate-600 */
+}
 
 </style>

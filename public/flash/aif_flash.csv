@@ -1,0 +1,113 @@
+Exam Code, Category, Term, Definition
+AIF-C01, AI/ML Fundamentals, Artificial Intelligence (AI), The broad field of computer science focused on creating systems capable of performing tasks that typically require human intelligence such as reasoning learning and problem-solving.
+AIF-C01, AI/ML Fundamentals, Machine Learning (ML), A subset of AI where algorithms learn patterns from data to make predictions or decisions without being explicitly programmed.
+AIF-C01, AI/ML Fundamentals, Deep Learning, A subset of machine learning that uses artificial neural networks with multiple layers (deep neural networks) to model complex patterns in data.
+AIF-C01, AI/ML Fundamentals, Supervised Learning, A type of ML where the model is trained on labeled data (input-output pairs) to learn a mapping function. Examples: classification and regression.
+AIF-C01, AI/ML Fundamentals, Unsupervised Learning, A type of ML where the model finds hidden patterns or structures in unlabeled data. Examples: clustering and dimensionality reduction.
+AIF-C01, AI/ML Fundamentals, Reinforcement Learning, A type of ML where an agent learns to make decisions by taking actions in an environment and receiving rewards or penalties.
+AIF-C01, AI/ML Fundamentals, Semi-Supervised Learning, A learning approach that combines a small amount of labeled data with a large amount of unlabeled data during training.
+AIF-C01, AI/ML Fundamentals, Training Data, The dataset used to teach a machine learning model to recognize patterns and make predictions.
+AIF-C01, AI/ML Fundamentals, Validation Data, A subset of data used during training to tune hyperparameters and evaluate model performance to prevent overfitting.
+AIF-C01, AI/ML Fundamentals, Test Data, A separate dataset used after training to evaluate the final performance of a model on unseen data.
+AIF-C01, AI/ML Fundamentals, Feature, An individual measurable property or characteristic of the data used as input to a machine learning model.
+AIF-C01, AI/ML Fundamentals, Label, The target output or answer associated with each training example in supervised learning.
+AIF-C01, AI/ML Fundamentals, Model, A mathematical representation learned from data that can make predictions or decisions on new unseen data.
+AIF-C01, AI/ML Fundamentals, Inference, The process of using a trained model to make predictions on new data.
+AIF-C01, AI/ML Fundamentals, Overfitting, When a model learns the training data too well (including noise) resulting in poor performance on new unseen data.
+AIF-C01, AI/ML Fundamentals, Underfitting, When a model is too simple to capture the underlying patterns in the data resulting in poor performance on both training and test data.
+AIF-C01, AI/ML Fundamentals, Bias (in ML), Systematic error introduced by assumptions in the learning algorithm that cause it to miss relevant relations between features and target outputs.
+AIF-C01, AI/ML Fundamentals, Variance (in ML), The amount by which the model's predictions would change if trained on a different dataset; high variance indicates overfitting.
+AIF-C01, AI/ML Fundamentals, Hyperparameter, A configuration setting external to the model that is set before training begins (e.g. learning rate or number of layers).
+AIF-C01, AI/ML Fundamentals, Epoch, One complete pass through the entire training dataset during the training process.
+AIF-C01, Neural Networks & Deep Learning, Neural Network, A computing system inspired by biological neural networks consisting of interconnected nodes (neurons) organized in layers that process information.
+AIF-C01, Neural Networks & Deep Learning, Convolutional Neural Network (CNN), A deep learning architecture primarily used for image recognition and computer vision tasks using convolutional layers to detect spatial features.
+AIF-C01, Neural Networks & Deep Learning, Recurrent Neural Network (RNN), A neural network architecture designed for sequential data (e.g. text and time series) where outputs from previous steps are fed as inputs to the current step.
+AIF-C01, Neural Networks & Deep Learning, Transformer, A neural network architecture that uses self-attention mechanisms to process sequential data in parallel forming the basis of modern LLMs like GPT and BERT.
+AIF-C01, Neural Networks & Deep Learning, Transfer Learning, A technique where a model trained on one task is reused as the starting point for a model on a different but related task.
+AIF-C01, Generative AI, Generative AI, AI systems that can create new content (text images code audio) based on patterns learned from training data.
+AIF-C01, Generative AI, Large Language Model (LLM), A type of generative AI model trained on massive text datasets that can understand and generate human-like text.
+AIF-C01, Generative AI, Foundation Model, A large AI model trained on broad data at scale that can be adapted (fine-tuned) to a wide range of downstream tasks.
+AIF-C01, Generative AI, Prompt, The input text or instruction given to a generative AI model to guide its output.
+AIF-C01, Generative AI, Prompt Engineering, The practice of designing and refining input prompts to get desired outputs from generative AI models.
+AIF-C01, Generative AI, Fine-Tuning, The process of further training a pre-trained model on a smaller task-specific dataset to improve performance on that task.
+AIF-C01, Generative AI, Retrieval-Augmented Generation (RAG), A technique that enhances LLM responses by retrieving relevant information from external knowledge sources before generating an answer.
+AIF-C01, Generative AI, Hallucination, When a generative AI model produces outputs that are factually incorrect fabricated or not grounded in the input data.
+AIF-C01, Generative AI, Temperature (in LLMs), A parameter that controls the randomness of a model's output; lower values produce more deterministic responses and higher values produce more creative ones.
+AIF-C01, Generative AI, Tokens, The basic units of text (words subwords or characters) that LLMs process as input and generate as output.
+AIF-C01, Generative AI, Context Window, The maximum number of tokens an LLM can process in a single input/output interaction.
+AIF-C01, Generative AI, Embedding, A numerical vector representation of data (text or images) that captures semantic meaning enabling similarity comparisons.
+AIF-C01, Generative AI, Vector Database, A database optimized for storing and querying high-dimensional vector embeddings commonly used in RAG architectures.
+AIF-C01, Generative AI, RLHF (Reinforcement Learning from Human Feedback), A technique used to fine-tune LLMs by incorporating human preferences and feedback into the training process.
+AIF-C01, AWS AI/ML Services, Amazon SageMaker, A fully managed AWS service for building training and deploying machine learning models at scale.
+AIF-C01, AWS AI/ML Services, Amazon Bedrock, A fully managed AWS service that provides access to foundation models from Amazon and third-party providers via a single API.
+AIF-C01, AWS AI/ML Services, Amazon Q, An AI-powered assistant by AWS that can answer questions generate content and take actions using enterprise data and systems.
+AIF-C01, AWS AI/ML Services, Amazon Rekognition, An AWS service that provides pre-trained computer vision capabilities for image and video analysis (object detection and facial analysis etc.).
+AIF-C01, AWS AI/ML Services, Amazon Comprehend, An AWS NLP service that uses ML to find insights and relationships in text including sentiment analysis entity recognition and topic modeling.
+AIF-C01, AWS AI/ML Services, Amazon Transcribe, An AWS service that converts speech to text using automatic speech recognition (ASR).
+AIF-C01, AWS AI/ML Services, Amazon Polly, An AWS service that converts text into lifelike speech using deep learning (text-to-speech).
+AIF-C01, AWS AI/ML Services, Amazon Translate, An AWS neural machine translation service for translating text between languages.
+AIF-C01, AWS AI/ML Services, Amazon Textract, An AWS service that automatically extracts text handwriting and structured data from scanned documents.
+AIF-C01, AWS AI/ML Services, Amazon Lex, An AWS service for building conversational interfaces (chatbots) using voice and text powered by the same technology as Alexa.
+AIF-C01, AWS AI/ML Services, Amazon Kendra, An AWS intelligent search service powered by ML that provides natural language search across enterprise data.
+AIF-C01, AWS AI/ML Services, Amazon Personalize, An AWS service that enables developers to create real-time personalized recommendations using ML.
+AIF-C01, AWS AI/ML Services, Amazon Forecast, An AWS service that uses ML to deliver highly accurate time-series forecasts.
+AIF-C01, AWS AI/ML Services, Amazon CodeWhisperer / Amazon Q Developer, An AI-powered code generation assistant that provides real-time code suggestions and security scanning.
+AIF-C01, AWS AI/ML Services, AWS Trainium, Custom AWS chips designed to deliver high-performance cost-effective ML training in the cloud.
+AIF-C01, AWS AI/ML Services, AWS Inferentia, Custom AWS chips designed to deliver high-performance low-cost ML inference in the cloud.
+AIF-C01, AWS AI/ML Services, Amazon SageMaker JumpStart, A feature of SageMaker that provides pre-trained models solution templates and example notebooks to accelerate ML development.
+AIF-C01, Responsible AI, Responsible AI, The practice of designing developing and deploying AI systems in a way that is ethical fair transparent and accountable.
+AIF-C01, Responsible AI, Bias (in AI Ethics), Unfair or prejudiced outcomes produced by AI systems often resulting from biased training data or flawed model design.
+AIF-C01, Responsible AI, Fairness, The principle that AI systems should treat all individuals and groups equitably without discrimination.
+AIF-C01, Responsible AI, Explainability / Interpretability, The ability to understand and explain how an AI model arrives at its predictions or decisions.
+AIF-C01, Responsible AI, Transparency, The principle that AI systems should be open about how they work what data they use and their limitations.
+AIF-C01, Responsible AI, Toxicity Detection, The ability to identify harmful offensive or inappropriate content generated by or input to AI systems.
+AIF-C01, Responsible AI, Guardrails (Amazon Bedrock Guardrails), Configurable safeguards in Amazon Bedrock that filter harmful content block denied topics and redact sensitive information from model inputs/outputs.
+AIF-C01, Responsible AI, Human-in-the-Loop, An approach where humans review validate or override AI decisions to ensure accuracy and accountability.
+AIF-C01, Data & ML Pipeline, Data Preprocessing, The steps taken to clean transform and prepare raw data before feeding it into a machine learning model.
+AIF-C01, Data & ML Pipeline, Feature Engineering, The process of creating selecting or transforming input features to improve model performance.
+AIF-C01, Data & ML Pipeline, Data Augmentation, Techniques to artificially increase the size and diversity of training data (e.g. rotating images or paraphrasing text).
+AIF-C01, Data & ML Pipeline, ETL (Extract Transform Load), A data pipeline process that extracts data from sources transforms it into a usable format and loads it into a target system.
+AIF-C01, Evaluation Metrics, Accuracy, The proportion of correct predictions out of total predictions; commonly used for classification tasks.
+AIF-C01, Evaluation Metrics, Precision, The proportion of true positive predictions out of all positive predictions; measures how many selected items are relevant.
+AIF-C01, Evaluation Metrics, Recall (Sensitivity), The proportion of true positive predictions out of all actual positives; measures how many relevant items are selected.
+AIF-C01, Evaluation Metrics, F1 Score, The harmonic mean of precision and recall providing a single metric that balances both.
+AIF-C01, Evaluation Metrics, AUC-ROC, Area Under the Receiver Operating Characteristic Curve; measures a classification model's ability to distinguish between classes.
+AIF-C01, Evaluation Metrics, BLEU Score, A metric for evaluating the quality of machine-generated text by comparing it to reference text; commonly used in translation.
+AIF-C01, Evaluation Metrics, Perplexity, A metric for evaluating language models; lower perplexity indicates the model is better at predicting the next token.
+AIF-C01, Evaluation Metrics, ROUGE Score, A set of metrics for evaluating text summarization by comparing overlap between generated and reference summaries.
+AIF-C01, Security & Compliance, Data Privacy, The protection of personal and sensitive information from unauthorized access use or disclosure in AI systems.
+AIF-C01, Security & Compliance, PII (Personally Identifiable Information), Any data that can be used to identify a specific individual such as name SSN or email address.
+AIF-C01, Security & Compliance, Encryption, The process of converting data into a coded format to prevent unauthorized access used to protect data at rest and in transit.
+AIF-C01, Security & Compliance, IAM (Identity and Access Management), AWS service for securely controlling access to AWS resources by managing users groups roles and permissions.
+AIF-C01, Security & Compliance, Compliance, Adherence to laws regulations and industry standards governing the use of AI and data (e.g. GDPR and HIPAA).
+AIF-C01, Security & Compliance, AWS Shared Responsibility Model, A security framework where AWS manages security OF the cloud (infrastructure) and customers manage security IN the cloud (data access and applications).
+AIF-C01, Additional Key Concepts, Natural Language Processing (NLP), A field of AI focused on enabling computers to understand interpret and generate human language.
+AIF-C01, Additional Key Concepts, Computer Vision, A field of AI that enables computers to interpret and understand visual information from images and videos.
+AIF-C01, Additional Key Concepts, Sentiment Analysis, An NLP technique that identifies and extracts the emotional tone (positive negative or neutral) from text.
+AIF-C01, Additional Key Concepts, Named Entity Recognition (NER), An NLP task that identifies and classifies named entities (people organizations and locations) in text.
+AIF-C01, Additional Key Concepts, Clustering, An unsupervised learning technique that groups similar data points together based on their features.
+AIF-C01, Additional Key Concepts, Classification, A supervised learning task where the model predicts a discrete category or class label for each input.
+AIF-C01, Additional Key Concepts, Regression, A supervised learning task where the model predicts a continuous numerical value.
+AIF-C01, Additional Key Concepts, Dimensionality Reduction, Techniques to reduce the number of input features while preserving important information (e.g. PCA and t-SNE).
+AIF-C01, Additional Key Concepts, Batch Inference, Processing a large volume of data through a model all at once rather than in real-time.
+AIF-C01, Additional Key Concepts, Real-Time Inference, Processing data through a model immediately as it arrives providing instant predictions.
+AIF-C01, Advanced Concepts & Operations, Model Drift, The degradation of model performance over time as the statistical properties of the input data change.
+AIF-C01, Advanced Concepts & Operations, A/B Testing, A method of comparing two versions of a model or system to determine which performs better with real users.
+AIF-C01, Advanced Concepts & Operations, MLOps, A set of practices that combines ML DevOps and data engineering to deploy and maintain ML systems in production reliably.
+AIF-C01, Advanced Concepts & Operations, Amazon SageMaker Model Monitor, A SageMaker feature that continuously monitors deployed models for data quality model quality bias and feature attribution drift.
+AIF-C01, Advanced Concepts & Operations, Amazon SageMaker Clarify, A SageMaker feature that helps detect bias in data and models and provides explanations for model predictions.
+AIF-C01, Advanced Concepts & Operations, Amazon Augmented AI (A2I), An AWS service that makes it easy to build human review workflows for ML predictions.
+AIF-C01, Advanced Concepts & Operations, Diffusion Model, A type of generative model that creates data (often images) by learning to reverse a gradual noising process.
+AIF-C01, Advanced Concepts & Operations, GAN (Generative Adversarial Network), A generative model architecture consisting of two neural networks (generator and discriminator) that compete to produce realistic data.
+AIF-C01, Advanced Concepts & Operations, Zero-Shot Learning, The ability of a model to perform a task it was not explicitly trained on using only a task description or prompt.
+AIF-C01, Advanced Concepts & Operations, Few-Shot Learning, The ability of a model to learn a new task from only a few examples provided in the prompt.
+AIF-C01, Advanced Concepts & Operations, Chain-of-Thought Prompting, A prompt engineering technique that encourages the model to break down complex reasoning into intermediate steps.
+AIF-C01, Advanced Concepts & Operations, Agents (AI Agents), AI systems that can autonomously plan reason and take actions using tools and APIs to accomplish complex tasks.
+AIF-C01, Advanced Concepts & Operations, Multimodal AI, AI models that can process and generate multiple types of data (text images audio and video) simultaneously.
+AIF-C01, Advanced Concepts & Operations, Amazon Titan, Amazon's family of foundation models available through Amazon Bedrock including text generation and embedding models.
+AIF-C01, Advanced Concepts & Operations, Anthropic Claude, A family of large language models by Anthropic available through Amazon Bedrock known for safety and helpfulness.
+AIF-C01, Advanced Concepts & Operations, Tokenization, The process of breaking text into smaller units (tokens) that can be processed by an NLP or language model.
+AIF-C01, Advanced Concepts & Operations, Latency, The time delay between sending a request to an AI model and receiving a response; critical for real-time applications.
+AIF-C01, Advanced Concepts & Operations, Throughput, The number of inference requests a model can process per unit of time.
+AIF-C01, Advanced Concepts & Operations, Cost Optimization (AI/ML), Strategies to reduce the cost of training and deploying AI models such as using spot instances right-sizing or serverless inference.
+
