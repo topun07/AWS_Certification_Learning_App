@@ -12,7 +12,6 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
 
-// Make sure your Vue ports are correct here!
 @CrossOrigin(origins = {"http://localhost:5173", "http://localhost:5174"}, maxAge = 3600)
 @RestController
 @RequestMapping("/api/users")
@@ -24,6 +23,75 @@ public class UserController {
     // 1. We inject the Repository so we can search the database directly
     @Autowired
     private AppUserRepository userRepository;
+
+    @Autowired
+    private org.springframework.security.crypto.password.PasswordEncoder passwordEncoder;
+
+    // 🚨 THE REGISTRATION ENDPOINT & ECHO TEST
+    @PostMapping("/register")
+    public ResponseEntity<?> registerUser(@RequestBody AppUser newUser) {
+
+        // 1. THE ECHO TEST: Print exactly what Java received from Vue!
+        System.out.println("===== INCOMING RECRUIT =====");
+        System.out.println("USERNAME: " + newUser.getUsername());
+        System.out.println("EMAIL: " + newUser.getEmail());
+        System.out.println("============================");
+
+        // 2. NULL CHECK & FORMAT CHECK
+        String emailRegex = "^[A-Za-z0-9+_.-]+@(.+)$";
+        if (newUser.getEmail() == null || !newUser.getEmail().matches(emailRegex)) {
+            return ResponseEntity.badRequest().body(java.util.Map.of("error", "Invalid email format. Access Denied."));
+        }
+
+        // 3. DUPLICATE CHECK: Is the email already in the database?
+        if (userRepository.existsByEmail(newUser.getEmail())) {
+            return ResponseEntity.badRequest().body(java.util.Map.of("error", "Email is already registered in the Matrix."));
+        }
+
+        // 4. USERNAME CHECK: Is the username taken?
+        if (userRepository.existsByUsername(newUser.getUsername())) {
+            return ResponseEntity.badRequest().body(java.util.Map.of("error", "Username is already taken by another recruit."));
+        }
+
+        String plainTextPassword = newUser.getPassword();
+        String hashedPassword = passwordEncoder.encode(plainTextPassword);
+        newUser.setPassword(hashedPassword);
+
+        // 5. If they pass all checks, save them!
+        AppUser savedUser = userRepository.save(newUser);
+        return ResponseEntity.ok(savedUser);
+    }
+
+    // 🚨 THE CANCELLATION ENDPOINT
+    @PostMapping("/cancel-premium")
+    public ResponseEntity<?> cancelPremiumMembership(Principal principal) {
+        if (principal == null) {
+            return ResponseEntity.status(401).body(Map.of("error", "Unauthorized"));
+        }
+
+        Optional<AppUser> optionalUser = userRepository.findByUsername(principal.getName());
+
+        if (optionalUser.isPresent()) {
+            AppUser user = optionalUser.get();
+
+            // 1. Mark them as pending cancellation
+            user.setPendingCancellation(true);
+
+            // 2. Prototype Logic: If they don't have a real billing date yet, set it to the end of the current month
+            if (user.getPremiumExpirationDate() == null) {
+                user.setPremiumExpirationDate(java.time.LocalDate.now().with(java.time.temporal.TemporalAdjusters.lastDayOfMonth()));
+            }
+
+            userRepository.save(user);
+
+            return ResponseEntity.ok(Map.of(
+                    "message", "Cancellation scheduled.",
+                    "expirationDate", user.getPremiumExpirationDate().toString()
+            ));
+        } else {
+            return ResponseEntity.status(404).body(Map.of("error", "User not found in the Matrix."));
+        }
+    }
 
     // 2. The Missing Profile Endpoint!
     @GetMapping("/profile")

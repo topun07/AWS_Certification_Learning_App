@@ -53,32 +53,28 @@ public class AuthController {
     }
 
     @PostMapping("/register")
-    public ResponseEntity<?> registerUser(@RequestBody RegisterRequest request) {
-        if (userRepository.existsByUsername(request.username())) {
-            return ResponseEntity.badRequest().body("Error: Username is already taken!");
+    public ResponseEntity<?> registerUser(@RequestBody AppUser newUser) {
+
+        // 1. FORMAT CHECK: Does it actually look like an email?
+        String emailRegex = "^[A-Za-z0-9+_.-]+@(.+)$";
+        if (!newUser.getEmail().matches(emailRegex)) {
+            return ResponseEntity.badRequest().body(java.util.Map.of("error", "Invalid email format. Access Denied."));
         }
-        if (userRepository.existsByEmail(request.email())) {
-            return ResponseEntity.badRequest().body("Error: Email is already in use!");
+
+        // 2. DUPLICATE CHECK: Is the email already in the database?
+        if (userRepository.existsByEmail(newUser.getEmail())) {
+            return ResponseEntity.badRequest().body(java.util.Map.of("error", "Email is already registered in the Matrix."));
         }
 
-        AppUser user = new AppUser(
-                request.username(),
-                request.email(),
-                passwordEncoder.encode(request.password())
-        );
+        // 3. USERNAME CHECK: Is the username taken?
+        if (userRepository.existsByUsername(newUser.getUsername())) {
+            return ResponseEntity.badRequest().body(java.util.Map.of("error", "Username is already taken by another recruit."));
+        }
 
-        userRepository.save(user);
-
-        String token = jwtService.generateToken(user.getUsername());
-
-        Map<String, Object> response = new HashMap<>();
-        response.put("token", token);
-        response.put("id", user.getId());
-        response.put("username", user.getUsername());
-        response.put("xp", user.getXp());
-        response.put("isPremium", user.isPremium());
-
-        return ResponseEntity.ok(response);
+        // 4. If they pass all checks, save them!
+        // (Make sure you are still hashing their password here if you have Spring Security set up!)
+        AppUser savedUser = userRepository.save(newUser);
+        return ResponseEntity.ok(savedUser);
     }
 
     public record RegisterRequest(String username, String email, String password) {}

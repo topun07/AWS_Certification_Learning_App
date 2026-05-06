@@ -4,6 +4,7 @@ import com.example.awsMachineLearningExam.model.Flashcard;
 import com.example.awsMachineLearningExam.model.QuizQuestion;
 import com.example.awsMachineLearningExam.repository.FlashcardRepository;
 import com.example.awsMachineLearningExam.repository.QuizQuestionRepository;
+import com.example.awsMachineLearningExam.repository.PipelineScenarioRepository; // 🚨 Added the import!
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -19,15 +20,25 @@ public class CsvParserService {
     private final QuizQuestionRepository quizRepository;
     private final FlashcardRepository flashcardRepository;
 
-    public CsvParserService(QuizQuestionRepository quizRepository, FlashcardRepository flashcardRepository) {
+    // 🚨 THE FIX 1: Add the repository at the Class level
+    private final PipelineScenarioRepository pipelineRepository;
+
+    // 🚨 THE FIX 2: Inject it through the constructor so Spring Boot wires it up perfectly
+    public CsvParserService(QuizQuestionRepository quizRepository,
+                            FlashcardRepository flashcardRepository,
+                            PipelineScenarioRepository pipelineRepository) {
         this.quizRepository = quizRepository;
         this.flashcardRepository = flashcardRepository;
+        this.pipelineRepository = pipelineRepository;
     }
 
     // ==========================================
     // 1. THE 16-COLUMN QUIZ PIPELINE
     // ==========================================
     public String processCsvFile(MultipartFile file) {
+
+        // 🚨 REMOVE THE @Autowired BLOCK THAT WAS SITTING HERE!
+
         if (file.isEmpty()) return "Error: File is empty.";
 
         List<QuizQuestion> questionsToSave = new ArrayList<>();
@@ -104,40 +115,82 @@ public class CsvParserService {
     // ==========================================
     // 2. THE 4-COLUMN FLASHCARD PIPELINE
     // ==========================================
-    public String processFlashcardCsvFile(MultipartFile file) {
-        if (file.isEmpty()) return "Error: File is empty.";
-        List<Flashcard> flashcardsToSave = new ArrayList<>();
-
-        try (BufferedReader reader = new BufferedReader(new InputStreamReader(file.getInputStream(), StandardCharsets.UTF_8))) {
+    public String processFlashcardCsvFile(org.springframework.web.multipart.MultipartFile file) {
+        try (java.io.BufferedReader br = new java.io.BufferedReader(new java.io.InputStreamReader(file.getInputStream()))) {
             String line;
-            boolean isFirstRow = true;
+            boolean isFirstLine = true;
+            java.util.List<com.example.awsMachineLearningExam.model.Flashcard> cardsToSave = new java.util.ArrayList<>();
 
-            while ((line = reader.readLine()) != null) {
-                line = line.replace("\uFEFF", "").trim();
-                if (line.isEmpty()) continue;
-                if (isFirstRow) { isFirstRow = false; continue; }
-
-                // 🚨 THE FIX: Handle both Pipes (|) and Commas (,) gracefully!
-                String[] data;
-                if (line.contains("|")) {
-                    data = line.split("\\|", -1);
-                } else {
-                    data = line.split(",(?=(?:[^\"]*\"[^\"]*\")*[^\"]*$)", -1);
+            while ((line = br.readLine()) != null) {
+                // 1. Skip the header row completely! We don't trust it.
+                if (isFirstLine) {
+                    isFirstLine = false;
+                    continue;
                 }
 
-                if (data.length >= 4) {
-                    Flashcard flashcard = new Flashcard();
-                    flashcard.setExamCode(data[0].replace("\"", "").trim());
-                    flashcard.setCategory(data[1].replace("\"", "").trim());
-                    flashcard.setTerm(data[2].replace("\"", "").trim());
-                    flashcard.setDefinition(data[3].replace("\"", "").trim());
-                    flashcardsToSave.add(flashcard);
+                // 2. Split the row by commas, but ignore commas that are inside quotation marks!
+                String[] columns = line.split(",(?=(?:[^\"]*\"[^\"]*\")*[^\"]*$)");
+
+                // 3. Map the data by strict column index (0, 1, 2, 3)
+                if (columns.length >= 4) {
+                    com.example.awsMachineLearningExam.model.Flashcard card = new com.example.awsMachineLearningExam.model.Flashcard();
+
+                    // .trim() removes invisible spaces, .replace() removes rogue quotation marks
+                    card.setExamCode(columns[0].trim().replace("\"", ""));
+                    card.setCategory(columns[1].trim().replace("\"", ""));
+                    card.setTerm(columns[2].trim().replace("\"", ""));
+                    card.setDefinition(columns[3].trim().replace("\"", ""));
+
+                    cardsToSave.add(card);
                 }
             }
-            flashcardRepository.saveAllAndFlush(flashcardsToSave);
-            return "Success! Injected " + flashcardsToSave.size() + " flashcards into the Matrix.";
+
+            // 4. Save the flawless data to the database
+            flashcardRepository.saveAll(cardsToSave);
+            return "✅ Successfully injected " + cardsToSave.size() + " flashcards into the Matrix!";
+
         } catch (Exception e) {
-            return "Error processing Flashcard CSV: " + e.getMessage();
+            return "❌ Error parsing CSV: " + e.getMessage();
+        }
+    }
+
+    // 🚨 THE NEW PIPELINE PARSER
+    public String processPipelineCsvFile(org.springframework.web.multipart.MultipartFile file) {
+        try (java.io.BufferedReader br = new java.io.BufferedReader(new java.io.InputStreamReader(file.getInputStream()))) {
+            String line;
+            int count = 0;
+            br.readLine(); // Skip the header row
+
+            while ((line = br.readLine()) != null) {
+                // This regex ignores commas inside quotes!
+                String[] data = line.split(",(?=([^\"]*\"[^\"]*\")*[^\"]*$)");
+
+                if (data.length >= 7) {
+                    com.example.awsMachineLearningExam.model.PipelineScenario scenario = new com.example.awsMachineLearningExam.model.PipelineScenario();
+
+                    scenario.setExamCode(data[0].replace("\"", "").trim());
+                    scenario.setScenarioDescription(data[1].replace("\"", "").trim());
+
+                    String[] toolbox = data[2].replace("\"", "").split("\\|");
+                    scenario.setToolboxServices(java.util.Arrays.asList(toolbox));
+
+                    String[] solution = data[3].replace("\"", "").split("\\|");
+                    scenario.setCorrectPipelineOrder(java.util.Arrays.asList(solution));
+
+                    // 🚨 GRAB THE NEW COLUMNS
+                    scenario.setHint(data[4].replace("\"", "").trim());
+                    scenario.setExplanation(data[5].replace("\"", "").trim());
+
+                    scenario.setHint2(data[5].replace("\"", "").trim());
+                    scenario.setExplanation(data[6].replace("\"", "").trim());
+
+                    pipelineRepository.save(scenario);
+                    count++;
+                }
+            }
+            return "Mission Accomplished: Injected " + count + " architecture pipelines into the Matrix.";
+        } catch (Exception e) {
+            return "Error parsing CSV: " + e.getMessage();
         }
     }
 }

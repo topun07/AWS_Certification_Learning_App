@@ -3,6 +3,7 @@ package com.example.awsMachineLearningExam.security;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
@@ -40,47 +41,29 @@ public class SecurityConfig {
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
-                // 1. Modern CORS config
-                .cors(cors -> cors.configurationSource(corsConfigurationSource()))
-
-                // 2. Disable CSRF (Stateless JWT APIs do not need this)
+                // 1. DISABLE CSRF
                 .csrf(csrf -> csrf.disable())
 
-                // 3. Allow HTML frames for the H2 UI to render on screen
-                .headers(headers -> headers
-                        .frameOptions(frameOptions -> frameOptions.sameOrigin())
-                )
+                // 🚨 2. ENABLE CORS (Properly linked to your Bean below)
+                .cors(cors -> cors.configurationSource(corsConfigurationSource()))
 
-                // 4. Modern Authorization rules
+                // 🚨 3. STATELESS ARCHITECTURE: Tell Spring NOT to track server sessions.
+                // This is absolutely mandatory for JWT-based REST APIs!
+                .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+
+                // 4. OPEN THE FRONT DOORS
                 .authorizeHttpRequests(auth -> auth
-                        // --- PUBLIC ROUTES (No VIP Pass needed) ---
-                        .requestMatchers(
-                                "/api/auth/**",
-                                "/api/payment/webhook",    // 🚨 EXACT MATCH TO YOUR CONTROLLER!
-                                "/api/modules/**",
-                                "/api/questions/**",
-                                "/h2-console/**",
-                                "/error"
-                        ).permitAll()
-
-                        // --- PROTECTED ROUTES (Requires a valid JWT VIP Pass) ---
-                        .requestMatchers(
-                                "/api/users/**",
-                                "/api/progress/**",
-                                "/api/payment/**",
-                                "/api/admin/**"
-                        ).authenticated()
-
-                        // --- CATCH-ALL ---
+                        .requestMatchers(org.springframework.http.HttpMethod.OPTIONS, "/**").permitAll()
+                        .requestMatchers("/error").permitAll()
+                        .requestMatchers("/api/users/login", "/api/users/register").permitAll()
+                        .requestMatchers(org.springframework.http.HttpMethod.GET, "/api/questions/**").permitAll()
+                        .requestMatchers("/api/auth/login", "/api/users/register").permitAll()
+                        .requestMatchers("/api/questions/pipeline/upload").permitAll()
+                        .requestMatchers("/api/questions/public/reviews").permitAll()
                         .anyRequest().authenticated()
                 )
 
-                // 5. Modern Session Management
-                .sessionManagement(session -> session
-                        .sessionCreationPolicy(SessionCreationPolicy.STATELESS)
-                )
-
-                // 6. JWT Filter Injection
+                // 🚨 5. PLUG IN THE FILTER: Put your custom JWT bouncer exactly where it belongs
                 .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class);
 
         return http.build();

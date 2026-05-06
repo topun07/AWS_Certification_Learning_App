@@ -28,6 +28,12 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     }
 
     @Override
+    protected boolean shouldNotFilter(jakarta.servlet.http.HttpServletRequest request) {
+        String path = request.getServletPath();
+        return path.startsWith("/api/auth/login") || path.startsWith("/api/users/register");
+    }
+
+    @Override
     protected void doFilterInternal(
             @NonNull HttpServletRequest request,
             @NonNull HttpServletResponse response,
@@ -36,10 +42,9 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
         final String authHeader = request.getHeader("Authorization");
         final String jwt;
-        final String username;
+        String username = null; // 🚨 Un-finalized so we can safely catch errors
 
         // 1. If there is no VIP pass in the header, let the request pass through
-        // (Spring Security will block it later if the route requires authentication)
         if (authHeader == null || !authHeader.startsWith("Bearer ")) {
             filterChain.doFilter(request, response);
             return;
@@ -48,27 +53,40 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         // 2. Extract the token from the "Bearer " string
         jwt = authHeader.substring(7);
 
-        // 3. Hand the token to your JwtService to get the username
-        username = jwtService.extractUsername(jwt);
+        // 🚨 THE FIX 1: Catch the Vue template literal trap!
+        if (jwt.equals("null") || jwt.trim().isEmpty()) {
+            filterChain.doFilter(request, response);
+            return;
+        }
+
+        // 🚨 THE FIX 2: Try-Catch block to prevent server 500 crashes on bad tokens
+        try {
+            // 3. Hand the token to your JwtService to get the username
+            username = jwtService.extractUsername(jwt);
+        } catch (Exception e) {
+            System.out.println("⚠️ JWT Bouncer intercepted a mangled token. Access Denied.");
+            filterChain.doFilter(request, response);
+            return;
+        }
 
         // 4. If we found a username, and they aren't already logged into this session...
         if (username != null && SecurityContextHolder.getContext().getAuthentication() == null) {
 
             // Grab the user's full details from the database
-            UserDetails userDetails = this.userDetailsService.loadUserByUsername(username);
+            org.springframework.security.core.userdetails.UserDetails userDetails = this.userDetailsService.loadUserByUsername(username);
 
             // 5. Ask JwtService if the token is completely valid
             if (jwtService.validateToken(jwt, userDetails.getUsername())) {
 
                 // 6. OPEN THE DOOR! Create the official Spring Security access token
-                UsernamePasswordAuthenticationToken authToken = new UsernamePasswordAuthenticationToken(
+                org.springframework.security.authentication.UsernamePasswordAuthenticationToken authToken = new org.springframework.security.authentication.UsernamePasswordAuthenticationToken(
                         userDetails,
                         null,
                         userDetails.getAuthorities()
                 );
 
                 authToken.setDetails(
-                        new WebAuthenticationDetailsSource().buildDetails(request)
+                        new org.springframework.security.web.authentication.WebAuthenticationDetailsSource().buildDetails(request)
                 );
 
                 // Officially log the user in for this specific request

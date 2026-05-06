@@ -2,6 +2,7 @@ package com.example.awsMachineLearningExam.controller;
 
 import com.example.awsMachineLearningExam.model.Flashcard;
 import com.example.awsMachineLearningExam.model.QuizQuestion;
+import com.example.awsMachineLearningExam.model.Review;
 import com.example.awsMachineLearningExam.repository.ExamHistoryRepository;
 import com.example.awsMachineLearningExam.repository.FlashcardRepository;
 import com.example.awsMachineLearningExam.repository.QuizQuestionRepository;
@@ -11,6 +12,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.util.List;
 import java.util.Map;
 
 @RestController
@@ -34,6 +36,15 @@ public class QuizQuestionController {
     @Autowired
     private com.example.awsMachineLearningExam.repository.AppUserRepository appUserRepository;
 
+    @Autowired
+    private org.springframework.jdbc.core.JdbcTemplate jdbcTemplate;
+
+    @Autowired
+    private com.example.awsMachineLearningExam.repository.PipelineScenarioRepository pipelineRepository;
+
+    @Autowired
+    private com.example.awsMachineLearningExam.repository.ReviewRepository reviewRepository;
+
     // --- QUIZ QUESTION ENDPOINTS ---
     @GetMapping("/all")
     public ResponseEntity<?> getAllQuestions() {
@@ -41,7 +52,11 @@ public class QuizQuestionController {
     }
 
     @PostMapping("/upload")
-    public ResponseEntity<?> uploadCsv(@RequestParam("file") MultipartFile file) {
+    public ResponseEntity<?> uploadCsv(@RequestHeader("X-Admin-Key") String adminKey, @RequestParam("file") MultipartFile file) {
+        if (!"YOUR_SECRET_MASTER_KEY".equals(adminKey)) {
+            return ResponseEntity.status(403).body(Map.of("error", "Security Breach: Unauthorized Admin Access."));
+        }
+
         String result = csvParserService.processCsvFile(file);
         if (result.startsWith("Error")) return ResponseEntity.badRequest().body(Map.of("error", result));
         return ResponseEntity.ok(Map.of("message", result));
@@ -54,7 +69,11 @@ public class QuizQuestionController {
     }
 
     @PostMapping("/flashcards/upload")
-    public ResponseEntity<?> uploadFlashcards(@RequestParam("file") MultipartFile file) {
+    public ResponseEntity<?> uploadFlashcards(@RequestHeader("X-Admin-Key") String adminKey, @RequestParam("file") MultipartFile file) {
+        if (!"YOUR_SECRET_MASTER_KEY".equals(adminKey)) {
+            return ResponseEntity.status(403).body(Map.of("error", "Security Breach: Unauthorized Admin Access."));
+        }
+
         String result = csvParserService.processFlashcardCsvFile(file);
         if (result.startsWith("Error")) return ResponseEntity.badRequest().body(Map.of("error", result));
         return ResponseEntity.ok(Map.of("message", result));
@@ -109,10 +128,15 @@ public class QuizQuestionController {
     @GetMapping("/history")
     public ResponseEntity<?> getUserHistory(@RequestParam Long userId) {
 
-        // 🚨 THE FIX: Call the newly renamed method!
-        java.util.List<?> history = examHistoryRepository.findByUser_Id(userId);
+        // 🚨 Bypass Hibernate entirely and pull the exact columns Vue needs as a raw Map!
+        String sql = "SELECT id, exam_code AS examCode, score_percentage AS scorePercentage, " +
+                "total_questions AS totalQuestions, correct_count AS correctCount, " +
+                "completed_at AS completedAt " +
+                "FROM exam_history WHERE user_id = ? ORDER BY completed_at DESC";
 
-        return ResponseEntity.ok(history != null ? history : java.util.List.of());
+        java.util.List<java.util.Map<String, Object>> history = jdbcTemplate.queryForList(sql, userId);
+
+        return ResponseEntity.ok(history);
     }
 
     // 2. Save New Exam Results
@@ -143,5 +167,34 @@ public class QuizQuestionController {
         } catch (Exception e) {
             return ResponseEntity.ok(java.util.List.of()); // Failsafe
         }
+    }
+
+    // 🚨 1. THE SECURED ADMIN UPLOAD
+    @PostMapping("/pipeline/upload")
+    public ResponseEntity<?> uploadPipelineScenarios(
+            @RequestHeader(value = "X-Admin-Key", defaultValue = "none") String adminKey,
+            @RequestParam("file") MultipartFile file) {
+
+        if (!"masterkey".equals(adminKey)) { // Use your real master key here!
+            return ResponseEntity.status(403).body(Map.of("error", "Security Breach: Unauthorized Admin Access."));
+        }
+
+        String result = csvParserService.processPipelineCsvFile(file);
+        if (result.startsWith("Error")) return ResponseEntity.badRequest().body(Map.of("error", result));
+        return ResponseEntity.ok(Map.of("message", result));
+    }
+
+    // 🚨 2. THE GAMEPLAY FETCH (Pulls a random scenario for the active exam)
+    @GetMapping("/pipeline/random")
+    public ResponseEntity<?> getRandomScenario(@RequestParam String examCode) {
+        java.util.List<com.example.awsMachineLearningExam.model.PipelineScenario> scenarios = pipelineRepository.findByExamCode(examCode);
+
+        if (scenarios.isEmpty()) {
+            return ResponseEntity.notFound().build(); // No scenarios exist for this exam yet!
+        }
+
+        // Pick a random scenario from the list
+        int randomIndex = new java.util.Random().nextInt(scenarios.size());
+        return ResponseEntity.ok(scenarios.get(randomIndex));
     }
 }

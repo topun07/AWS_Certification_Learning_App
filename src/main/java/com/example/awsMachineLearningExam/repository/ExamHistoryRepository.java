@@ -19,6 +19,9 @@ public interface ExamHistoryRepository extends JpaRepository<ExamHistory, Long> 
 
     List<ExamHistory> findByExamCodeOrderByCompletedAtDesc(String examCode);
 
+    @Query("SELECT h FROM ExamHistory h WHERE h.user.id = :userId ORDER BY h.completedAt DESC")
+    List<ExamHistory> findMyExams(@org.springframework.data.repository.query.Param("userId") Long userId);
+
     @Query(value = "SELECT " +
             "COALESCE(u.username, 'Anonymous Ninja') as fullName, " +
             "MAX(eh.score_percentage) as topScore, " +

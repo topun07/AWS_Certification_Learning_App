@@ -24,6 +24,12 @@ public class AppUser {
     @Column(name = "is_premium")
     private boolean isPremium = false;
 
+    @Column(name = "pending_cancellation")
+    private boolean pendingCancellation = false;
+
+    @Column(name = "premium_expiration_date")
+    private java.time.LocalDate premiumExpirationDate;
+
     private int xp;
     private String rankTitle;
 
@@ -62,4 +68,8 @@ public class AppUser {
     public void setLastStudyDate(LocalDate lastStudyDate) { this.lastStudyDate = lastStudyDate; }
     public boolean isPremium() { return isPremium; }
     public void setPremium(boolean premium) { isPremium = premium; }
+    public boolean isPendingCancellation() { return pendingCancellation; }
+    public void setPendingCancellation(boolean pendingCancellation) { this.pendingCancellation = pendingCancellation; }
+    public java.time.LocalDate getPremiumExpirationDate() { return premiumExpirationDate; }
+    public void setPremiumExpirationDate(java.time.LocalDate premiumExpirationDate) { this.premiumExpirationDate = premiumExpirationDate; }
     }

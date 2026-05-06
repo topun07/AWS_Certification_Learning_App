@@ -7,12 +7,14 @@
         <h2 class="text-3xl 2xl:text-5xl font-black text-center mb-6 2xl:mb-10 text-blue-400 tracking-tight">
           {{ isLoginMode ? 'Access Datapad' : 'Register Recruit' }}
         </h2>
+
         <div v-if="authError" class="bg-red-900/50 border border-red-500 text-red-200 p-3 2xl:p-5 rounded-xl mb-6 2xl:text-lg text-sm text-center font-bold animate-pulse">
           {{ authError }}
         </div>
+
         <form @submit.prevent="submitAuth">
 
-          <div v-if="!isLoginMode" class="mb-4 2xl:mb-6">
+          <div v-if="!isLoginMode" class="mb-4 2xl:mb-6 animate-fade-in">
             <label class="block text-xs 2xl:text-base font-black uppercase tracking-widest text-slate-400 mb-2 2xl:mb-3">
               Codename (Username)
             </label>
@@ -20,36 +22,56 @@
                 type="text"
                 v-model="authForm.username"
                 placeholder="e.g. CloudNinja99"
-                class="w-full bg-slate-800/50 border border-slate-700 text-white rounded-xl 2xl:rounded-2xl px-4 py-3 2xl:px-6 2xl:py-5 2xl:text-xl focus:outline-none focus:ring-2 focus:ring-blue-500"
+                class="w-full bg-slate-800/50 border border-slate-700 text-white rounded-xl 2xl:rounded-2xl px-4 py-3 2xl:px-6 2xl:py-5 2xl:text-xl focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all"
                 :required="!isLoginMode"
             />
           </div>
 
           <div class="mb-4 2xl:mb-6">
-            <label class="block text-xs 2xl:text-base font-black uppercase tracking-widest text-slate-400 mb-2 2xl:mb-3">
-              Comm-Link (Email)
-            </label>
+            <label class="block text-xs 2xl:text-base font-black uppercase tracking-widest text-slate-400 mb-2 2xl:mb-3">Email Address</label>
             <input
                 type="email"
                 v-model="authForm.email"
-                placeholder="engineer@knowledgeforge.com"
-                class="w-full bg-slate-800/50 border border-slate-700 text-white rounded-xl 2xl:rounded-2xl px-4 py-3 2xl:px-6 2xl:py-5 2xl:text-xl focus:outline-none focus:ring-2 focus:ring-blue-500"
+                placeholder="Email Address"
+                class="w-full bg-slate-800/50 border border-slate-700 text-white rounded-xl 2xl:rounded-2xl px-4 py-3 2xl:px-6 2xl:py-5 2xl:text-xl focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all"
                 required
             />
           </div>
 
-          <div class="mb-6 2xl:mb-10">
-            <label class="block text-xs 2xl:text-base font-black uppercase tracking-widest text-slate-400 mb-2 2xl:mb-3">
-              Passcode
-            </label>
+          <div v-if="!isLoginMode" class="mb-4 2xl:mb-6 animate-fade-in">
+            <input
+                type="email"
+                v-model="authForm.confirmEmail"
+                placeholder="Confirm Email Address"
+                class="w-full bg-slate-800/50 border border-slate-700 text-white rounded-xl 2xl:rounded-2xl px-4 py-3 2xl:px-6 2xl:py-5 2xl:text-xl focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all"
+                :required="!isLoginMode"
+            />
+          </div>
+
+          <div class="mb-4 2xl:mb-6">
+            <label class="block text-xs 2xl:text-base font-black uppercase tracking-widest text-slate-400 mb-2 2xl:mb-3">Password</label>
             <input
                 type="password"
                 v-model="authForm.password"
-                placeholder="••••••••"
-                class="w-full bg-slate-800/50 border border-slate-700 text-white rounded-xl 2xl:rounded-2xl px-4 py-3 2xl:px-6 2xl:py-5 2xl:text-xl focus:outline-none focus:ring-2 focus:ring-blue-500"
+                placeholder="Password"
+                class="w-full bg-slate-800/50 border border-slate-700 text-white rounded-xl 2xl:rounded-2xl px-4 py-3 2xl:px-6 2xl:py-5 2xl:text-xl focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all"
                 required
             />
           </div>
+
+          <div v-if="!isLoginMode" class="mb-6 2xl:mb-8 animate-fade-in">
+            <input
+                type="password"
+                v-model="authForm.confirmPassword"
+                placeholder="Confirm Password"
+                class="w-full bg-slate-800/50 border border-slate-700 text-white rounded-xl 2xl:rounded-2xl px-4 py-3 2xl:px-6 2xl:py-5 2xl:text-xl focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all"
+                :required="!isLoginMode"
+            />
+          </div>
+
+          <p v-if="authValidationMessage" class="text-red-400 font-bold text-center mb-4 text-sm animate-pulse">
+            {{ authValidationMessage }}
+          </p>
 
           <button
               type="submit"
@@ -57,7 +79,9 @@
           >
             {{ isLoginMode ? 'Login' : 'Create Account' }}
           </button>
+
         </form>
+
         <div class="text-center mt-6 2xl:mt-8">
           <button @click="isLoginMode = !isLoginMode; authError = ''" class="text-sm 2xl:text-lg font-bold text-slate-400 hover:text-white transition-colors">
             {{ isLoginMode ? 'Need an account? Register here.' : 'Already a recruit? Login here.' }}
@@ -419,6 +443,7 @@
       </div>
 
       <div class="mt-12 2xl:mt-24 grid grid-cols-1 lg:grid-cols-2 gap-8 2xl:gap-16">
+
         <div class="bg-white rounded-[2rem] 2xl:rounded-[3rem] p-8 2xl:p-12 shadow-sm border border-slate-100 flex flex-col h-full">
           <div class="mb-6 2xl:mb-10 flex justify-between items-start">
             <div>
@@ -471,43 +496,83 @@
               </div>
             </div>
             <div v-else class="text-center p-6 2xl:p-12 text-slate-400 text-sm 2xl:text-xl font-bold">Insufficient telemetry data. Complete a simulation to generate priorities.</div>
+          </div>
+        </div>
+      </div> <div v-if="recentReviews.length > 0" class="w-full mt-24 mb-12 animate-fade-in">
+      <div class="text-center mb-12">
+        <h2 class="text-3xl md:text-5xl font-black text-slate-800 mb-4 tracking-tight">Forged in the Real World</h2>
+        <p class="text-slate-500 font-medium text-lg md:text-xl">Join the engineers who passed the exam using our databanks.</p>
+      </div>
 
-            <footer class="mt-24 2xl:mt-32 border-t border-slate-200 bg-slate-50/50 pt-12 pb-8 2xl:pt-20 2xl:pb-12 rounded-t-[3rem] 2xl:rounded-t-[4rem]">
-              <div class="max-w-4xl 2xl:max-w-6xl mx-auto px-4 md:px-8 text-center flex flex-col items-center">
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+        <div
+            v-for="review in recentReviews"
+            :key="review.id"
+            class="bg-white rounded-3xl p-8 border border-slate-200 shadow-sm hover:shadow-xl hover:-translate-y-2 transition-all duration-300 relative"
+        >
+          <div class="absolute -top-6 -left-2 text-6xl text-blue-100 font-serif font-black select-none">"</div>
 
-                <div class="mb-6 2xl:mb-8 transform hover:scale-105 transition-transform flex justify-center">
-                  <img
-                      src="/image/logo/anvil.png"
-                      alt="Knowledge Forge Academy"
-                      class="h-16 md:h-20 2xl:h-28 w-auto object-contain rounded-2xl shadow-lg border border-indigo-100"
-                  />
-                </div>
+          <div class="flex gap-1 mb-4 relative z-10">
+            <span v-for="n in review.rating" :key="n" class="text-amber-400 text-xl">⭐</span>
+          </div>
 
-                <h3 class="text-xl 2xl:text-4xl font-black text-slate-900 tracking-tight mb-1 2xl:mb-3">Knowledge Forge Academy</h3>
-                <p class="text-sm 2xl:text-2xl font-medium text-slate-500 mb-6 2xl:mb-12 flex items-center gap-2 2xl:gap-4">
-                  <span>📍</span> Allen, TX 75002
-                </p>
+          <p class="text-slate-700 font-medium leading-relaxed mb-6 relative z-10 italic">
+            "{{ review.reviewText }}"
+          </p>
 
-                <div class="flex flex-col sm:flex-row w-full gap-4 2xl:gap-8 justify-center">
-                  <a href="tel:222-222-2222" class="inline-flex justify-center items-center gap-3 2xl:gap-5 bg-white text-indigo-600 hover:text-indigo-700 hover:bg-indigo-50 px-6 py-4 2xl:px-10 2xl:py-6 rounded-2xl 2xl:rounded-3xl font-black text-sm 2xl:text-xl uppercase tracking-widest transition-all border border-slate-200 hover:border-indigo-200 shadow-sm hover:shadow-md group flex-1">
-                    <span class="text-xl 2xl:text-3xl group-hover:animate-bounce">📞</span>
-                    (222) 222-2222
-                  </a>
-
-                  <a href="mailto:test@test.com" class="inline-flex justify-center items-center gap-3 2xl:gap-5 bg-white text-indigo-600 hover:text-indigo-700 hover:bg-indigo-50 px-6 py-4 2xl:px-10 2xl:py-6 rounded-2xl 2xl:rounded-3xl font-black text-sm 2xl:text-xl uppercase tracking-widest transition-all border border-slate-200 hover:border-indigo-200 shadow-sm hover:shadow-md group flex-1">
-                    <span class="text-xl 2xl:text-3xl group-hover:animate-pulse">✉️</span>
-                    test@test.com
-                  </a>
-                </div>
-                <div class="mt-12 2xl:mt-20 text-[10px] 2xl:text-sm font-black uppercase tracking-widest text-slate-400 border-t border-slate-200/60 pt-6 2xl:pt-10 w-full max-w-md 2xl:max-w-2xl">
-                  © 2026 Knowledge Forge Academy. System fully operational.
-                </div>
-
-              </div>
-            </footer>
+          <div class="flex items-center gap-4 border-t border-slate-100 pt-6">
+            <div class="w-12 h-12 rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center text-white font-black text-lg shadow-inner">
+              {{ review.authorName.charAt(0).toUpperCase() }}
+            </div>
+            <div>
+              <h4 class="font-black text-slate-900">{{ review.authorName }}</h4>
+              <span class="text-xs font-bold uppercase tracking-widest text-emerald-500">Certified Architect</span>
+            </div>
           </div>
         </div>
       </div>
+    </div>
+
+      <footer class="mt-24 2xl:mt-32 border-t border-slate-200 bg-slate-50/50 pt-12 pb-8 2xl:pt-20 2xl:pb-12 rounded-t-[3rem] 2xl:rounded-t-[4rem]">
+        <div class="max-w-4xl 2xl:max-w-6xl mx-auto px-4 md:px-8 text-center flex flex-col items-center">
+
+          <div class="mb-6 2xl:mb-8 transform hover:scale-105 transition-transform flex justify-center">
+            <img
+                src="/image/logo/anvil.png"
+                alt="Knowledge Forge Academy"
+                class="h-16 md:h-20 2xl:h-28 w-auto object-contain rounded-2xl shadow-lg border border-indigo-100"
+            />
+          </div>
+
+          <h3 class="text-xl 2xl:text-4xl font-black text-slate-900 tracking-tight mb-1 2xl:mb-3">Knowledge Forge Academy</h3>
+          <p class="text-sm 2xl:text-2xl font-medium text-slate-500 mb-6 2xl:mb-12 flex items-center gap-2 2xl:gap-4">
+            <span>📍</span> Allen, TX 75002
+          </p>
+
+          <div class="flex flex-col sm:flex-row w-full gap-4 2xl:gap-8 justify-center">
+            <a href="tel:222-222-2222" class="inline-flex justify-center items-center gap-3 2xl:gap-5 bg-white text-indigo-600 hover:text-indigo-700 hover:bg-indigo-50 px-6 py-4 2xl:px-10 2xl:py-6 rounded-2xl 2xl:rounded-3xl font-black text-sm 2xl:text-xl uppercase tracking-widest transition-all border border-slate-200 hover:border-indigo-200 shadow-sm hover:shadow-md group flex-1">
+              <span class="text-xl 2xl:text-3xl group-hover:animate-bounce">📞</span>
+              (222) 222-2222
+            </a>
+
+            <a href="mailto:test@test.com" class="inline-flex justify-center items-center gap-3 2xl:gap-5 bg-white text-indigo-600 hover:text-indigo-700 hover:bg-indigo-50 px-6 py-4 2xl:px-10 2xl:py-6 rounded-2xl 2xl:rounded-3xl font-black text-sm 2xl:text-xl uppercase tracking-widest transition-all border border-slate-200 hover:border-indigo-200 shadow-sm hover:shadow-md group flex-1">
+              <span class="text-xl 2xl:text-3xl group-hover:animate-pulse">✉️</span>
+              test@test.com
+            </a>
+          </div>
+
+          <div class="flex justify-center gap-8 mt-10 font-bold text-slate-500 text-sm 2xl:text-base">
+            <button @click="showAboutModal = true" class="hover:text-indigo-600 transition-colors">About Us</button>
+            <button @click="showCancelModal = true" class="hover:text-indigo-600 transition-colors">Cancel Membership</button>
+            <a href="#" class="hover:text-indigo-600 transition-colors">Terms of Service</a>
+          </div>
+
+          <div class="mt-8 2xl:mt-12 text-[10px] 2xl:text-sm font-black uppercase tracking-widest text-slate-400 border-t border-slate-200/60 pt-6 2xl:pt-10 w-full max-w-md 2xl:max-w-2xl">
+            © 2026 Knowledge Forge Academy. System fully operational.
+          </div>
+
+        </div>
+      </footer>
 
     </div>
 
@@ -739,6 +804,10 @@
         <button @click="activeForgeTab = 'cheatsheets'" :class="activeForgeTab === 'cheatsheets' ? 'bg-white text-emerald-600 shadow-sm border border-slate-200' : 'text-slate-500 hover:text-slate-700'" class="flex-1 py-3 md:py-4 2xl:py-6 rounded-2xl 2xl:rounded-3xl text-[10px] md:text-sm 2xl:text-xl font-black uppercase tracking-widest transition-all">
           Study Material
         </button>
+        <button @click="activeForgeTab = 'architecture'" :class="activeForgeTab === 'architecture' ? 'bg-pink-500 text-white' : 'bg-slate-200 text-slate-600'" class="px-6 py-3 rounded-xl font-bold transition-all">
+          ARCHITECTURE
+        </button>
+
       </div>
 
       <div v-if="activeForgeTab === 'domains'" class="space-y-6 2xl:space-y-10 max-w-5xl 2xl:max-w-7xl mx-auto animate-fade-in">
@@ -789,19 +858,32 @@
 
       <div v-else-if="activeForgeTab === 'study_cards'" class="max-w-5xl 2xl:max-w-7xl mx-auto animate-fade-in">
 
-        <div class="flex flex-col md:flex-row justify-between md:items-end gap-4 mb-8 2xl:mb-12">
+        <div class="flex flex-col lg:flex-row justify-between lg:items-end gap-4 mb-8 2xl:mb-12">
           <div>
             <h3 class="text-2xl 2xl:text-4xl font-black text-slate-800">Flashcard Deck</h3>
             <p class="text-slate-500 text-sm 2xl:text-xl mt-1">Review definitions before entering the Matrix.</p>
           </div>
-          <select
-              v-model="librarySelectedDomain"
-              class="bg-white border-2 border-slate-200 text-slate-700 text-sm 2xl:text-xl font-bold rounded-xl 2xl:rounded-2xl px-4 py-3 2xl:px-6 2xl:py-4 focus:outline-none focus:ring-2 focus:ring-pink-500 cursor-pointer shadow-sm md:min-w-[300px]"
-          >
-            <option v-for="domain in libraryFlashcardDomains" :key="domain" :value="domain">
-              {{ domain === 'All' ? 'All Domains' : domain }}
-            </option>
-          </select>
+
+          <div class="flex flex-col sm:flex-row gap-3 sm:gap-4 items-start sm:items-center">
+
+            <div class="flex bg-slate-200 p-1 rounded-xl 2xl:rounded-2xl border border-slate-300/50">
+              <button @click="startWithTerm = false" :class="!startWithTerm ? 'bg-white shadow-sm text-pink-600' : 'text-slate-500 hover:text-slate-700'" class="px-3 py-2 2xl:px-5 2xl:py-3 rounded-lg 2xl:rounded-xl text-xs 2xl:text-base font-bold transition-all">
+                Definition First
+              </button>
+              <button @click="startWithTerm = true" :class="startWithTerm ? 'bg-white shadow-sm text-pink-600' : 'text-slate-500 hover:text-slate-700'" class="px-3 py-2 2xl:px-5 2xl:py-3 rounded-lg 2xl:rounded-xl text-xs 2xl:text-base font-bold transition-all">
+                Term First
+              </button>
+            </div>
+
+            <select
+                v-model="librarySelectedDomain"
+                class="bg-white border-2 border-slate-200 text-slate-700 text-sm 2xl:text-xl font-bold rounded-xl 2xl:rounded-2xl px-4 py-2.5 2xl:px-6 2xl:py-4 focus:outline-none focus:ring-2 focus:ring-pink-500 cursor-pointer shadow-sm md:min-w-[250px]"
+            >
+              <option v-for="domain in libraryFlashcardDomains" :key="domain" :value="domain">
+                {{ domain === 'All' ? 'All Domains' : domain }}
+              </option>
+            </select>
+          </div>
         </div>
 
         <div v-if="filteredLibraryFlashcards.length > 0" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 2xl:gap-10">
@@ -817,14 +899,24 @@
                 :class="card.flipped ? '[transform:rotateY(180deg)] shadow-pink-500/20' : ''"
             >
               <div class="absolute inset-0 [backface-visibility:hidden] bg-white border-2 border-slate-100 rounded-3xl 2xl:rounded-[2.5rem] p-6 2xl:p-10 flex flex-col justify-center items-center text-center">
-                <span class="text-[10px] 2xl:text-sm font-black uppercase tracking-widest text-slate-400 absolute top-6 2xl:top-8">Definition</span>
-                <p class="text-sm 2xl:text-xl font-medium text-slate-700 leading-relaxed">{{ card.definition }}</p>
+              <span class="text-[10px] 2xl:text-sm font-black uppercase tracking-widest text-slate-400 absolute top-6 2xl:top-8">
+                {{ startWithTerm ? 'Term' : 'Definition' }}
+              </span>
+
+                <h3 v-if="startWithTerm" class="text-2xl 2xl:text-4xl font-black text-slate-800">{{ card.term }}</h3>
+                <p v-else class="text-sm 2xl:text-xl font-medium text-slate-700 leading-relaxed">{{ card.definition }}</p>
+
                 <span class="text-[10px] 2xl:text-sm font-bold text-pink-400 absolute bottom-6 2xl:bottom-8 opacity-0 group-hover:opacity-100 transition-opacity">Click to flip ⤵</span>
               </div>
 
               <div class="absolute inset-0 [backface-visibility:hidden] [transform:rotateY(180deg)] bg-pink-600 border-2 border-pink-700 rounded-3xl 2xl:rounded-[2.5rem] p-6 2xl:p-10 flex flex-col justify-center items-center text-center shadow-inner">
-                <span class="text-[10px] 2xl:text-sm font-black uppercase tracking-widest text-pink-300 absolute top-6 2xl:top-8">Term</span>
-                <h3 class="text-2xl 2xl:text-5xl font-black text-white">{{ card.term }}</h3>
+              <span class="text-[10px] 2xl:text-sm font-black uppercase tracking-widest text-pink-300 absolute top-6 2xl:top-8">
+                {{ startWithTerm ? 'Definition' : 'Term' }}
+              </span>
+
+                <p v-if="startWithTerm" class="text-sm 2xl:text-xl font-medium text-white leading-relaxed">{{ card.definition }}</p>
+                <h3 v-else class="text-2xl 2xl:text-5xl font-black text-white">{{ card.term }}</h3>
+
                 <span class="text-[10px] 2xl:text-sm font-bold text-pink-300 absolute bottom-6 2xl:bottom-8 opacity-0 group-hover:opacity-100 transition-opacity">Click to flip ⤵</span>
               </div>
             </div>
@@ -892,6 +984,8 @@
           <p v-if="index === 0 || isPremiumUser" class="text-xs md:text-sm 2xl:text-lg text-slate-400 mt-2 md:mt-3 2xl:mt-4 font-bold uppercase tracking-widest relative z-10 hover:text-emerald-500">Download PDF ↓</p>
         </div>
       </div>
+
+      <div v-if="activeForgeTab === 'architecture'" class="w-full"> <ArchitectureMatrix /></div>
 
     </div>
 
@@ -1065,6 +1159,16 @@
               </button>
             </div>
             <p v-if="flashcardUploadStatus" class="text-[10px] 2xl:text-sm font-bold mt-2 2xl:mt-4" :class="flashcardUploadStatus.includes('✅') ? 'text-emerald-400' : 'text-amber-400'">{{ flashcardUploadStatus }}</p>
+          </div>
+
+          <div class="p-4 border-2 border-pink-500 rounded-xl bg-pink-50 mt-4">
+            <h3 class="font-bold text-pink-700 mb-2">Inject Architecture Pipelines</h3>
+
+            <input type="file" @change="handlePipelineFileSelect" class="block w-full text-sm text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-pink-100 file:text-pink-700 hover:file:bg-pink-200 mb-4"/>
+
+            <button @click="submitPipelineCsv" class="w-full bg-pink-500 hover:bg-pink-600 text-white font-black py-3 rounded-lg transition-all shadow-md active:scale-[0.98] tracking-widest">
+              INJECT PIPELINES
+            </button>
           </div>
 
         </div>
@@ -1418,6 +1522,22 @@
       </div>
     </div>
 
+    <div v-if="showWelcomeModal" class="fixed inset-0 bg-slate-900/95 backdrop-blur-md flex items-center justify-center z-[100] p-4 transition-all">
+      <div class="bg-slate-800 border-2 border-blue-500 rounded-[2.5rem] p-10 text-center shadow-[0_0_60px_rgba(59,130,246,0.3)] animate-fade-in w-full max-w-md">
+
+        <div class="text-6xl mb-6 animate-bounce">⚔️</div>
+
+        <h2 class="text-3xl font-black text-white mb-2 tracking-tight">Welcome to the Forge,</h2>
+        <h3 class="text-4xl font-black text-blue-400 mb-8 uppercase tracking-widest">{{ authForm.username }}</h3>
+
+        <div class="flex items-center justify-center gap-3 text-slate-400 font-medium bg-slate-900/50 p-4 rounded-xl">
+          <div class="w-5 h-5 border-2 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
+          Forging your databanks...
+        </div>
+
+      </div>
+    </div>
+
   </div>
 
   <Transition name="glitch-fade">
@@ -1438,14 +1558,62 @@
   </div>
 </Transition>
 
+  <footer class="mt-20 border-t border-slate-200 bg-white py-10 w-full text-center">
+    <div class="flex justify-center gap-8 mb-4 font-bold text-slate-500 text-sm">
+      <button @click="showAboutModal = true" class="hover:text-pink-500 transition-colors">About Us</button>
+      <button @click="showCancelModal = true" class="hover:text-pink-500 transition-colors">Cancel Membership</button>
+      <a href="#" class="hover:text-pink-500 transition-colors">Terms of Service</a>
+    </div>
+    <p class="text-xs text-slate-400">© 2026 Knowledge Forge Academy. All rights reserved.</p>
+  </footer>
+
+  <div v-if="showCancelModal" class="fixed inset-0 bg-slate-900/80 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+    <div class="bg-white rounded-3xl w-full max-w-2xl p-8 md:p-12 shadow-2xl relative">
+      <button @click="showCancelModal = false" class="absolute top-6 right-6 text-slate-400 hover:text-slate-700 font-bold text-xl">✕</button>
+
+      <h2 class="text-3xl font-black text-slate-900 mb-2">Cancel Premium</h2>
+      <p class="text-slate-500 font-medium mb-6">We're sorry to see you go. Please review the terms of cancellation below.</p>
+
+      <div class="bg-slate-50 border border-slate-200 rounded-xl p-4 h-48 overflow-y-auto mb-6 text-xs text-slate-600 leading-relaxed font-mono">
+        <p class="mb-2 font-bold uppercase">1. No Prorated Refunds</p>
+        <p class="mb-4">By initiating this cancellation, you acknowledge that Knowledge Forge Academy operates on a strict no-prorated-refund policy. Your Premium Membership will remain fully active until the end of your current billing cycle, at which point your account will be downgraded to the Free tier.</p>
+
+        <p class="mb-2 font-bold uppercase">2. Limitation of Liability</p>
+        <p class="mb-4">Knowledge Forge Academy provides educational materials "as is". We make no warranties, express or implied, regarding the outcome of any AWS Certification exams. By accepting these terms, you waive the right to hold Knowledge Forge Academy liable for any exam failures, loss of employment, or related damages.</p>
+
+        <p class="mb-2 font-bold uppercase">3. Class Action Waiver</p>
+        <p>You agree to resolve any disputes with Knowledge Forge Academy on an individual basis. You waive the right to participate in any class, consolidated, or representative action.</p>
+      </div>
+
+      <label class="flex items-start gap-3 cursor-pointer mb-8 p-4 border border-red-100 bg-red-50 rounded-xl hover:bg-red-100 transition-colors">
+        <input type="checkbox" v-model="legalAgreed" class="mt-1 w-5 h-5 accent-red-500 cursor-pointer" />
+        <span class="text-sm font-bold text-red-900">I have read and agree to the Limitation of Liability, and I understand my membership will remain active until the end of the term with no refunds.</span>
+      </label>
+
+      <p v-if="cancelFeedback" class="text-center font-bold mb-4" :class="cancelFeedback.includes('✅') ? 'text-emerald-600' : 'text-red-500'">
+        {{ cancelFeedback }}
+      </p>
+
+      <button
+          @click="processCancellation"
+          :disabled="!legalAgreed"
+          class="w-full py-4 rounded-xl font-black text-lg transition-all"
+          :class="legalAgreed ? 'bg-red-600 hover:bg-red-700 text-white shadow-lg' : 'bg-slate-200 text-slate-400 cursor-not-allowed'"
+      >
+        CONFIRM CANCELLATION
+      </button>
+    </div>
+  </div>
+
 </template>
 
 <script setup>
-import { ref, onMounted, computed, watch, onUnmounted } from 'vue';
+  import { ref, onMounted, computed, watch, onUnmounted } from 'vue';
   import { jsPDF } from "jspdf";
   import autoTable from 'jspdf-autotable';
   import { Radar } from 'vue-chartjs';
   import { Chart as ChartJS, RadialLinearScale, PointElement, LineElement, Filler, Tooltip, Legend } from 'chart.js';
+  import ArchitectureMatrix from './ArchitectureMatrix.vue';
 
 ChartJS.register(RadialLinearScale, PointElement, LineElement, Filler, Tooltip, Legend);
 
@@ -1588,6 +1756,7 @@ const categoryScores = ref(savedScores ? JSON.parse(savedScores) : {});
 const showAgreementModal = ref(false);
 const hasAcceptedTerms = ref(false);
 const pendingPlanType = ref(null);
+const pipelineFile = ref(null);
 
 // --- Platform State ---
 const currentView = ref(window.location.hash.replace('#', '') || 'landing');
@@ -1618,6 +1787,7 @@ const isFlashcardGameComplete = ref(false); // Triggers the final Results screen
 
 // --- 🎴 STUDY CARDS (LIBRARY) STATE ---
 const librarySelectedDomain = ref('All');
+const startWithTerm = ref(false);
 const libraryFlashcards = ref([]);
 
 const flashcardFinalScore = ref(0);
@@ -1630,9 +1800,12 @@ const showAuthModal = ref(false);
 const liveUserScores = ref([0, 0, 0, 0]);
 const showPremiumModal = ref(false);
 const isLoginMode = ref(true); // Toggle between Login and Register
-const authForm = ref({ username: '', email: '', password: '' });
+const authForm = ref({ username: '', email: '', confirmEmail: '', password: '',
+  confirmPassword: '' });
 const authError = ref('');
 const authToken = ref(localStorage.getItem('aws_jwt') || null); // Load saved token if it exists
+const authValidationMessage = ref("");
+const showWelcomeModal = ref(false);
 
 // --- Category Logic ---
 const selectedCategory = ref('All');
@@ -1644,6 +1817,7 @@ const examHistory = ref([]);
 // --- User Login ---
 const isSignup = ref(true);
 const userResults = ref({});
+const recentReviews = ref([]);
 
 // 2. THE SYNCHRONIZER: When App.vue sends new data, update our local user!
 watch(() => props.isLoggedIn, (newStatus) => {
@@ -1704,6 +1878,12 @@ const uploadStatus = ref('');
 
 // --- THE KNOWLEDGE FORGE: DYNAMIC DATABASE FETCH ---
 const libraryModules = ref([]);
+
+// Footer & Cancellation State
+const showCancelModal = ref(false);
+const showAboutModal = ref(false);
+const legalAgreed = ref(false);
+const cancelFeedback = ref("");
 
 // --- DYNAMIC TARGETED FETCH ---
   // --- DYNAMIC TARGETED FETCH ---
@@ -2161,6 +2341,43 @@ const formattedTime = computed(() => {
   const secs = totalSeconds % 60;
   return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
 });
+
+  const handlePipelineFileSelect = (event) => {
+    pipelineFile.value = event.target.files[0];
+  };
+
+  // 3. When the user clicks the INJECT button, fire it to Java!
+  const submitPipelineCsv = async () => {
+    if (!pipelineFile.value) {
+      alert("❌ Please select a pipeline CSV file first.");
+      return;
+    }
+
+    const formData = new FormData();
+    formData.append('file', pipelineFile.value);
+
+    try {
+      const response = await fetch('http://localhost:8080/api/questions/pipeline/upload', {
+        method: 'POST',
+        headers: {
+          'X-Admin-Key': 'masterkey', // Use your real key!
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
+        },
+        body: formData
+      });
+
+      const result = await response.json();
+      if (response.ok) {
+        alert("✅ " + result.message);
+        pipelineFile.value = null; // Clear the file after success
+      } else {
+        alert("❌ " + result.error);
+      }
+    } catch (error) {
+      console.error("Upload failed", error);
+      alert("❌ Critical Error: Could not reach the Matrix.");
+    }
+  };
 
 // Function to handle clicking a card
   // Function to handle clicking a card
@@ -2958,8 +3175,18 @@ const fetchHistory = async () => {
     });
 
     if (response.ok) {
-      examHistory.value = await response.json();
-      console.log(`📡 EXM HISTORY: Bridge established. ${examHistory.value.length} nodes received.`);
+      const data = await response.json();
+
+      // 🚨 THE ARMOR: Only accept the data if it is a list!
+      if (Array.isArray(data)) {
+        examHistory.value = data;
+        console.log("📊 RECENT ACTIVITY DATA:", examHistory.value);
+        console.log(`📡 EXM HISTORY: Bridge established. ${examHistory.value.length} nodes received.`);
+      } else {
+        // If Java sends a weird error object, default to an empty array
+        examHistory.value = [];
+        console.warn("⚠️ Data Bridge warning: Expected an array, but received an object.");
+      }
     } else {
       examHistory.value = [];
       console.error("Failed to establish history data bridge. Server returned an error.");
@@ -3090,6 +3317,23 @@ const deleteAdminQuestion = async (id) => {
   }
 };
 
+const fetchReviews = async () => {
+    try {
+      const response = await fetch('http://localhost:8080/api/questions/public/reviews');
+      if (response.ok) {
+        recentReviews.value = await response.json();
+      }
+    } catch (error) {
+      console.error("Could not fetch reviews:", error);
+    }
+  };
+
+// Fetch them when the app loads
+import { onMounted } from 'vue';
+onMounted(() => {
+    fetchReviews();
+  });
+
 // 4. UI HELPER: Open the modal for editing or creating
 const openAdminModal = (question = null) => {
     if (question) {
@@ -3157,54 +3401,52 @@ const streakDisplay = computed(() => {
 
 // --- THE PROTOCOL ROUTER ---
 const initiateProtocol = (targetView) => {
-    const gameConfig = arcadeConfig[targetView];
+  const gameConfig = arcadeConfig[targetView];
 
-    if (!gameConfig) {
-      currentView.value = targetView;
-      return;
-    }
+  if (!gameConfig) {
+    currentView.value = targetView;
+    return;
+  }
 
-    // --- GATE 1: THE PREMIUM WALL ---
-    if (gameConfig.requiresPremium && !isPremiumUser.value) {
+  // --- GATE 1: THE PREMIUM WALL ---
+  if (gameConfig.requiresPremium && !isPremiumUser.value) {
+    if (typeof playSound === 'function') playSound('wrong');
+
+    localStorage.setItem('aws_intended_protocol', targetView);
+    showUpgradePrompt.value = true;
+    return;
+  }
+
+  // --- GATE 2: THE 3-STRIKE TRACKER (For Free/Unregistered Users) ---
+  if (!isPremiumUser.value && gameConfig.maxFreePlays) {
+    const strikes = parseInt(localStorage.getItem(`aws_${targetView}_strikes`) || '0');
+
+    if (strikes >= gameConfig.maxFreePlays) {
       if (typeof playSound === 'function') playSound('wrong');
-
-      // 🚨 THE FIX: Save exactly which game they were trying to play!
-      localStorage.setItem('aws_intended_protocol', targetView);
-
       showUpgradePrompt.value = true;
-      return;
+      return; // Abort!
     }
 
-    // --- GATE 2: THE 3-STRIKE TRACKER (For Free/Unregistered Users) ---
-    // 🚨 THE FIX: Added .value here too!
-    if (!isPremiumUser.value && gameConfig.maxFreePlays) {
-      // 1. Read their local stamp card (default to 0 if it doesn't exist)
-      const strikes = parseInt(localStorage.getItem(`aws_${targetView}_strikes`) || '0');
+    localStorage.setItem(`aws_${targetView}_strikes`, (strikes + 1).toString());
+    console.log(`🎫 Free play granted for ${gameConfig.name}: Strike ${strikes + 1} of ${gameConfig.maxFreePlays}`);
+  }
 
-      // 2. Are they out of strikes?
-      if (strikes >= gameConfig.maxFreePlays) {
-        if (typeof playSound === 'function') playSound('wrong');
-        showUpgradePrompt.value = true;
-        return; // Abort!
-      }
+  // --- VIP ACCESS GRANTED ---
+  if (typeof playSound === 'function') playSound('click');
 
-      // 3. They are allowed in! Punch their stamp card.
-      localStorage.setItem(`aws_${targetView}_strikes`, (strikes + 1).toString());
-      console.log(`🎫 Free play granted for ${gameConfig.name}: Strike ${strikes + 1} of ${gameConfig.maxFreePlays}`);
+  if (['standard', 'amrap', 'sudden_death', 'flashcards'].includes(targetView)) {
+    bootQuizEngine(targetView);
+  } else {
+    currentView.value = targetView;
+
+    // 🚨 THE FIX: Force Vue to actually fetch the Data when you enter the library!
+    if (targetView === 'library' && selectedCert.value) {
+      fetchKnowledgeForge(selectedCert.value.code);
     }
+  }
 
-    // --- VIP ACCESS GRANTED ---
-    // If they passed the gates (or are Premium), let them play!
-    if (typeof playSound === 'function') playSound('click');
-
-    if (['standard', 'amrap', 'sudden_death', 'flashcards'].includes(targetView)) {
-      bootQuizEngine(targetView);
-    } else {
-      currentView.value = targetView;
-    }
-
-    window.scrollTo({ top: 0, behavior: 'smooth' });
-  };
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+};
 
 const fetchFlashcards = async () => {
   const codeToFetch = selectedCert.value?.code;
@@ -3336,6 +3578,7 @@ const fetchLibraryFlashcards = async (certCode) => {
 
     if (response.ok) {
       const rawCards = await response.json();
+      console.log("🃏 FLASHCARDS FROM JAVA:", rawCards);
 
       // 🚨 Inject the reactive 'flipped' variable into every card so they can flip individually!
       libraryFlashcards.value = rawCards.map(card => ({
@@ -3415,6 +3658,20 @@ const deleteAdminFlashcard = async (id) => {
     console.error("Failed to vaporize:", error);
   }
 };
+
+watch(activeForgeTab, (newTab) => {
+  if (newTab === 'study_cards' && selectedCert.value) {
+    console.log("🃏 Tab clicked! Fetching flashcards for:", selectedCert.value.code);
+    fetchLibraryFlashcards(selectedCert.value.code);
+  }
+});
+
+// Also, let's make sure it fetches immediately if they load directly into the tab
+onMounted(() => {
+  if (activeForgeTab.value === 'study_cards' && selectedCert.value) {
+    fetchLibraryFlashcards(selectedCert.value.code);
+  }
+});
 
 // 1. Add the Certifications list
 const certifications = ref([
@@ -3691,7 +3948,8 @@ const uploadCsv = async () => {
         method: 'POST',
         headers: {
           // 🚨 Include the token so Spring Boot doesn't block the upload!
-          'Authorization': `Bearer ${token}`
+          'Authorization': `Bearer ${token}`,
+          'X-Admin-Key': 'masterkey'
         },
         body: formData,
       });
@@ -4112,7 +4370,7 @@ const downloadDocumentPDF = () => {
 
 // 1. The API Call (Defined first, so other functions can see it)
   // 🚨 FIX 1: Added the VIP Pass to the Streak tracker
-  const recordStudySession = async () => {
+const recordStudySession = async () => {
     if (!currentUser.value) return;
 
     try {
@@ -4285,12 +4543,26 @@ const closeReview = () => {
   if (typeof fetchLeaderboard === 'function') fetchLeaderboard();
 };
 
-  // --- AUTHENTICATION PIPELINE ---
-  const submitAuth = async () => {
+// --- AUTHENTICATION PIPELINE ---
+const submitAuth = async () => {
+    // 1. Clear old errors
+    authValidationMessage.value = "";
     authError.value = '';
 
+    // 🚨 THE INTERCEPTOR: Block the request BEFORE it goes to Java!
+    if (!isLoginMode.value) {
+      if (authForm.value.email !== authForm.value.confirmEmail) {
+        authValidationMessage.value = "Emails do not match. Please verify.";
+        return; // Stops the function immediately
+      }
+      if (authForm.value.password !== authForm.value.confirmPassword) {
+        authValidationMessage.value = "Passwords do not match. Please verify.";
+        return; // Stops the function immediately
+      }
+    }
+
     try {
-      const endpoint = isLoginMode.value ? '/api/auth/login' : '/api/auth/register';
+      const endpoint = isLoginMode.value ? '/api/auth/login' : '/api/users/register';
       console.log(`Initiating ${isLoginMode.value ? 'Login' : 'Registration'} Protocol...`);
 
       const response = await fetch(`http://localhost:8080${endpoint}`, {
@@ -4301,34 +4573,40 @@ const closeReview = () => {
 
       if (response.ok) {
         if (!isLoginMode.value) {
-          // Auto-Login after registration
-          // Auto-Login after registration
-          const autoLoginResponse = await fetch('http://localhost:8080/api/auth/login', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              email: authForm.value.email, // 🚨 SWAPPED: Now sending email!
-              password: authForm.value.password
-            })
-          });
+          // 🚨 REGISTRATION SUCCESS: Trigger the Welcome Modal
+          showAuthModal.value = false;
+          showWelcomeModal.value = true;
 
-          if (autoLoginResponse.ok) {
-            const fullUserObj = await autoLoginResponse.json();
-            completeLoginProcess(fullUserObj);
-          }
+          // Wait 2.5 seconds for dramatic effect, then Auto-Login
+          setTimeout(async () => {
+            showWelcomeModal.value = false;
+
+            const autoLoginResponse = await fetch('http://localhost:8080/api/auth/login', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                email: authForm.value.email,
+                password: authForm.value.password
+              })
+            });
+
+            if (autoLoginResponse.ok) {
+              const fullUserObj = await autoLoginResponse.json();
+              completeLoginProcess(fullUserObj); // Hands off to your function!
+            }
+          }, 2500);
+
         } else {
-          // Normal Login
+          // Normal Login Success
           const fullUserObj = await response.json();
           completeLoginProcess(fullUserObj);
         }
       } else {
-        // 🚨 THE FIX: Intercept the ugly Spring Boot JSON!
+        // Error Handling
         if (response.status === 403 || response.status === 401) {
-          // Clear the password field so they can try again
           authForm.value.password = '';
           authError.value = "Access Denied: Invalid username or passcode.";
         } else if (response.status === 400) {
-          // Usually happens during Registration if username is taken
           const errorText = await response.text();
           authError.value = errorText;
         } else {
@@ -4341,7 +4619,7 @@ const closeReview = () => {
     }
   };
 
-  const completeLoginProcess = (loginData) => {
+const completeLoginProcess = (loginData) => {
     // 1. Save the VIP Pass
     const token = loginData.token || loginData.jwt;
     localStorage.setItem('aws_jwt', token);
@@ -4480,6 +4758,34 @@ const logout = () => {
   authToken.value = null;
   currentUser.value = null;
 };
+
+// The Cancellation Function
+const processCancellation = async () => {
+    if (!legalAgreed.value) {
+      cancelFeedback.value = "You must agree to the legal terms to proceed.";
+      return;
+    }
+
+    try {
+      const response = await fetch('http://localhost:8080/api/users/cancel-premium', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
+        }
+      });
+
+      const data = await response.json();
+      if (response.ok) {
+        cancelFeedback.value = `✅ Successfully scheduled. Your premium access remains active until ${data.expirationDate}.`;
+        // Optionally hide the form and just show the success message
+        setTimeout(() => { showCancelModal.value = false; }, 4000);
+      } else {
+        cancelFeedback.value = "❌ " + data.error;
+      }
+    } catch (error) {
+      cancelFeedback.value = "❌ Critical Error: Could not reach the Matrix.";
+    }
+  };
 
 clearInterval(amrapInterval);
 
