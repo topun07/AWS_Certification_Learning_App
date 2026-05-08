@@ -1,0 +1,355 @@
+certCode,domain,title,content
+"AIP-C01","Domain 2: Implementation & Integration","Implementation and Integration","## AIP-C01 Domain 2: Implementation and Integration
+
+**Weight:** ~26% of scored exam content (second largest domain)
+**Exam Level:** Professional
+**Target Audience:** Developers preparing for the AWS Certified Generative AI Developer - Professional exam
+
+Domain 2 is where architecture meets code. You're expected to build agentic AI systems, choose deployment strategies, integrate GenAI into enterprise workflows, and design robust API patterns. This is the most ""developer-centric"" domain on the exam.
+
+---
+
+## Objective 2.1: Agentic AI Design and Implementation
+
+### What Are AI Agents?
+
+An AI agent is an autonomous system that uses an FM as its reasoning engine to plan, execute multi-step tasks, use tools, and adapt based on observations - with minimal human oversight. Unlike simple prompt-response patterns, agents operate in a loop:
+
+```
+User Goal -> [PLAN] -> [ACT (tool call)] -> [OBSERVE (result)] -> [REASON] -> [ACT again or RESPOND]
+```
+
+This is called the **ReAct (Reasoning + Acting) pattern** - the most common agentic loop tested on the exam.
+
+### Amazon Bedrock Agents
+
+Bedrock Agents is the fully managed service for building agentic AI on AWS. Key components:
+
+| Component | Purpose | Example |
+|-----------|---------|---------|
+| **Foundation Model** | The ""brain"" - reasons, plans, generates responses | Claude 3.5 Sonnet for complex reasoning |
+| **Instructions** | System prompt defining the agent's role and behavior | ""You are a travel booking assistant. Always confirm before making reservations."" |
+| **Action Groups** | Tools the agent can invoke (Lambda functions or API schemas) | book_flight, search_hotels, check_availability |
+| **Knowledge Bases** | RAG-connected data sources for grounding | Company travel policies, hotel database |
+| **Guardrails** | Safety controls on inputs/outputs | Block requests for competitor recommendations |
+| **Session management** | Maintains conversation state across turns | Remember user's travel dates across the conversation |
+
+### Action Groups - Deep Dive
+
+Action groups define what an agent can do. Two implementation approaches:
+
+**1. Lambda-based Action Groups:**
+
+```
+Agent decides to call ""search_flights"" ->
+    Bedrock invokes your Lambda function ->
+        Lambda calls external API (airline system) ->
+            Returns structured result to agent ->
+                Agent reasons about result and continues
+```
+
+**2. OpenAPI Schema-based (Return of Control):**
+
+- You provide an OpenAPI spec describing available actions.
+- The agent returns the action + parameters to your application (doesn't execute directly).
+- Your application executes the action and returns results.
+- Gives you full control over execution.
+
+### Agent Orchestration Strategies
+
+| Strategy | How It Works | When to Use |
+|----------|-------------|-------------|
+| **Single agent** | One agent handles all tasks | Simple workflows with limited tool scope |
+| **Multi-agent collaboration** | Supervisor agent delegates to specialist sub-agents | Complex domains (e.g., supervisor routes to ""booking agent,"" ""billing agent,"" ""support agent"") |
+| **Sequential chaining** | Output of one agent feeds into the next | Pipeline workflows (research -> draft -> review) |
+| **Parallel execution** | Multiple agents work simultaneously on sub-tasks | Independent tasks that can be combined (search flights + search hotels simultaneously) |
+
+### Bedrock Agents - Multi-Agent Collaboration
+
+Bedrock supports multi-agent collaboration where:
+
+- A supervisor agent receives the user request and decides which sub-agent to invoke.
+- Sub-agents are specialized (each with their own tools, knowledge bases, and instructions).
+- The supervisor synthesizes sub-agent responses into a final answer.
+
+*Real-world example:* An e-commerce assistant has a supervisor agent that routes to: (1) a product search agent with catalog access, (2) an order management agent with order API tools, and (3) a returns agent with refund policy knowledge base.
+
+### Amazon Bedrock Flows
+
+Bedrock Flows provides a visual, low-code way to build multi-step GenAI workflows:
+
+- **Nodes** - Each step in the flow (prompt, condition, Lambda, knowledge base retrieval, model invocation).
+- **Connections** - Define data flow between nodes.
+- **Conditions** - Branch logic based on outputs (if sentiment = negative -> escalate to human).
+- **Iterators** - Loop over collections (process each document in a batch).
+
+**When to use Flows vs. Agents:**
+- **Flows** = Deterministic, predictable multi-step workflows (you define the path).
+- **Agents** = Dynamic, autonomous decision-making (the FM decides the path).
+
+---
+
+## Objective 2.2: Deployment Strategies
+
+### Compute Options for GenAI Applications
+
+| Service | Best For | Characteristics |
+|---------|----------|----------------|
+| **AWS Lambda** | Event-driven, short-lived GenAI tasks | Serverless; 15-min timeout; cold starts; pay-per-invocation |
+| **Amazon ECS (Fargate)** | Containerized GenAI microservices | Serverless containers; no timeout limit; good for long-running inference |
+| **Amazon EKS** | Complex multi-container GenAI platforms | Kubernetes orchestration; maximum flexibility; higher operational overhead |
+| **Amazon EC2** | Self-hosted models requiring GPUs | Full control; GPU instances (P4d, P5, Inf2); manage everything yourself |
+| **AWS App Runner** | Simple web-facing GenAI APIs | Fully managed; auto-scaling; minimal configuration |
+
+### Deployment Patterns
+
+**Blue/Green Deployment:**
+- Run two identical environments (blue = current, green = new).
+- Switch traffic from blue to green after validation.
+- Instant rollback by switching back.
+- Use case: Deploying a new agent version with updated instructions.
+
+**Canary Deployment:**
+- Route a small percentage of traffic (e.g., 5%) to the new version.
+- Monitor for errors/regressions.
+- Gradually increase traffic if healthy.
+- Use case: Testing a fine-tuned model against the base model in production.
+
+**A/B Testing:**
+- Route different user segments to different model configurations.
+- Compare metrics (latency, user satisfaction, accuracy).
+- Use case: Testing whether Claude Sonnet or Titan produces better customer support responses.
+
+### Infrastructure as Code
+
+- **AWS CloudFormation** - Define Bedrock agents, knowledge bases, and supporting infrastructure as templates.
+- **AWS CDK (Cloud Development Kit)** - Programmatic infrastructure definition in Python/TypeScript.
+- **AWS SAM (Serverless Application Model)** - Simplified deployment for Lambda-based GenAI backends.
+- **Terraform** - Third-party IaC with Bedrock provider support.
+
+---
+
+## Objective 2.3: Enterprise Integration Patterns
+
+### API Patterns for GenAI
+
+**Synchronous (Request-Response):**
+
+```
+Client -> API Gateway -> Lambda -> Bedrock InvokeModel -> Response (wait for full generation)
+```
+
+- Simple but blocks until complete.
+- Timeout risk for long generations.
+
+**Streaming:**
+
+```
+Client -> API Gateway (WebSocket) -> Lambda -> Bedrock InvokeModelWithResponseStream -> Token-by-token delivery
+```
+
+- Better UX - user sees response forming in real-time.
+- Requires WebSocket or Server-Sent Events (SSE).
+
+**Asynchronous (Queue-Based):**
+
+```
+Client -> API Gateway -> SQS -> Lambda -> Bedrock -> Store result in DynamoDB -> Client polls/webhook
+```
+
+- Decouples request from response.
+- Handles long-running tasks and high concurrency.
+- Use case: Batch document summarization.
+
+**Event-Driven:**
+
+```
+S3 (new document uploaded) -> EventBridge -> Step Functions -> [Extract -> Embed -> Index -> Notify]
+```
+
+- Automatically triggers GenAI pipelines on data changes.
+- Use case: Auto-index new documents into a knowledge base.
+
+### AWS Step Functions for GenAI Orchestration
+
+Step Functions orchestrates complex, multi-step GenAI workflows with:
+
+- **State machines** - Define workflow as a series of states (Task, Choice, Parallel, Wait, Map).
+- **Error handling** - Built-in retry logic and catch blocks for transient failures.
+- **Parallel execution** - Run multiple Bedrock calls simultaneously.
+- **Map state** - Process arrays of items (e.g., summarize each chapter of a book in parallel).
+- **Human approval** - Pause workflow and wait for human input before proceeding.
+- **Direct Bedrock integration** - Call Bedrock APIs directly from Step Functions without Lambda.
+
+*Real-world example:* A document processing pipeline uses Step Functions to: (1) extract text with Textract, (2) classify document type with Bedrock, (3) route to appropriate processing logic, (4) generate summary, (5) store results, (6) notify stakeholders.
+
+### Session and State Management
+
+GenAI applications often need to maintain state across interactions:
+
+| Approach | Service | Use Case |
+|----------|---------|----------|
+| **Conversation history** | DynamoDB | Store chat turns for multi-session chatbots |
+| **Agent session** | Bedrock Agents (built-in) | Automatic session context within a conversation |
+| **Caching** | ElastiCache (Redis) | Cache frequent prompt-response pairs for low latency |
+| **Long-term memory** | Bedrock Agent memory | Agent remembers user preferences across sessions |
+| **Workflow state** | Step Functions | Track progress through multi-step pipelines |
+
+### Authentication and Authorization
+
+- **Amazon Cognito** - User authentication for GenAI applications (sign-up, sign-in, token management).
+- **API Gateway authorizers** - Validate JWT tokens before requests reach your GenAI backend.
+- **IAM-based access** - Service-to-service authentication (Lambda invoking Bedrock).
+- **Resource policies** - Control which accounts/services can invoke specific Bedrock models.
+
+---
+
+## Objective 2.4: Integration with AWS Services
+
+### Key Integration Patterns
+
+**GenAI + Amazon Connect (Contact Center):**
+- Agent assists human agents with real-time response suggestions.
+- Post-call summarization using Bedrock.
+- Automated intent classification and routing.
+
+**GenAI + Amazon Lex (Conversational AI):**
+- Lex handles structured intent recognition.
+- Bedrock handles open-ended, generative responses.
+- Hybrid: Lex for known intents -> Bedrock fallback for unknown queries.
+
+**GenAI + Amazon Kendra (Enterprise Search):**
+- Kendra provides intelligent document retrieval.
+- Bedrock generates natural language answers from Kendra results.
+- Alternative to Bedrock Knowledge Bases for organizations already using Kendra.
+
+**GenAI + Amazon SageMaker:**
+- SageMaker for custom model training/hosting.
+- Bedrock for managed FM access.
+- Combine: SageMaker-hosted custom classifier -> Bedrock for generation.
+
+**GenAI + Amazon EventBridge:**
+- Trigger GenAI workflows on business events.
+- Example: New support ticket created -> EventBridge -> Lambda -> Bedrock generates draft response.
+
+### Prompt Management
+
+Amazon Bedrock Prompt Management enables:
+
+- **Version control** - Track prompt iterations with version history.
+- **Variables** - Parameterize prompts with dynamic values (customer name, product, context).
+- **A/B testing** - Route traffic between prompt versions to compare performance.
+- **Prompt flows** - Chain prompts together in sequences.
+
+*Real-world example:* A marketing team manages 15 prompt templates for different campaign types. They version each prompt, test variations, and roll back if a new version underperforms.
+
+---
+
+## Objective 2.5: Error Handling and Resilience
+
+### Common Failure Modes in GenAI Applications
+
+| Failure | Cause | Mitigation |
+|---------|-------|------------|
+| **Throttling** | Exceeded Bedrock API rate limits | Exponential backoff + retry; Provisioned Throughput; request queuing |
+| **Timeout** | Generation takes too long | Streaming responses; async patterns; reduce max_tokens |
+| **Hallucination** | Model generates incorrect information | RAG grounding; Guardrails grounding checks; lower temperature |
+| **Tool failure** | Agent's Lambda action group errors | Step Functions retry logic; fallback tools; graceful degradation |
+| **Context overflow** | Input exceeds model's context window | Summarize history; truncate oldest messages; use larger context model |
+| **Model unavailability** | Regional outage or model deprecation | Cross-region inference; model fallback routing |
+
+### Resilience Patterns
+
+- **Circuit breaker** - Stop calling a failing service after N consecutive errors; try again after a cooldown period.
+- **Retry with exponential backoff** - Wait progressively longer between retries (1s, 2s, 4s, 8s...).
+- **Dead letter queues (DLQ)** - Capture failed messages for later analysis/reprocessing.
+- **Fallback models** - If primary model is unavailable, route to a secondary model.
+- **Graceful degradation** - If RAG retrieval fails, respond with a disclaimer rather than crashing (""I couldn't access the knowledge base. Here's my best general answer..."").
+
+---
+
+## Architecture Reference - Enterprise GenAI Platform
+
+```
++------------------------------------------------------------------+
+|                        CLIENT LAYER                                |
+|   Web App / Mobile / Slack Bot / API Consumer                     |
++-----------------------------+------------------------------------+
+                              |
++-----------------------------v------------------------------------+
+|                     API LAYER                                      |
+|   API Gateway (REST/WebSocket) + Cognito Auth + WAF               |
++-----------------------------+------------------------------------+
+                              |
++-----------------------------v------------------------------------+
+|                  ORCHESTRATION LAYER                               |
+|   Step Functions / Bedrock Agents / Bedrock Flows                 |
++-------+-----------------+------------------+---------------------+
+        |                 |                  |
++-------v------+  +-------v--------+  +-----v-------+
+|  COMPUTE     |  |  AI SERVICES   |  |  DATA LAYER |
+|  Lambda      |  |  Bedrock FMs   |  |  DynamoDB   |
+|  ECS/Fargate |  |  Knowledge     |  |  S3         |
+|  SageMaker   |  |  Bases         |  |  OpenSearch |
+|              |  |  Guardrails    |  |  ElastiCache|
++--------------+  +----------------+  +-------------+
+                              |
++-----------------------------v------------------------------------+
+|                  OBSERVABILITY LAYER                               |
+|   CloudWatch (metrics/logs) + CloudTrail (audit) + X-Ray (trace) |
++------------------------------------------------------------------+
+```
+
+---
+
+## Key Exam Patterns for AIP-C01 Domain 2
+
+- **""Build an autonomous assistant that calls APIs""** - Bedrock Agents with Lambda-based action groups
+- **""Route complex requests to specialized sub-systems""** - Multi-agent collaboration (supervisor + sub-agents)
+- **""Predictable multi-step workflow with branching logic""** - Bedrock Flows or Step Functions
+- **""Dynamic, FM-driven decision-making""** - Bedrock Agents (ReAct loop)
+- **""Real-time token streaming to the user""** - InvokeModelWithResponseStream + WebSocket API Gateway
+- **""Decouple request from long-running generation""** - Async pattern (SQS -> Lambda -> Bedrock -> DynamoDB)
+- **""Auto-trigger GenAI when new data arrives""** - EventBridge + Step Functions / Lambda
+- **""Maintain conversation context across sessions""** - DynamoDB for session history + Bedrock Converse API
+- **""Agent keeps failing on a specific tool call""** - Retry with backoff + fallback tool + DLQ for failed invocations
+- **""Deploy new model version with minimal risk""** - Canary deployment (route 5% traffic, monitor, expand)
+- **""Manage and version prompt templates""** - Bedrock Prompt Management
+- **""Orchestrate parallel Bedrock calls with error handling""** - Step Functions (Parallel state + Catch/Retry)
+- **""Authenticate users before they access the chatbot""** - Amazon Cognito + API Gateway authorizer
+- **""Agent needs to remember user preferences long-term""** - Bedrock Agent memory or DynamoDB user profile store
+
+---
+
+## Quick Exam Tips for Domain 2
+
+- **Agents vs. Flows vs. Step Functions** - know when to use each:
+  - Agents = autonomous, FM decides the path
+  - Flows = visual, deterministic multi-step GenAI workflows
+  - Step Functions = general-purpose orchestration with full AWS service integration
+
+- **Action groups** are the mechanism by which agents interact with the outside world. Know both Lambda-based and Return of Control patterns.
+
+- **Streaming** is almost always preferred for user-facing chat applications. The exam will test whether you choose streaming vs. synchronous vs. async based on the use case.
+
+- **Step Functions** can call Bedrock directly (optimized integration) - you don't always need Lambda in between.
+
+- **Multi-agent** questions will describe scenarios with multiple distinct domains or capabilities. The answer is usually a supervisor agent delegating to specialists.
+
+- **Error handling** is a Professional-level differentiator. Expect scenarios where you must design for throttling, timeouts, and partial failures.
+
+- The exam loves **integration scenarios** - ""How do you connect Bedrock to [existing enterprise system]?"" The answer usually involves API Gateway + Lambda + the target system's API.
+
+- **Cognito** appears frequently as the authentication layer. Know that it provides JWT tokens that API Gateway validates.
+
+---
+
+## Summary
+
+This covers all objectives in AIP-C01 Domain 2:
+
+- **Agentic AI** - Bedrock Agents, action groups, multi-agent collaboration, ReAct pattern
+- **Deployment strategies** - compute options, blue/green, canary, IaC
+- **Enterprise integration** - API patterns (sync/stream/async), Step Functions, EventBridge
+- **Service integration** - Connect, Lex, Kendra, SageMaker, prompt management
+- **Error handling and resilience** - throttling, retries, circuit breakers, fallbacks"

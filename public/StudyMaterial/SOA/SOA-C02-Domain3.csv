@@ -1,0 +1,267 @@
+certCode,domain,title,content
+"SOA-C02","Domain 3: Deployment, Provisioning & Automation","Deployment, Provisioning & Automation","## SOA-C02 Domain 3: Deployment, Provisioning & Automation
+
+**Weight:** ~18% of scored exam content
+**Exam Level:** Associate
+
+This domain covers provisioning cloud resources, automating deployments, and managing infrastructure as code.
+
+---
+
+## CloudFormation
+
+### Core Concepts
+
+| Component | Purpose |
+|-----------|---------|
+| **Template** | JSON/YAML blueprint of infrastructure |
+| **Stack** | Running instance of a template |
+| **StackSet** | Deploy stacks across accounts/regions |
+| **Change Set** | Preview changes before applying |
+| **Drift Detection** | Identify manual changes to stack resources |
+| **Nested Stacks** | Reusable template components |
+
+### Template Sections
+
+| Section | Required | Purpose |
+|---------|----------|---------|
+| **AWSTemplateFormatVersion** | No | Template version |
+| **Description** | No | Template description |
+| **Parameters** | No | Input values at deploy time |
+| **Mappings** | No | Static key-value lookups |
+| **Conditions** | No | Conditional resource creation |
+| **Resources** | YES | AWS resources to create |
+| **Outputs** | No | Return values (cross-stack references) |
+
+### Key Features
+
+**Stack Policies:**
+- Protect resources from unintentional updates
+- JSON document defining allowed update actions
+- Default: All updates allowed
+- Once set, cannot be deleted (only modified)
+
+**Rollback:**
+- CREATE_FAILED: Auto-rollback (delete all resources)
+- UPDATE_ROLLBACK: Revert to previous state
+- Disable rollback for debugging (troubleshoot failures)
+
+**DeletionPolicy:**
+- **Delete** (default): Remove resource when stack deleted
+- **Retain**: Keep resource after stack deletion
+- **Snapshot**: Create snapshot before deletion (EBS, RDS, Redshift)
+
+**UpdatePolicy:**
+- AutoScalingRollingUpdate: Replace instances gradually
+- AutoScalingReplacingUpdate: Replace entire ASG
+- AutoScalingScheduledAction: Prevent scheduled actions during update
+
+### StackSets
+
+- Deploy to multiple accounts and regions simultaneously
+- Requires: Admin account (creates StackSet) + Target accounts
+- Deployment options: Sequential or Parallel
+- Failure tolerance: Max accounts/regions that can fail
+- Use with AWS Organizations for automatic deployment to new accounts
+
+### Drift Detection
+
+- Identifies resources modified outside CloudFormation
+- Status: IN_SYNC, MODIFIED, DELETED
+- Does NOT detect: Changes to properties not in template
+- Remediation: Import resource or update stack to match
+
+### Helper Scripts (EC2)
+
+| Script | Purpose |
+|--------|---------|
+| **cfn-init** | Configure instance (packages, files, services) |
+| **cfn-signal** | Signal stack that resource is ready |
+| **cfn-hup** | Detect metadata changes and re-run cfn-init |
+| **CreationPolicy** | Wait for signal before marking CREATE_COMPLETE |
+| **WaitCondition** | Pause stack creation until signal received |
+
+---
+
+## Systems Manager (SSM)
+
+### Core Capabilities
+
+| Feature | Purpose | Use Case |
+|---------|---------|----------|
+| **Run Command** | Execute commands on fleet | Install patches, run scripts |
+| **Patch Manager** | Automate OS patching | Compliance, security |
+| **State Manager** | Maintain desired state | Ensure agent installed, config applied |
+| **Automation** | Multi-step runbooks | Complex workflows, remediation |
+| **Session Manager** | Shell access without SSH | No bastion, no open ports |
+| **Parameter Store** | Centralized config/secrets | Connection strings, feature flags |
+| **Inventory** | Collect instance metadata | Software, network, Windows updates |
+| **Maintenance Windows** | Schedule operations | Patching during off-hours |
+
+### Patch Manager
+
+- **Patch Baseline:** Rules for which patches to approve
+- **Patch Group:** Tag-based grouping (e.g., ""PatchGroup: Production"")
+- **Maintenance Window:** When to apply patches
+- **Compliance:** Report on patch status across fleet
+- Pre-defined baselines for each OS (can customize)
+- Scan only or Scan + Install
+
+### Run Command
+
+- Execute commands on managed instances (no SSH/RDP)
+- Requires SSM Agent (pre-installed on Amazon Linux, Windows AMIs)
+- Rate control: Concurrency (how many at once) + Error threshold
+- Output: S3, CloudWatch Logs
+- Documents: AWS-RunShellScript, AWS-RunPowerShellScript, custom
+
+### Automation Documents
+
+- Multi-step workflows (runbooks)
+- Steps: aws:runCommand, aws:executeScript, aws:approve, aws:sleep
+- Trigger from: EventBridge, Config remediation, manual, maintenance window
+- Built-in documents: AWS-RestartEC2Instance, AWS-StopEC2Instance, etc.
+- Approval steps for human-in-the-loop workflows
+
+### Parameter Store
+
+| Tier | Max Size | Cost | Throughput |
+|------|----------|------|-----------|
+| **Standard** | 4 KB | Free | 40 TPS |
+| **Advanced** | 8 KB | $0.05/param/month | 1000 TPS |
+
+- Hierarchy: /app/prod/db-password
+- Types: String, StringList, SecureString (KMS encrypted)
+- Versioning: Track changes over time
+- Notifications: EventBridge on parameter change
+- Cross-account: Share via Resource Access Manager
+
+---
+
+## Elastic Beanstalk
+
+### Deployment Policies
+
+| Policy | Downtime | Speed | Rollback | Use Case |
+|--------|----------|-------|----------|----------|
+| **All at Once** | Yes | Fastest | Redeploy | Dev/test |
+| **Rolling** | No (reduced capacity) | Slow | Redeploy | Production (cost-sensitive) |
+| **Rolling with Additional Batch** | No (full capacity) | Slow | Redeploy | Production (maintain capacity) |
+| **Immutable** | No | Slower | Terminate new | Production (safe) |
+| **Traffic Splitting** | No | Slowest | Reroute traffic | Canary testing |
+| **Blue/Green** | No | Medium | Swap URLs | Zero-downtime |
+
+### Key Concepts
+
+- **.ebextensions/**: Configuration files (.config YAML/JSON)
+- **Saved Configurations:** Reusable environment settings
+- **Platform Updates:** Managed or immutable update strategy
+- **Worker Environments:** Process SQS messages (background jobs)
+- **Docker:** Single or multi-container (ECS)
+
+### .ebextensions
+
+```yaml
+# .ebextensions/01-packages.config
+packages:
+  yum:
+    httpd: []
+
+commands:
+  01_setup:
+    command: ""echo hello > /tmp/test.txt""
+
+files:
+  ""/etc/myapp/config.json"":
+    content: |
+      {""key"": ""value""}
+```
+
+---
+
+## EC2 Image Builder
+
+### Pipeline Components
+
+| Component | Purpose |
+|-----------|---------|
+| **Image Recipe** | Base image + components to install |
+| **Build Components** | Scripts/actions to customize image |
+| **Test Components** | Validate image after build |
+| **Infrastructure Config** | Instance type, VPC, security group for build |
+| **Distribution Settings** | Regions and accounts to share AMI |
+| **Pipeline** | Schedule and orchestrate the build |
+
+### Key Features
+
+- Automated AMI creation on schedule or trigger
+- Built-in and custom components (AWSTOE documents)
+- Automatic testing after build
+- Cross-region and cross-account distribution
+- Version tracking
+- Integration with SSM for golden AMI management
+
+---
+
+## OpsWorks
+
+| Flavor | Based On | Use Case |
+|--------|----------|----------|
+| **OpsWorks Stacks** | Chef | Legacy, layer-based architecture |
+| **OpsWorks for Chef Automate** | Chef Server | Full Chef infrastructure |
+| **OpsWorks for Puppet Enterprise** | Puppet | Puppet-based configuration |
+
+- Layers: Web, App, DB (each with recipes/manifests)
+- Lifecycle events: Setup, Configure, Deploy, Undeploy, Shutdown
+- Auto-healing: Restart failed instances
+- Time-based/Load-based scaling
+
+---
+
+## Key Exam Patterns
+
+**CloudFormation:**
+- **""Deploy to multiple accounts/regions""** -> StackSets
+- **""Preview changes before update""** -> Change Sets
+- **""Detect manual changes""** -> Drift Detection
+- **""Keep resource after stack deletion""** -> DeletionPolicy: Retain
+- **""Wait for EC2 to finish setup""** -> CreationPolicy + cfn-signal
+- **""Reusable template components""** -> Nested Stacks
+- **""Cross-stack references""** -> Outputs + Export + Fn::ImportValue
+
+**SSM:**
+- **""Run commands without SSH""** -> Run Command (requires SSM Agent)
+- **""Automate patching""** -> Patch Manager + Maintenance Window
+- **""Store config values""** -> Parameter Store (hierarchy, versioning)
+- **""Complex multi-step remediation""** -> Automation Documents
+- **""Shell access without bastion""** -> Session Manager
+- **""Ensure desired state""** -> State Manager (associations)
+
+**Beanstalk:**
+- **""Zero-downtime deployment""** -> Immutable or Blue/Green
+- **""Canary testing""** -> Traffic Splitting
+- **""Fastest deployment (dev)""** -> All at Once
+- **""Maintain full capacity during deploy""** -> Rolling with Additional Batch
+- **""Custom instance configuration""** -> .ebextensions
+
+**AMI:**
+- **""Automated AMI pipeline""** -> EC2 Image Builder
+- **""Golden AMI across accounts""** -> Image Builder + distribution settings
+- **""Fast instance launch""** -> Pre-baked AMI (vs. user data scripts)
+
+---
+
+## Quick Exam Tips
+
+- **StackSets** deploy across accounts/regions. Requires admin + target account roles.
+- **Change Sets** preview changes. Drift Detection finds manual modifications.
+- **DeletionPolicy: Snapshot** creates a backup before CloudFormation deletes the resource.
+- **cfn-signal + CreationPolicy** = wait for EC2 to finish bootstrapping before marking complete.
+- **SSM Agent** is required for all Systems Manager features (pre-installed on Amazon Linux).
+- **Session Manager** replaces bastion hosts - no SSH keys, no open ports, full audit trail.
+- **Patch Manager** uses baselines + patch groups + maintenance windows for automated patching.
+- **Parameter Store** is free (Standard tier). Use hierarchy for organization (/prod/db/password).
+- **Immutable deployment** in Beanstalk creates a new ASG, validates, then swaps. Safest option.
+- **Blue/Green** in Beanstalk uses CNAME swap between two environments.
+- **EC2 Image Builder** automates AMI creation, testing, and cross-region distribution.
+- **Nested Stacks** are for reusability. Cross-stack references (Exports) are for sharing values."

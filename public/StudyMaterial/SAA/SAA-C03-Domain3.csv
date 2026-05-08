@@ -1,0 +1,311 @@
+certCode,domain,title,content
+"SAA-C03","Domain 3: Design High-Performing Architectures","Design High-Performing Architectures","## SAA-C03 Domain 3: Design High-Performing Architectures
+
+**Weight:** ~24% of scored exam content
+**Exam Level:** Associate
+
+This domain covers selecting high-performing compute, storage, database, and networking solutions.
+
+---
+
+## Compute Solutions
+
+### EC2 Instance Families
+
+| Family | Optimized For | Use Case | Example |
+|--------|--------------|----------|---------|
+| **M** (General) | Balanced | Web servers, app servers | m6i, m7g |
+| **C** (Compute) | CPU-intensive | Batch processing, ML inference, gaming | c6i, c7g |
+| **R** (Memory) | Memory-intensive | In-memory databases, real-time analytics | r6i, r7g |
+| **T** (Burstable) | Variable workloads | Dev/test, small web apps | t3, t4g |
+| **P/G** (Accelerated) | GPU | ML training, video encoding | p4d, g5 |
+| **I** (Storage) | High I/O | NoSQL databases, data warehousing | i3, i4i |
+| **D** (Dense Storage) | HDD storage | Hadoop, distributed file systems | d3 |
+
+### EC2 Placement Groups
+
+| Type | Behavior | Use Case |
+|------|----------|----------|
+| **Cluster** | Same rack, same AZ | HPC, low-latency networking |
+| **Spread** | Different hardware (max 7/AZ) | Critical instances, HA |
+| **Partition** | Separate racks (groups) | Hadoop, Cassandra, Kafka |
+
+### Compute Options Comparison
+
+| Service | Use Case | Scaling | Pricing |
+|---------|----------|---------|---------|
+| **EC2** | Full control, long-running | ASG | Per second |
+| **Lambda** | Event-driven, short tasks (< 15 min) | Automatic (1000 concurrent) | Per request + duration |
+| **ECS/Fargate** | Containers, microservices | Service auto scaling | Per vCPU + memory |
+| **Batch** | Large-scale batch jobs | Managed compute | EC2/Spot pricing |
+
+### Lambda Performance
+
+- **Memory:** 128 MB - 10 GB (CPU scales with memory)
+- **Timeout:** Max 15 minutes
+- **Concurrency:** 1000 default (request increase)
+- **Cold Start:** Reduce with Provisioned Concurrency
+- **Layers:** Share code/libraries across functions
+- **SnapStart:** Pre-initialized execution environment (Java)
+
+---
+
+## Storage Solutions
+
+### EBS Volume Types
+
+| Type | IOPS | Throughput | Use Case |
+|------|------|-----------|----------|
+| **gp3** | 3,000-16,000 | 125-1,000 MB/s | General purpose (default) |
+| **gp2** | 3,000-16,000 (burst) | 250 MB/s | Legacy general purpose |
+| **io2 Block Express** | Up to 256,000 | 4,000 MB/s | Critical databases |
+| **st1** | N/A | 500 MB/s | Big data, sequential reads |
+| **sc1** | N/A | 250 MB/s | Cold storage, infrequent |
+
+### Storage Comparison
+
+| Service | Type | Access Pattern | Performance |
+|---------|------|---------------|-------------|
+| **EBS** | Block | Single EC2 (Multi-Attach for io2) | Low latency, high IOPS |
+| **EFS** | File (NFS) | Multiple EC2, cross-AZ | Elastic, auto-scaling |
+| **FSx Lustre** | File (HPC) | High-performance computing | Sub-ms latency, 100s GB/s |
+| **FSx Windows** | File (SMB) | Windows workloads | AD integration |
+| **S3** | Object | Any (HTTP) | Unlimited scale |
+| **Instance Store** | Block | Ephemeral, highest IOPS | Lost on stop/terminate |
+
+### S3 Performance
+
+- **Baseline:** 3,500 PUT/POST/DELETE + 5,500 GET per prefix per second
+- **Multi-part Upload:** Required > 5 GB, recommended > 100 MB
+- **S3 Transfer Acceleration:** CloudFront edge locations for faster uploads
+- **Byte-Range Fetches:** Parallel downloads of file segments
+- **S3 Select / Glacier Select:** Query subset of data (SQL on S3)
+
+### Caching Strategies
+
+| Service | Use Case | Latency |
+|---------|----------|---------|
+| **CloudFront** | Static/dynamic content at edge | < 10ms (edge) |
+| **ElastiCache Redis** | Session store, leaderboards, pub/sub | Sub-millisecond |
+| **ElastiCache Memcached** | Simple caching, multi-threaded | Sub-millisecond |
+| **DAX** | DynamoDB accelerator | Microseconds |
+| **API Gateway Cache** | API response caching | Configurable TTL |
+
+---
+
+## Database Solutions
+
+### Database Selection Guide
+
+| Requirement | Service | Why |
+|-------------|---------|-----|
+| **Relational, complex queries** | RDS (Aurora) | SQL, joins, transactions |
+| **Key-value, < 10ms** | DynamoDB | Serverless, auto-scaling |
+| **In-memory, sub-ms** | ElastiCache | Redis/Memcached |
+| **Document (JSON)** | DocumentDB | MongoDB-compatible |
+| **Graph relationships** | Neptune | Social networks, fraud |
+| **Time series** | Timestream | IoT, DevOps metrics |
+| **Ledger (immutable)** | QLDB | Audit, supply chain |
+| **Wide column** | Keyspaces | Cassandra-compatible |
+| **Search** | OpenSearch | Full-text search, logs |
+| **Data warehouse** | Redshift | Analytics, BI |
+
+### DynamoDB Performance
+
+| Feature | Description |
+|---------|-------------|
+| **Capacity Modes** | On-Demand (pay per request) vs. Provisioned (RCU/WCU) |
+| **DAX** | In-memory cache (microsecond reads) |
+| **Global Tables** | Multi-region, active-active |
+| **Streams** | Change data capture (CDC) |
+| **TTL** | Auto-delete expired items |
+| **Partition Key Design** | High cardinality = even distribution |
+
+### DynamoDB Capacity
+
+| Unit | Operation | Size |
+|------|-----------|------|
+| **1 RCU** | 1 strongly consistent read/sec | 4 KB |
+| **1 RCU** | 2 eventually consistent reads/sec | 4 KB |
+| **1 WCU** | 1 write/sec | 1 KB |
+
+### RDS Performance
+
+- **Read Replicas:** Scale reads (up to 15 for Aurora)
+- **Multi-AZ:** HA, not performance (standby can't serve reads)
+- **Aurora Serverless:** Auto-scale capacity for variable workloads
+- **RDS Proxy:** Connection pooling, reduces failover time
+- **Performance Insights:** Identify bottlenecks
+
+---
+
+## Networking Performance
+
+### CloudFront
+
+- Global CDN with 400+ edge locations
+- Cache static content (images, CSS, JS)
+- Dynamic content acceleration (persistent connections to origin)
+- Origin types: S3, ALB, EC2, custom HTTP
+- OAC (Origin Access Control): Restrict S3 access to CloudFront only
+- Lambda@Edge / CloudFront Functions: Customize at edge
+
+### CloudFront vs. Global Accelerator
+
+| Feature | CloudFront | Global Accelerator |
+|---------|-----------|-------------------|
+| **Content** | Cacheable (static + dynamic) | Non-cacheable (dynamic only) |
+| **IPs** | Anycast (varies) | 2 static Anycast IPs |
+| **Protocol** | HTTP/HTTPS/WebSocket | TCP/UDP |
+| **Use Case** | Web content delivery | Gaming, IoT, VoIP |
+| **Caching** | Yes (edge cache) | No caching |
+| **Routing** | DNS-based | AWS backbone routing |
+
+### Global Accelerator
+
+- 2 static Anycast IP addresses
+- Routes traffic over AWS global backbone (not public internet)
+- Automatic failover between endpoints (< 30 seconds)
+- Health checks on endpoints
+- Use cases: Non-HTTP (TCP/UDP), static IPs needed, instant failover
+
+### Route 53 Routing Policies
+
+| Policy | Use Case |
+|--------|----------|
+| **Simple** | Single resource, no health checks |
+| **Weighted** | A/B testing, gradual migration |
+| **Latency** | Route to lowest-latency region |
+| **Failover** | Active-passive DR |
+| **Geolocation** | Route by user location (compliance) |
+| **Geoproximity** | Route by geographic distance (with bias) |
+| **Multi-value** | Simple load balancing with health checks |
+
+---
+
+## Data Transfer & Integration
+
+### Data Transfer Services
+
+| Service | Use Case | Speed |
+|---------|----------|-------|
+| **S3 Transfer Acceleration** | Fast uploads to S3 | Edge -> S3 via backbone |
+| **DataSync** | On-prem to AWS (scheduled) | Up to 10 Gbps |
+| **Snow Family** | Massive data (offline) | Physical device |
+| **Direct Connect** | Dedicated network link | 1-100 Gbps |
+| **VPN** | Encrypted over internet | Limited by internet |
+
+### Snow Family
+
+| Device | Storage | Use Case |
+|--------|---------|----------|
+| **Snowcone** | 8-14 TB | Edge computing, small transfers |
+| **Snowball Edge** | 80 TB | Large migrations, edge compute |
+| **Snowmobile** | 100 PB | Exabyte-scale migration |
+
+---
+
+## Key Exam Patterns
+
+**Compute:**
+- **""Variable traffic, cost-effective""** -> Lambda or Fargate
+- **""HPC, low-latency between instances""** -> Cluster placement group
+- **""Critical instances, max HA""** -> Spread placement group
+- **""Long-running, full control""** -> EC2
+- **""Containers, no server management""** -> Fargate
+- **""Reduce Lambda cold starts""** -> Provisioned Concurrency
+
+**Storage:**
+- **""Highest IOPS database""** -> io2 Block Express (256,000 IOPS)
+- **""General purpose, cost-effective""** -> gp3
+- **""Shared file system, Linux""** -> EFS
+- **""Shared file system, Windows""** -> FSx for Windows
+- **""HPC file system""** -> FSx for Lustre
+- **""Ephemeral, highest performance""** -> Instance Store
+
+**Database:**
+- **""Serverless, auto-scaling, key-value""** -> DynamoDB
+- **""Microsecond reads on DynamoDB""** -> DAX
+- **""Relational, auto-scaling, HA""** -> Aurora Serverless
+- **""Connection pooling for RDS""** -> RDS Proxy
+- **""Analytics, BI queries""** -> Redshift
+- **""Full-text search""** -> OpenSearch
+
+**Networking:**
+- **""Cache static content globally""** -> CloudFront
+- **""Static IPs, TCP/UDP, instant failover""** -> Global Accelerator
+- **""Route to lowest latency region""** -> Route 53 Latency routing
+- **""Restrict S3 to CloudFront only""** -> OAC (Origin Access Control)
+- **""Massive data migration (PBs)""** -> Snowball / Snowmobile
+
+**Caching:**
+- **""Reduce database reads""** -> ElastiCache (Redis)
+- **""DynamoDB read acceleration""** -> DAX
+- **""API response caching""** -> API Gateway cache
+- **""Static content at edge""** -> CloudFront
+
+---
+
+## Quick Exam Tips
+
+- **gp3 is the new default** EBS volume. Better price-performance than gp2.
+- **io2 Block Express** for the highest IOPS (256,000). Use for critical databases.
+- **Instance Store** = highest performance but ephemeral (data lost on stop).
+- **EFS** = shared file system across multiple EC2 instances and AZs.
+- **CloudFront + S3** = standard pattern for static website hosting.
+- **Global Accelerator** = static IPs + AWS backbone. CloudFront = caching at edge.
+- **DynamoDB On-Demand** = unpredictable traffic. Provisioned = steady traffic.
+- **DAX** = microsecond reads for DynamoDB (in-memory, transparent cache).
+- **Aurora Serverless** = auto-scales for variable/unpredictable database workloads.
+- **RDS Proxy** = connection pooling, reduces failover time, great for Lambda.
+- **Lambda + Provisioned Concurrency** = eliminate cold starts for latency-sensitive.
+- **Cluster Placement Group** = lowest latency between instances (same rack).
+- **S3 multi-part upload** = required for > 5 GB, recommended for > 100 MB.
+- **Route 53 Latency routing** = route users to the region with lowest latency.
+- **ElastiCache Redis** = sub-ms latency, persistence, pub/sub, sorted sets.
+
+---
+
+## Domain 3 Concept Map
+
+```
+HIGH-PERFORMING ARCHITECTURES
+|
++-- COMPUTE
+|   +-- EC2: Instance families (M/C/R/T/P/I), placement groups
+|   +-- Lambda: Event-driven, 15 min max, Provisioned Concurrency
+|   +-- Containers: ECS/Fargate (serverless), EKS (Kubernetes)
+|   +-- Batch: Large-scale batch processing
+|
++-- STORAGE
+|   +-- EBS: gp3 (default), io2 (high IOPS), st1/sc1 (throughput)
+|   +-- EFS: Shared NFS, auto-scaling, multi-AZ
+|   +-- S3: Object storage, multi-part, Transfer Acceleration
+|   +-- FSx: Lustre (HPC), Windows (SMB), NetApp, OpenZFS
+|   +-- Instance Store: Ephemeral, highest IOPS
+|
++-- DATABASE
+|   +-- Relational: RDS, Aurora (Serverless, Global)
+|   +-- Key-Value: DynamoDB (+ DAX for microsecond reads)
+|   +-- In-Memory: ElastiCache (Redis, Memcached)
+|   +-- Analytics: Redshift, Athena
+|   +-- Search: OpenSearch
+|   +-- Special: Neptune (graph), Timestream (time series)
+|
++-- NETWORKING
+|   +-- CloudFront: CDN, edge caching, OAC for S3
+|   +-- Global Accelerator: Static IPs, AWS backbone, TCP/UDP
+|   +-- Route 53: DNS routing (latency, weighted, failover)
+|   +-- Direct Connect: Dedicated link (1-100 Gbps)
+|
++-- CACHING
+|   +-- Edge: CloudFront (static/dynamic content)
+|   +-- Application: ElastiCache Redis/Memcached
+|   +-- Database: DAX (DynamoDB), RDS Proxy (connection pooling)
+|   +-- API: API Gateway cache
+|
++-- DATA TRANSFER
+    +-- Online: Transfer Acceleration, DataSync, Direct Connect
+    +-- Offline: Snow Family (Snowcone, Snowball, Snowmobile)
+    +-- Migration: DMS (database), MGN (servers)
+```"

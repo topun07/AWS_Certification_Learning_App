@@ -1,72 +1,5 @@
-1) increase text size here in landing page
-<div class="flex-grow flex flex-col gap-3">
-        <h4 class="text-xs font-black text-slate-400 uppercase tracking-widest mb-1 px-2">Select Training Protocol</h4>
 
-        <button @click="initiateProtocol('standard')" class="relative overflow-hidden group flex items-center gap-4 bg-white p-4 rounded-2xl border border-slate-200 hover:border-blue-500 hover:shadow-xl hover:-translate-y-0.5 transition-all text-left w-full">
-          <div class="absolute top-0 right-0 bg-gradient-to-r from-amber-400 to-orange-500 text-white text-[10px] font-black px-3 py-1 rounded-bl-xl tracking-widest uppercase shadow-[0_0_15px_rgba(245,158,11,0.5)]">
-            ⭐ Premium
-          </div>
-          <span class="text-2xl bg-blue-50 text-blue-500 w-12 h-12 flex flex-shrink-0 items-center justify-center rounded-xl group-hover:scale-110 group-hover:bg-blue-500 group-hover:text-white transition-all">🏛️</span>
-          <div class="pr-16">
-            <h5 class="text-sm font-bold text-slate-900 group-hover:text-blue-600 transition-colors">Simulated Exam</h5>
-            <p class="text-[11px] text-slate-500 font-medium leading-tight mt-0.5">Standard assessment. Timed. Real exam conditions.</p>
-          </div>
-        </button>
-
-        <button @click="initiateProtocol('amrap')" class="relative overflow-hidden group flex items-center gap-4 bg-white p-4 rounded-2xl border border-slate-200 hover:border-red-500 hover:shadow-xl hover:-translate-y-0.5 transition-all text-left w-full">
-          <div class="absolute top-0 right-0 bg-gradient-to-r from-amber-400 to-orange-500 text-white text-[10px] font-black px-3
-          py-1 rounded-bl-xl tracking-widest uppercase shadow-[0_0_15px_rgba(245,158,11,0.5)]">
-            ⭐ Premium
-          </div>
-          <span class="text-2xl bg-red-50 text-red-500 w-12 h-12 flex flex-shrink-0 items-center justify-center rounded-xl group-hover:scale-110 group-hover:bg-red-500 group-hover:text-white transition-all">⏱️</span>
-          <div class="pr-16">
-            <h5 class="text-sm font-bold text-slate-900 group-hover:text-red-600 transition-colors">AMRAP Attack</h5>
-            <p class="text-[11px] text-slate-500 font-medium leading-tight mt-0.5">10 minute clock. Infinite questions. Pure speed and recall.</p>
-          </div>
-        </button>
-
-        <button @click="initiateProtocol('sudden_death')" class="relative overflow-hidden group flex items-center gap-4 bg-white p-4 rounded-2xl border-2 border-purple-100 hover:border-purple-500 hover:shadow-xl hover:shadow-purple-500/20 hover:-translate-y-0.5 transition-all text-left w-full">
-          <div class="absolute top-0 right-0 bg-gradient-to-r from-emerald-400 to-green-500 text-white text-[10px] font-black px-4 py-1 rounded-bl-xl tracking-widest uppercase shadow-[0_0_15px_rgba(16,185,129,0.6)] animate-pulse">
-            ⚡ Free Play
-          </div>
-          <span class="text-2xl bg-purple-50 text-purple-500 w-12 h-12 flex flex-shrink-0 items-center justify-center rounded-xl group-hover:scale-110 group-hover:bg-purple-500 group-hover:text-white transition-all">💀</span>
-          <div class="pr-20">
-            <h5 class="text-sm font-bold text-slate-900 group-hover:text-purple-600 transition-colors">Sudden Death</h5>
-            <p class="text-[11px] text-slate-500 font-medium leading-tight mt-0.5">3 Lives. No timer. One mistake shatters a heart. Survive.</p>
-          </div>
-        </button>
-
-        <button @click="initiateProtocol('flashcards')" class="relative overflow-hidden group flex items-center gap-4 bg-white p-4 rounded-2xl border border-slate-200 hover:border-pink-500 hover:shadow-xl hover:-translate-y-0.5 transition-all text-left w-full">
-          <div class="absolute top-0 right-0 bg-gradient-to-r from-amber-400 to-orange-500 text-white text-[10px] font-black px-3 py-1 rounded-bl-xl tracking-widest uppercase shadow-[0_0_15px_rgba(245,158,11,0.5)]">
-            ⭐ Premium
-          </div>
-          <span class="text-2xl bg-pink-50 text-pink-500 w-12 h-12 flex flex-shrink-0 items-center justify-center rounded-xl group-hover:scale-110 group-hover:bg-pink-500 group-hover:text-white transition-all">🎴</span>
-          <div class="pr-16">
-            <h5 class="text-sm font-bold text-slate-900 group-hover:text-pink-600 transition-colors">Flashcard Matrix</h5>
-            <p class="text-[11px] text-slate-500 font-medium leading-tight mt-0.5">Match terms to definitions. 6 pairs per round. Test your vocabulary.</p>
-          </div>
-        </button>
-
-        <button @click="initiateProtocol('library')" class="relative overflow-hidden group flex items-center gap-4 bg-white p-4 rounded-2xl border border-slate-200 hover:border-emerald-500 hover:shadow-xl hover:-translate-y-0.5 transition-all text-left w-full">
-
-
-
-          <div class="absolute top-0 right-0 bg-gradient-to-r from-emerald-400 to-green-500 text-white text-[10px] font-black px-4 py-1 rounded-bl-xl tracking-widest uppercase shadow-[0_0_15px_rgba(16,185,129,0.6)] animate-pulse">
-            ⚡ Free Access
-          </div>
-
-          <span class="text-2xl bg-emerald-50 text-emerald-500 w-12 h-12 flex flex-shrink-0 items-center justify-center rounded-xl group-hover:scale-110 group-hover:bg-emerald-500 group-hover:text-white transition-all">🧠</span>
-          <div class="pr-16">
-            <h5 class="text-sm font-bold text-slate-900 group-hover:text-emerald-600 transition-colors">The Knowledge Forge</h5>
-            <p class="text-[11px] text-slate-500 font-medium leading-tight mt-0.5">Access study guides, architectural diagrams, and video modules.</p>
-          </div>
-        </button>
-      </div>
-	  
-	  
-
-
-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   git hub token
+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   git hub token
 
 git init
 
@@ -87,8 +20,8 @@ stripe listen --forward-to http://localhost:8080/api/payment/webhook
 stripe listen --print-secret
 
 whsec_f21a4eb11aa6924a39d48862bfb9e0b6de3485c9732b45d6f0cf0bbce0be78b8
-whsec_f21a4eb11aa6924a39d48862bfb9e0b6de3485c9732b45d6f0cf0bbce0be78b8
-whsec_f21a4eb11aa6924a39d48862bfb9e0b6de3485c9732b45d6f0cf0bbce0be78b8 
+
+when promoting this site:
 
 Screenshots/Video Demos: Show the UI (Vue) and functionality in action.
 

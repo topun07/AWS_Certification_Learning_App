@@ -1,0 +1,389 @@
+certCode,domain,title,content
+"CLF-C02","Domain 2: Security & Compliance","Security and Compliance","## CLF-C02 Domain 2: Security and Compliance
+
+**Weight:** ~30% of scored exam content
+**Exam Level:** Foundational
+
+This domain tests your understanding of AWS security services, identity management, data protection, compliance programs, and how the Shared Responsibility Model applies to real scenarios.
+
+---
+
+## Shared Responsibility Model (Security Context)
+
+| Security Task | Who Is Responsible? | Why? |
+|--------------|-------------------|------|
+| Physical data center security | AWS | You never access AWS facilities |
+| Hardware maintenance | AWS | AWS owns the infrastructure |
+| Hypervisor patching | AWS | Below the OS layer |
+| OS patching on EC2 | Customer | You chose IaaS; you manage the OS |
+| OS patching on RDS | AWS | Managed service; AWS handles it |
+| OS patching on Lambda | AWS | Serverless; no OS to manage |
+| Security Group configuration | Customer | You define network access rules |
+| Data encryption (enabling it) | Customer | You choose whether to encrypt |
+| IAM user/role management | Customer | You control who accesses what |
+
+**The Key Exam Phrase:**
+- ""Security OF the cloud"" = AWS responsibility (infrastructure, hardware, global network)
+- ""Security IN the cloud"" = Customer responsibility (data, access, configuration, applications)
+
+---
+
+## AWS Identity and Access Management (IAM)
+
+### IAM Components
+
+| Component | What It Is | Key Facts |
+|-----------|-----------|-----------|
+| **Root User** | Account owner (email + password) | Full access; NEVER use for daily tasks; enable MFA immediately |
+| **IAM User** | Individual identity | Has credentials (password and/or access keys) |
+| **IAM Group** | Collection of IAM users | Attach policies to groups; simplifies management |
+| **IAM Role** | Temporary identity assumed by users/services | No permanent credentials; uses temporary tokens; preferred for services |
+| **IAM Policy** | JSON document defining permissions | Attached to users, groups, or roles; defines Allow/Deny |
+
+### IAM Policy Structure
+
+```json
+{
+  ""Version"": ""2012-10-17"",
+  ""Statement"": [
+    {
+      ""Effect"": ""Allow"",
+      ""Action"": ""s3:GetObject"",
+      ""Resource"": ""arn:aws:s3:::my-bucket/*""
+    }
+  ]
+}
+```
+
+| Element | What It Defines |
+|---------|----------------|
+| **Effect** | Allow or Deny |
+| **Action** | What API calls are permitted |
+| **Resource** | Which AWS resources (ARN) |
+| **Condition** | Optional restrictions (IP, time, MFA) |
+
+### IAM Best Practices
+
+| Practice | Why It Matters |
+|----------|---------------|
+| Enable MFA on root account | Protects against compromised credentials |
+| Don't use root for daily tasks | Minimize blast radius |
+| Use groups to assign permissions | Easier than per-user policies |
+| Follow least privilege | Grant only minimum permissions needed |
+| Use roles for applications/services | No hardcoded credentials; temporary tokens |
+| Rotate credentials regularly | Limits exposure if compromised |
+| Use IAM Access Analyzer | Identifies resources shared externally |
+| Enable CloudTrail | Audit all API calls |
+
+### Types of IAM Policies
+
+| Policy Type | Description | Use Case |
+|-------------|-------------|----------|
+| **AWS Managed** | Pre-built by AWS | Common permissions; easy to apply |
+| **Customer Managed** | Created by you; reusable | Custom permissions for your org |
+| **Inline** | Embedded directly in user/group/role | One-off permissions; not reusable |
+
+### IAM Roles - When to Use
+
+| Scenario | Use a Role Because... |
+|----------|----------------------|
+| EC2 instance needs S3 access | No hardcoded keys; instance assumes role |
+| Lambda needs DynamoDB access | Lambda execution role provides permissions |
+| Cross-account access | Role in Account B trusted by Account A |
+| Federated users (SSO) | External users assume role; no IAM user needed |
+
+---
+
+## Multi-Factor Authentication (MFA)
+
+| MFA Type | What It Is | Best For |
+|----------|-----------|----------|
+| **Virtual MFA** | App on phone (Google Authenticator, Authy) | Most users; free; easy |
+| **Hardware TOTP token** | Physical key fob | High-security environments |
+| **FIDO2 security key** | USB/NFC hardware key (YubiKey) | Phishing-resistant; strongest |
+
+**Where to Enable MFA:**
+- Root account - ALWAYS (first thing on new account)
+- IAM users with console access - Strongly recommended
+- Privileged users - Required for admin-level access
+
+---
+
+## AWS Organizations and Account Security
+
+| Feature | What It Does |
+|---------|-------------|
+| **Consolidated billing** | Single bill for all accounts; volume discounts |
+| **Organizational Units (OUs)** | Group accounts by function (Prod, Dev, Security) |
+| **Service Control Policies (SCPs)** | Guardrails limiting what accounts CAN do |
+| **Account creation** | Programmatically create new accounts |
+
+### Service Control Policies (SCPs)
+
+- SCPs are permission boundaries - they **restrict** what's possible in an account.
+- SCPs do NOT grant permissions (IAM policies grant; SCPs limit).
+- Applied to OUs or individual accounts.
+- The management account is NOT affected by SCPs.
+
+### AWS Control Tower
+
+- Automates multi-account setup following best practices.
+- Creates a landing zone (pre-configured environment).
+- Applies guardrails (preventive SCPs + detective Config rules).
+- Provides a dashboard for compliance visibility.
+
+---
+
+## AWS Security Services
+
+### Threat Detection and Monitoring
+
+| Service | What It Does | Key Fact |
+|---------|-------------|---------|
+| **Amazon GuardDuty** | Intelligent threat detection | Finds threats automatically; ML-powered; no rules to write |
+| **AWS Security Hub** | Centralized security dashboard | Single pane of glass for security posture |
+| **Amazon Inspector** | Vulnerability scanning | Finds software vulnerabilities in EC2, Lambda, containers |
+| **AWS CloudTrail** | Logs ALL API calls | ""Who did what, when?"" - audit trail |
+| **Amazon Detective** | Investigates security findings | Root cause analysis after GuardDuty alert |
+| **AWS Config** | Tracks configuration changes | ""What changed?"" - configuration history and compliance |
+
+### How They Work Together
+
+```
+DETECT                    AGGREGATE              INVESTIGATE
++--------------+         +--------------+       +--------------+
+| GuardDuty    |-------->|              |       |              |
+| (threats)    |         |  Security    |------>|  Detective   |
+|              |         |  Hub         |       |  (root cause)|
+| Inspector    |-------->|  (dashboard) |       |              |
+| (vulns)      |         |              |       +--------------+
+|              |         |              |
+| Config       |-------->|              |       +--------------+
+| (compliance) |         |              |------>|  CloudTrail  |
+|              |         +--------------+       |  (audit log) |
++--------------+                                +--------------+
+```
+
+### Data Protection Services
+
+| Service | What It Does | Key Fact |
+|---------|-------------|---------|
+| **AWS KMS** | Create and manage encryption keys | Encrypts data at rest; integrates with most services |
+| **AWS CloudHSM** | Dedicated hardware security module | You control keys entirely; FIPS 140-2 Level 3 |
+| **AWS Certificate Manager (ACM)** | SSL/TLS certificates | Free public certs; auto-renewal; used with ALB/CloudFront |
+| **AWS Secrets Manager** | Store and rotate secrets | Automatic rotation; no hardcoded credentials |
+| **Amazon Macie** | Discover sensitive data in S3 | Finds PII, credit cards using ML |
+
+### Network Security Services
+
+| Service | What It Does | Key Fact |
+|---------|-------------|---------|
+| **AWS WAF** | Web application firewall (Layer 7) | Protects against SQL injection, XSS |
+| **AWS Shield** | DDoS protection | Standard = free; Advanced = paid with DRT |
+| **AWS Network Firewall** | Managed VPC firewall | Stateful inspection; domain filtering |
+| **Security Groups** | Instance-level firewall (stateful) | Allow rules only; return traffic auto-allowed |
+| **Network ACLs** | Subnet-level firewall (stateless) | Allow AND deny; must allow return traffic |
+| **AWS Firewall Manager** | Centrally manage firewall rules | WAF, Shield, SG policies across accounts |
+
+### Identity and Access Services
+
+| Service | What It Does | Key Fact |
+|---------|-------------|---------|
+| **IAM Identity Center (SSO)** | Single sign-on for multiple accounts | One login for all accounts |
+| **Amazon Cognito** | User auth for web/mobile apps | Sign-up/sign-in for YOUR app's users |
+| **AWS Directory Service** | Managed Microsoft Active Directory | Connect on-premises AD to AWS |
+| **IAM Access Analyzer** | Identifies externally shared resources | Finds unintended public access |
+
+---
+
+## Data Encryption
+
+### Encryption at Rest vs. In Transit
+
+| Type | What It Protects | How It Works |
+|------|-----------------|-------------|
+| **At Rest** | Data stored on disk/storage | Encrypted before writing; decrypted when reading |
+| **In Transit** | Data moving across networks | TLS/SSL encryption between endpoints |
+
+### AWS KMS - Key Concepts
+
+| Concept | Description |
+|---------|-------------|
+| **Customer Managed Key** | You create, manage, and control the key |
+| **AWS Managed Key** | AWS creates and manages for you (per service) |
+| **AWS Owned Key** | AWS uses internally; you don't see or manage |
+| **Key rotation** | Automatic annual rotation (customer managed keys) |
+| **Envelope encryption** | Data key encrypts data; KMS key encrypts data key |
+
+### Encryption Decision Tree
+
+```
+Need encryption at rest?
++-- AWS manages everything -> AWS Managed Key (default)
++-- I want control over key -> Customer Managed Key (KMS)
++-- I need dedicated hardware -> CloudHSM
+
+Need encryption in transit?
++-- HTTPS (web traffic) -> ACM certificate on ALB/CloudFront
++-- Database connections -> Enable SSL/TLS on RDS
++-- VPN (site-to-site) -> IPsec encryption (automatic)
+```
+
+---
+
+## AWS Compliance Programs
+
+| Concept | Description |
+|---------|-------------|
+| **AWS Artifact** | Download AWS compliance reports (SOC, ISO, PCI) |
+| **Compliance Programs** | AWS certifications: SOC 1/2/3, ISO 27001, PCI DSS, HIPAA, FedRAMP, GDPR |
+| **Customer Compliance** | YOU ensure YOUR workload meets regulations |
+| **Shared responsibility** | AWS provides compliant infrastructure; you build compliant applications |
+
+### Key Compliance Terms
+
+| Term | What It Means |
+|------|--------------|
+| **SOC Reports** | Audit reports on AWS controls |
+| **PCI DSS** | Payment card industry standard |
+| **HIPAA** | Healthcare data protection (US) |
+| **GDPR** | EU data protection regulation |
+| **FedRAMP** | US government cloud security standard |
+
+**AWS Artifact:**
+- Artifact Agreements - Review and accept agreements (e.g., BAA for HIPAA)
+- Artifact Reports - Download third-party audit reports
+- ""Where do you find AWS compliance reports?"" -> AWS Artifact
+
+---
+
+## Security Logging and Monitoring
+
+### AWS CloudTrail
+
+| Feature | Description |
+|---------|-------------|
+| **What it logs** | Every API call (who, what, when, from where) |
+| **Enabled by default** | Yes (90-day event history; free) |
+| **Long-term storage** | Create a trail -> deliver to S3 |
+| **Event types** | Management events and Data events |
+| **Multi-account** | Organization trail covers all accounts |
+| **Integrity** | Log file validation (detect tampering) |
+
+### CloudWatch (Security Context)
+
+| Feature | Security Use |
+|---------|-------------|
+| **CloudWatch Logs** | Collect and analyze application/system logs |
+| **CloudWatch Alarms** | Alert on suspicious metrics |
+| **Log Insights** | Query logs for security investigation |
+
+### VPC Flow Logs
+
+- Capture IP traffic metadata for VPC network interfaces.
+- Identify: rejected connections, unusual traffic patterns.
+- Send to CloudWatch Logs or S3 for analysis.
+- Does NOT capture packet content - only metadata.
+
+---
+
+## Incident Response
+
+| Phase | Service | How It Helps |
+|-------|---------|-------------|
+| **Detection** | GuardDuty | Automatically detects threats |
+| **Investigation** | Detective | Visualizes attack patterns |
+| **Audit** | CloudTrail | Shows exactly what happened |
+| **Containment** | Security Groups / NACLs | Isolate compromised resources |
+| **Recovery** | AWS Backup / Snapshots | Restore from known-good state |
+| **Prevention** | Config Rules / SCPs | Prevent recurrence |
+
+---
+
+## Key Exam Patterns for CLF-C02 Domain 2
+
+- **""Who patches EC2 OS?""** -> Customer
+- **""Who handles physical security?""** -> AWS
+- **""Temporary credentials for EC2?""** -> IAM Role
+- **""Find AWS SOC reports?""** -> AWS Artifact
+- **""Detect threats automatically?""** -> GuardDuty
+- **""Find vulnerabilities in EC2?""** -> Inspector
+- **""Find sensitive data in S3?""** -> Macie
+- **""See who deleted a resource?""** -> CloudTrail
+- **""Encrypt data at rest?""** -> AWS KMS
+- **""Manage SSL certificates?""** -> ACM
+- **""Store passwords securely?""** -> Secrets Manager
+- **""Centralized security dashboard?""** -> Security Hub
+- **""Restrict what accounts can do?""** -> SCPs
+- **""Single sign-on across accounts?""** -> IAM Identity Center
+- **""Authenticate mobile app users?""** -> Cognito
+- **""DDoS protection?""** -> Shield (Standard=free; Advanced=paid)
+- **""Protect against SQL injection?""** -> WAF
+- **""Investigate security finding?""** -> Detective
+- **""Track configuration changes?""** -> Config
+- **""SG vs. NACL?""** -> SG=stateful, allow only. NACL=stateless, allow+deny
+- **""Dedicated encryption hardware?""** -> CloudHSM
+- **""Auto-rotate secrets?""** -> Secrets Manager
+
+---
+
+## Quick Exam Tips for Domain 2
+
+- **30% of the exam** - spend the most study time here.
+- **Shared Responsibility Model** appears in multiple questions. More managed = more AWS responsibility.
+- **IAM Roles > IAM Users** for services. EC2/Lambda accessing other services = ALWAYS a Role.
+- **Root user** should ONLY be used for account-level tasks. Everything else -> IAM users/roles.
+- **Least privilege** = give only permissions needed. #1 IAM principle tested.
+- **GuardDuty vs. Inspector vs. Macie:** GuardDuty=threats, Inspector=vulnerabilities, Macie=sensitive data.
+- **CloudTrail vs. Config:** CloudTrail=""Who did what?"" Config=""What changed?""
+- **KMS vs. CloudHSM:** KMS=managed, most use cases. CloudHSM=dedicated hardware, regulatory.
+- **Secrets Manager vs. Parameter Store:** Secrets Manager=rotation, designed for secrets. Parameter Store=simpler, cheaper.
+- **AWS Artifact** is ONLY for downloading compliance documents.
+- **Security Hub** aggregates findings from GuardDuty, Inspector, Macie, Config into one dashboard.
+- **SCPs don't grant permissions** - they only restrict. SCP Deny always wins over IAM Allow.
+- **Encryption** is the customer's choice to enable. AWS provides tools; YOU turn it on.
+
+---
+
+## Security Services Quick Reference
+
+```
+WHAT DO YOU NEED?                        -> USE THIS
+
+Detect threats automatically             -> GuardDuty
+Scan for vulnerabilities                 -> Inspector
+Find sensitive data in S3                -> Macie
+See who made API calls                   -> CloudTrail
+Track configuration changes              -> Config
+Centralized security dashboard           -> Security Hub
+Investigate incidents                    -> Detective
+Manage encryption keys                   -> KMS
+Dedicated encryption hardware            -> CloudHSM
+SSL/TLS certificates                     -> ACM
+Store/rotate passwords                   -> Secrets Manager
+Protect web apps (Layer 7)               -> WAF
+DDoS protection                          -> Shield
+Manage security across accounts          -> Firewall Manager
+Single sign-on                           -> IAM Identity Center
+App user authentication                  -> Cognito
+Download compliance reports              -> Artifact
+Restrict account capabilities            -> SCPs
+Identify external sharing                -> IAM Access Analyzer
+```
+
+---
+
+## Summary
+
+This covers all objectives in CLF-C02 Domain 2:
+
+- **Shared Responsibility Model** - AWS vs. customer by service type
+- **IAM** - Users, groups, roles, policies, least privilege
+- **MFA** - Types, where to enable, root protection
+- **Organizations** - SCPs, Control Tower, OUs
+- **Security services** - GuardDuty, Inspector, Macie, Detective, Security Hub
+- **Data protection** - KMS, CloudHSM, ACM, Secrets Manager
+- **Network security** - Security Groups, NACLs, WAF, Shield
+- **Compliance** - AWS Artifact, programs, customer responsibility
+- **Logging** - CloudTrail, Config, CloudWatch, VPC Flow Logs
+- **Incident response** - Detection, investigation, containment, recovery"

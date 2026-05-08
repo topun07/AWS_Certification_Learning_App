@@ -1,0 +1,516 @@
+certCode,domain,title,content
+"MLS-C01","Domain 3: Modeling","Modeling","## MLS-C01 Domain 3: Modeling
+
+**Weight:** ~36% of scored exam content (LARGEST DOMAIN)
+**Exam Level:** Specialty
+
+This domain covers problem framing, algorithm selection, training, tuning, and evaluation - the core of the ML exam.
+
+---
+
+## Problem Framing
+
+### ML Problem Types
+
+| Problem Type | Output | Algorithm Examples |
+|-------------|--------|-------------------|
+| **Binary Classification** | Yes/No, 0/1 | XGBoost, Linear Learner, Logistic Regression |
+| **Multi-class Classification** | One of N classes | XGBoost, KNN, Random Forest |
+| **Regression** | Continuous number | Linear Learner, XGBoost, DeepAR |
+| **Clustering** | Group assignment | K-Means, DBSCAN |
+| **Anomaly Detection** | Normal/Abnormal | Random Cut Forest, Isolation Forest |
+| **Ranking** | Ordered list | Personalize, XGBoost (pairwise) |
+| **Recommendation** | User-item match | Factorization Machines, Personalize |
+| **NLP** | Text output | BlazingText, Seq2Seq, Comprehend |
+| **Computer Vision** | Image labels/boxes | Image Classification, Object Detection |
+| **Time Series** | Future values | DeepAR, Amazon Forecast |
+
+### When NOT to Use ML
+
+- Simple rules can solve it (if-else logic)
+- Not enough data (< 1000 samples typically)
+- No clear pattern exists
+- Cost of errors is too high without human review
+- A lookup table or heuristic works
+
+---
+
+## SageMaker Built-in Algorithms
+
+### Supervised - Classification & Regression
+
+| Algorithm | Type | Use Case | Key Parameters |
+|-----------|------|----------|----------------|
+| **XGBoost** | Tree ensemble | Tabular data (most versatile) | num_round, max_depth, eta, objective, subsample |
+| **Linear Learner** | Linear model | Simple classification/regression | predictor_type, learning_rate, l1, wd |
+| **KNN** | Instance-based | Classification, low latency | k, sample_size, predictor_type |
+| **Factorization Machines** | Matrix factorization | Recommendations, sparse data | num_factors, predictor_type |
+
+### Supervised - Computer Vision
+
+| Algorithm | Type | Use Case | Key Parameters |
+|-----------|------|----------|----------------|
+| **Image Classification** | CNN (ResNet) | Label entire image | num_classes, num_training_samples, epochs |
+| **Object Detection** | CNN (SSD/YOLO) | Locate objects with bounding boxes | num_classes, num_training_samples |
+| **Semantic Segmentation** | CNN (FCN) | Pixel-level labeling | num_classes, algorithm (fcn, psp, deeplab) |
+
+### Supervised - NLP & Sequence
+
+| Algorithm | Type | Use Case | Key Parameters |
+|-----------|------|----------|----------------|
+| **BlazingText** | Word2Vec / Text Classification | Word embeddings, text classification | mode (supervised/skipgram/cbow) |
+| **Seq2Seq** | Encoder-Decoder (RNN/Transformer) | Translation, summarization | num_layers, num_embed, beam_size |
+| **Object2Vec** | Embedding | Relationship learning (pairs) | enc_dim, token_embedding_dim |
+
+### Unsupervised
+
+| Algorithm | Type | Use Case | Key Parameters |
+|-----------|------|----------|----------------|
+| **K-Means** | Clustering | Group similar data points | k, init_method, epochs |
+| **PCA** | Dimensionality reduction | Feature reduction, denoising | num_components, algorithm_mode |
+| **Random Cut Forest** | Anomaly detection | Outlier/anomaly scoring | num_trees, num_samples_per_tree |
+| **IP Insights** | Anomaly detection | Detect suspicious IP usage | num_entity_vectors, vector_dim |
+| **LDA** | Topic modeling | Discover topics in documents | num_topics, alpha0 |
+| **NTM** | Topic modeling | Neural topic discovery | num_topics, encoder_layers |
+
+### Reinforcement Learning
+
+- **SageMaker RL:** Coach, Ray RLlib
+- **Use cases:** Robotics, game AI, resource optimization
+- **Key concepts:** Agent, Environment, Reward, Policy
+
+---
+
+## XGBoost Deep Dive (Most Tested Algorithm)
+
+### Key Hyperparameters
+
+| Parameter | What It Does | Typical Range | Overfitting? |
+|-----------|-------------|---------------|--------------|
+| **num_round** | Number of boosting rounds (trees) | 100-1000 | More = overfit |
+| **max_depth** | Maximum tree depth | 3-10 | Deeper = overfit |
+| **eta (learning_rate)** | Step size shrinkage | 0.01-0.3 | Lower = slower but better |
+| **subsample** | Row sampling per tree | 0.5-1.0 | Lower = regularize |
+| **colsample_bytree** | Column sampling per tree | 0.5-1.0 | Lower = regularize |
+| **min_child_weight** | Minimum sum of instance weight | 1-10 | Higher = regularize |
+| **gamma** | Minimum loss reduction for split | 0-5 | Higher = regularize |
+| **alpha (L1)** | L1 regularization | 0-1 | Higher = sparser |
+| **lambda (L2)** | L2 regularization | 0-1 | Higher = smoother |
+| **scale_pos_weight** | Balance positive/negative | ratio neg/pos | For imbalanced data |
+| **objective** | Loss function | binary:logistic, reg:squarederror, multi:softmax | Must match problem |
+| **eval_metric** | Evaluation metric | auc, error, rmse, mlogloss | Must match objective |
+
+### XGBoost Objectives
+
+| Objective | Problem Type |
+|-----------|-------------|
+| binary:logistic | Binary classification (probability) |
+| multi:softmax | Multi-class (class label) |
+| multi:softprob | Multi-class (probability per class) |
+| reg:squarederror | Regression |
+| reg:logistic | Regression (0-1 range) |
+| rank:pairwise | Learning to rank |
+
+### XGBoost on SageMaker
+
+- **Input:** CSV (no header, target first column) or LibSVM or Parquet
+- **Instance:** ml.m5 (CPU) for most; ml.p3 (GPU) for large datasets
+- **Distributed:** Supports multi-instance training
+- **Framework mode:** Use as a framework (script mode) for custom logic
+- **Built-in mode:** Use as built-in algorithm (simpler, no code)
+
+---
+
+## Model Training Concepts
+
+### Bias vs. Variance Tradeoff
+
+| Condition | Symptoms | Fix |
+|-----------|----------|-----|
+| **High Bias (Underfitting)** | High training error, high validation error | More features, more complex model, less regularization |
+| **High Variance (Overfitting)** | Low training error, high validation error | More data, regularization, dropout, simpler model |
+| **Good Fit** | Low training error, low validation error (similar) | Deploy! |
+
+### Regularization Techniques
+
+| Technique | Effect | Used In |
+|-----------|--------|---------|
+| **L1 (Lasso)** | Drives weights to zero (feature selection) | Linear models, XGBoost (alpha) |
+| **L2 (Ridge)** | Shrinks weights (prevents large values) | Linear models, XGBoost (lambda) |
+| **Elastic Net** | Combination of L1 + L2 | Linear Learner |
+| **Dropout** | Randomly disable neurons during training | Neural networks |
+| **Early Stopping** | Stop when validation error increases | All iterative models |
+| **Data Augmentation** | Create variations of training data | Computer vision |
+| **Batch Normalization** | Normalize layer inputs | Deep learning |
+
+### Training/Validation/Test Split
+
+- **Training (70-80%):** Model learns from this
+- **Validation (10-15%):** Tune hyperparameters, prevent overfitting
+- **Test (10-15%):** Final unbiased evaluation (use ONCE)
+- **K-Fold Cross Validation:** Rotate validation set K times (small datasets)
+- **Time Series:** NEVER random split - use temporal ordering
+
+### Learning Curves
+
+- **Training error decreasing, validation error increasing** = Overfitting
+- **Both errors high and close** = Underfitting
+- **Both errors low and close** = Good fit
+- **Gap between curves** = Variance (overfitting)
+
+---
+
+## Hyperparameter Tuning
+
+### SageMaker Automatic Model Tuning (HPO)
+
+| Feature | Description |
+|---------|-------------|
+| **Strategy** | Bayesian (default, best), Random, Grid, Hyperband |
+| **Objective Metric** | What to optimize (e.g., validation:auc) |
+| **Ranges** | Continuous, Integer, Categorical |
+| **Max Jobs** | Total training jobs to run |
+| **Max Parallel** | Concurrent jobs (more = faster but less Bayesian benefit) |
+| **Warm Start** | Reuse results from previous tuning jobs |
+| **Early Stopping** | Stop poorly performing jobs early |
+
+### Tuning Strategies
+
+| Strategy | Best For | How It Works |
+|----------|----------|-------------|
+| **Bayesian** | Most cases (default) | Models objective as Gaussian Process, explores intelligently |
+| **Random** | Large search spaces, parallel | Random sampling, no learning between jobs |
+| **Grid** | Small discrete spaces | Exhaustive search of all combinations |
+| **Hyperband** | Many hyperparameters | Early stopping of bad configs, allocates more to promising |
+
+### Best Practices
+
+- Start with Random search to identify promising regions
+- Then Bayesian to refine
+- Limit parallel jobs for Bayesian (it learns from previous results)
+- Use log-scaled ranges for learning rate
+- Don't tune too many parameters at once (< 10)
+
+---
+
+## Model Evaluation Metrics
+
+### Classification Metrics
+
+| Metric | Formula | Use When |
+|--------|---------|----------|
+| **Accuracy** | (TP+TN)/(TP+TN+FP+FN) | Balanced classes ONLY |
+| **Precision** | TP/(TP+FP) | Cost of false positives is high (spam filter) |
+| **Recall (Sensitivity)** | TP/(TP+FN) | Cost of false negatives is high (cancer detection) |
+| **F1 Score** | 2*(P*R)/(P+R) | Balance precision and recall |
+| **AUC-ROC** | Area under ROC curve | Overall model quality, threshold-independent |
+| **AUC-PR** | Area under PR curve | Imbalanced data (better than ROC) |
+| **Specificity** | TN/(TN+FP) | True negative rate |
+
+### Confusion Matrix
+
+```
+                Predicted Positive    Predicted Negative
+Actual Positive      TP                    FN
+Actual Negative      FP                    TN
+```
+
+- **Type I Error (FP):** False alarm (predicted positive, actually negative)
+- **Type II Error (FN):** Missed detection (predicted negative, actually positive)
+
+### Regression Metrics
+
+| Metric | Description | Use When |
+|--------|-------------|----------|
+| **RMSE** | Root Mean Squared Error | Penalizes large errors more |
+| **MAE** | Mean Absolute Error | Robust to outliers |
+| **R-squared** | Proportion of variance explained | Overall model fit (0-1) |
+| **MAPE** | Mean Absolute Percentage Error | Relative error comparison |
+
+### When to Use Which Metric
+
+| Scenario | Best Metric | Why |
+|----------|------------|-----|
+| **Fraud detection** | Recall (+ AUC-PR) | Must catch all fraud (FN is costly) |
+| **Spam filter** | Precision | Don't want legitimate email in spam (FP is costly) |
+| **Medical diagnosis** | Recall | Must not miss disease (FN is dangerous) |
+| **Balanced classes** | Accuracy or F1 | Both errors equally costly |
+| **Imbalanced classes** | F1 or AUC-PR | Accuracy is misleading |
+| **Ranking** | NDCG, MAP | Order matters |
+| **Regression** | RMSE (penalize large errors) or MAE (robust) | Depends on error tolerance |
+
+---
+
+## Deep Learning on SageMaker
+
+### Frameworks Supported
+
+| Framework | SageMaker Support | Use Case |
+|-----------|------------------|----------|
+| **TensorFlow** | Built-in container, script mode | General deep learning |
+| **PyTorch** | Built-in container, script mode | Research, NLP |
+| **MXNet** | Built-in container | Computer vision |
+| **Hugging Face** | Built-in container | NLP, transformers |
+
+### Key Deep Learning Concepts
+
+| Concept | Description | Exam Relevance |
+|---------|-------------|----------------|
+| **CNN** | Convolutional Neural Network | Image classification, object detection |
+| **RNN/LSTM** | Recurrent Neural Network | Sequences, time series, NLP |
+| **Transformer** | Attention mechanism | NLP (BERT, GPT), translation |
+| **Transfer Learning** | Pre-trained model + fine-tune | Limited labeled data |
+| **Epochs** | Full passes through training data | More = potential overfit |
+| **Batch Size** | Samples per gradient update | Larger = faster but less precise |
+| **Learning Rate** | Step size for weight updates | Too high = diverge, too low = slow |
+| **Vanishing Gradient** | Gradients approach zero in deep nets | Use ReLU, LSTM, residual connections |
+| **Exploding Gradient** | Gradients grow uncontrollably | Gradient clipping |
+
+### Activation Functions
+
+| Function | Range | Use Case |
+|----------|-------|----------|
+| **ReLU** | [0, inf) | Hidden layers (default choice) |
+| **Sigmoid** | (0, 1) | Binary output layer |
+| **Softmax** | (0, 1) sum=1 | Multi-class output layer |
+| **Tanh** | (-1, 1) | RNN hidden layers |
+
+### Optimizers
+
+| Optimizer | Description |
+|-----------|-------------|
+| **SGD** | Basic, needs tuning, good generalization |
+| **Adam** | Adaptive learning rate, fast convergence (default choice) |
+| **RMSprop** | Good for RNNs |
+
+---
+
+## Ensemble Methods
+
+### Types
+
+| Method | How It Works | Example |
+|--------|-------------|---------|
+| **Bagging** | Train on random subsets, average predictions | Random Forest |
+| **Boosting** | Sequential, each model fixes previous errors | XGBoost, AdaBoost |
+| **Stacking** | Train meta-model on base model outputs | Custom ensembles |
+
+### Random Forest vs. XGBoost
+
+| Feature | Random Forest | XGBoost |
+|---------|--------------|---------|
+| **Method** | Bagging (parallel trees) | Boosting (sequential trees) |
+| **Overfitting** | Less prone | More prone (needs tuning) |
+| **Speed** | Faster training | Slower (sequential) |
+| **Accuracy** | Good | Usually better |
+| **Missing Values** | Doesn't handle natively | Handles natively |
+| **Interpretability** | Feature importance | Feature importance + SHAP |
+
+---
+
+## SageMaker Training Infrastructure
+
+### Instance Selection
+
+| Workload | Instance Type | Why |
+|----------|--------------|-----|
+| **XGBoost (small-medium)** | ml.m5 (CPU) | Tree algorithms are CPU-bound |
+| **XGBoost (large)** | ml.m5 or ml.p3 | GPU for large datasets |
+| **Deep Learning** | ml.p3, ml.p4, ml.g4dn (GPU) | Matrix operations need GPU |
+| **Computer Vision** | ml.p3 (multi-GPU) | Large image datasets |
+| **NLP (Transformers)** | ml.p3, ml.p4 | Large models need GPU memory |
+| **Distributed Training** | Multiple instances | Data parallelism or model parallelism |
+
+### Training Modes
+
+| Mode | Description | Best For |
+|------|-------------|----------|
+| **File Mode** | Download data to instance | Small-medium datasets |
+| **Pipe Mode** | Stream from S3 (no download) | Large datasets, faster start |
+| **FastFile Mode** | POSIX access to S3 (lazy load) | Random access patterns |
+
+### Distributed Training
+
+| Strategy | Description | Use When |
+|----------|-------------|----------|
+| **Data Parallelism** | Split data across GPUs, sync gradients | Large datasets, model fits in one GPU |
+| **Model Parallelism** | Split model across GPUs | Model too large for one GPU |
+| **Horovod** | Ring-allreduce for data parallelism | Multi-GPU, multi-node |
+| **SageMaker Distributed** | Managed data/model parallelism | Simplest approach |
+
+---
+
+## Transfer Learning
+
+### When to Use
+
+- Limited labeled data (< 10,000 samples)
+- Similar domain to pre-trained model
+- Faster training needed
+- State-of-the-art performance without massive compute
+
+### How It Works
+
+1. Take pre-trained model (e.g., ResNet, BERT)
+2. Freeze early layers (general features)
+3. Replace final layer(s) for your task
+4. Fine-tune on your data
+
+### SageMaker Support
+
+- **Image Classification:** Pre-trained ResNet, VGG
+- **Object Detection:** Pre-trained SSD, Faster R-CNN
+- **NLP:** Hugging Face pre-trained models (BERT, GPT, T5)
+- **JumpStart:** 300+ pre-trained models ready to fine-tune
+
+---
+
+## Key Exam Patterns
+
+**Algorithm Selection:**
+- **""Tabular data, classification""** -> XGBoost (first choice always)
+- **""Simple linear relationship""** -> Linear Learner
+- **""Recommendations, sparse data""** -> Factorization Machines
+- **""Image classification""** -> Image Classification (ResNet) or transfer learning
+- **""Object detection""** -> Object Detection (SSD)
+- **""Text classification""** -> BlazingText (supervised mode)
+- **""Word embeddings""** -> BlazingText (Word2Vec mode)
+- **""Translation/summarization""** -> Seq2Seq
+- **""Anomaly detection (streaming)""** -> Random Cut Forest
+- **""Anomaly detection (IP)""** -> IP Insights
+- **""Topic modeling""** -> LDA or NTM
+- **""Clustering""** -> K-Means
+- **""Time series forecasting""** -> DeepAR
+- **""Recommendations (personalized)""** -> Amazon Personalize
+
+**Overfitting:**
+- **""Training accuracy high, validation low""** -> Overfitting
+- **""Fix overfitting""** -> More data, regularization (L1/L2), dropout, early stopping, simpler model
+- **""Fix underfitting""** -> More features, more complex model, less regularization, more training time
+
+**Hyperparameter Tuning:**
+- **""Best tuning strategy""** -> Bayesian (default, most efficient)
+- **""Large search space, parallel""** -> Random search
+- **""Reuse previous tuning results""** -> Warm start
+- **""XGBoost overfitting""** -> Reduce max_depth, increase min_child_weight, reduce eta, add regularization
+
+**Metrics:**
+- **""Fraud detection metric""** -> Recall (catch all fraud)
+- **""Spam filter metric""** -> Precision (don't block good email)
+- **""Imbalanced data metric""** -> F1 or AUC-PR (NOT accuracy)
+- **""Regression metric""** -> RMSE (penalize large errors) or MAE (robust)
+
+**Deep Learning:**
+- **""Image tasks""** -> CNN
+- **""Sequence/time series""** -> RNN/LSTM
+- **""NLP (modern)""** -> Transformer (BERT, GPT)
+- **""Limited labeled data""** -> Transfer learning
+- **""Vanishing gradient""** -> ReLU activation, LSTM, residual connections
+- **""Output layer for multi-class""** -> Softmax
+- **""Output layer for binary""** -> Sigmoid
+
+---
+
+## Quick Exam Tips
+
+- **XGBoost is the answer** for most tabular data questions. Know its parameters cold.
+- **Bayesian HPO** is the default and best strategy for SageMaker tuning.
+- **Recall for fraud/medical.** Precision for spam. F1 for balance. AUC-PR for imbalanced.
+- **Overfitting = high variance.** Fix with regularization, dropout, more data, early stopping.
+- **Underfitting = high bias.** Fix with more features, more complex model, less regularization.
+- **Transfer learning** when you have limited labeled data but a similar pre-trained model exists.
+- **Pipe mode** for large datasets (streams from S3, no disk space needed).
+- **GPU instances (ml.p3)** for deep learning. CPU (ml.m5) for XGBoost.
+- **Data parallelism** when data is large but model fits in one GPU.
+- **Model parallelism** when model is too large for one GPU.
+- **K-Fold cross validation** for small datasets (rotate validation set).
+- **Never use accuracy** for imbalanced data. It's misleading.
+- **Random Cut Forest** = SageMaker's anomaly detection algorithm.
+- **BlazingText** = fast Word2Vec + text classification (two modes).
+- **Factorization Machines** = recommendations with sparse data (click-through prediction).
+- **DeepAR** = time series forecasting (multiple related series, probabilistic).
+- **Linear Learner** supports both classification AND regression (set predictor_type).
+- **Early stopping** is the simplest regularization technique.
+
+---
+
+## Domain 3 Concept Map
+
+```
+MODELING
+|
++-- PROBLEM FRAMING
+|   +-- Classification: Binary (XGBoost, Linear Learner), Multi-class (XGBoost, KNN)
+|   +-- Regression: Linear Learner, XGBoost, DeepAR
+|   +-- Clustering: K-Means
+|   +-- Anomaly: Random Cut Forest, IP Insights
+|   +-- NLP: BlazingText, Seq2Seq, Comprehend
+|   +-- Vision: Image Classification, Object Detection, Semantic Segmentation
+|   +-- Recommendations: Factorization Machines, Personalize
+|
++-- SAGEMAKER ALGORITHMS
+|   +-- XGBoost: Tabular data king, handles missing values, classification + regression
+|   +-- Linear Learner: Simple relationships, fast, supports L1/L2
+|   +-- KNN: Instance-based, low latency inference
+|   +-- Factorization Machines: Sparse data, recommendations
+|   +-- BlazingText: Word2Vec + text classification
+|   +-- Image Classification: ResNet-based, transfer learning
+|   +-- Object Detection: SSD, bounding boxes
+|   +-- Seq2Seq: Translation, summarization
+|   +-- Random Cut Forest: Anomaly detection
+|   +-- K-Means: Clustering
+|   +-- PCA: Dimensionality reduction
+|   +-- DeepAR: Time series forecasting
+|
++-- TRAINING
+|   +-- Bias-Variance: Underfitting (high bias) vs. Overfitting (high variance)
+|   +-- Regularization: L1 (selection), L2 (shrinkage), Dropout, Early Stopping
+|   +-- Data Split: Train/Val/Test (70/15/15), K-Fold for small data
+|   +-- Learning Curves: Diagnose over/underfitting
+|   +-- Infrastructure: File/Pipe/FastFile mode, GPU vs. CPU
+|   +-- Distributed: Data parallelism, Model parallelism, Horovod
+|
++-- HYPERPARAMETER TUNING
+|   +-- Strategies: Bayesian (best), Random (parallel), Grid (small), Hyperband
+|   +-- SageMaker HPO: Objective metric, ranges, max jobs, warm start
+|   +-- XGBoost Tuning: max_depth, eta, subsample, colsample_bytree, min_child_weight
+|   +-- Best Practice: Start random, refine with Bayesian
+|
++-- EVALUATION
+|   +-- Classification: Accuracy, Precision, Recall, F1, AUC-ROC, AUC-PR
+|   +-- Regression: RMSE, MAE, R-squared, MAPE
+|   +-- Confusion Matrix: TP, TN, FP, FN
+|   +-- Metric Selection: Recall (fraud), Precision (spam), F1 (balanced)
+|   +-- Imbalanced: Never accuracy; use F1, AUC-PR
+|
++-- DEEP LEARNING
+|   +-- Architectures: CNN (images), RNN/LSTM (sequences), Transformer (NLP)
+|   +-- Concepts: Epochs, Batch Size, Learning Rate, Activation Functions
+|   +-- Regularization: Dropout, Batch Norm, Data Augmentation
+|   +-- Optimizers: Adam (default), SGD, RMSprop
+|   +-- Transfer Learning: Pre-trained + fine-tune (limited data)
+|
++-- ENSEMBLE METHODS
+    +-- Bagging: Random Forest (parallel, less overfit)
+    +-- Boosting: XGBoost (sequential, more accurate)
+    +-- Stacking: Meta-model on base predictions
+```
+
+---
+
+## Summary Table
+
+| Topic | Key Services | Critical Concepts |
+|-------|-------------|------------------|
+| **Problem Framing** | SageMaker | Match problem type to algorithm family |
+| **XGBoost** | SageMaker Built-in | num_round, max_depth, eta, objective, scale_pos_weight |
+| **Linear Learner** | SageMaker Built-in | predictor_type, L1/L2, normalization |
+| **Computer Vision** | SageMaker, Rekognition | CNN, ResNet, transfer learning, GPU instances |
+| **NLP** | BlazingText, Comprehend | Word2Vec, text classification, Seq2Seq |
+| **Anomaly Detection** | Random Cut Forest | Streaming + batch, unsupervised |
+| **Training** | SageMaker Training | File/Pipe mode, distributed, instance selection |
+| **Tuning** | SageMaker HPO | Bayesian (default), warm start, objective metric |
+| **Evaluation** | SageMaker | Recall (fraud), Precision (spam), F1 (balanced) |
+| **Deep Learning** | TensorFlow, PyTorch | CNN, RNN, Transformer, transfer learning |
+| **Regularization** | All models | L1, L2, Dropout, Early Stopping |
+| **Ensemble** | XGBoost, Random Forest | Bagging vs. Boosting, bias-variance |"

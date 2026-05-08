@@ -1,0 +1,475 @@
+certCode,domain,title,content
+"DVA-C02","Domain 2: Security","Security","## DVA-C02 Domain 2: Security
+
+**Weight:** ~26% of scored exam content
+**Exam Level:** Associate
+
+This domain covers IAM, Cognito, API Gateway authorization, KMS encryption, secrets management, and application security patterns from a developer perspective.
+
+---
+
+## IAM for Developers
+
+### Policy Evaluation Logic
+
+1. Explicit Deny -> DENY (always wins)
+2. SCP allows? -> If no, DENY
+3. Permission Boundary allows? -> If no, DENY
+4. Identity-based OR Resource-based allows? -> ALLOW
+5. Default -> IMPLICIT DENY
+
+### IAM Roles for Services
+
+| Service | Role Type | Purpose |
+|---------|-----------|---------|
+| **Lambda** | Execution Role | What Lambda can access (S3, DynamoDB, logs) |
+| **EC2** | Instance Profile | What EC2 can access (credentials via metadata) |
+| **ECS** | Task Execution Role | Pull image, write logs, get secrets |
+| **ECS** | Task Role | Application permissions (what container does) |
+
+**Best Practice:** Never use access keys in code. Always use IAM roles (temporary, auto-rotated).
+
+### STS Operations
+
+| Operation | Use Case |
+|-----------|----------|
+| **AssumeRole** | Cross-account access; temporary elevation |
+| **AssumeRoleWithWebIdentity** | Web identity tokens (prefer Cognito) |
+| **GetSessionToken** | MFA-protected API access |
+| **GetCallerIdentity** | Debug ""who am I?"" |
+| **DecodeAuthorizationMessage** | Debug ""Access Denied"" errors |
+
+### Identity-Based vs. Resource-Based Policies
+
+| Feature | Identity-Based | Resource-Based |
+|---------|---------------|---------------|
+| **Attached to** | User, Group, Role | Resource (S3, SQS, Lambda) |
+| **Cross-account** | Requires role assumption | Direct access (no role needed) |
+| **Caller permissions** | Gives up original (AssumeRole) | Retains original + gains resource access |
+
+---
+
+## Amazon Cognito
+
+### Two Components
+
+| Component | Purpose | Returns |
+|-----------|---------|---------|
+| **User Pools** | Authentication (""Who are you?"") | JWT tokens (ID, Access, Refresh) |
+| **Identity Pools** | Authorization (""What can you do?"") | Temporary AWS credentials |
+
+### User Pool Tokens
+
+| Token | Purpose | Expires |
+|-------|---------|---------|
+| **ID Token** | User identity (claims, attributes) | 1 hour |
+| **Access Token** | API authorization (scopes, groups) | 1 hour |
+| **Refresh Token** | Get new ID/Access tokens | Configurable (days-years) |
+
+### User Pool Lambda Triggers
+
+| Trigger | Use Case |
+|---------|----------|
+| **Pre Sign-up** | Validate email domain; auto-confirm |
+| **Post Confirmation** | Send welcome email; create profile |
+| **Pre Token Generation** | Add custom claims to JWT |
+| **User Migration** | Migrate from legacy user store |
+| **Custom Message** | Custom email/SMS templates |
+
+### Identity Pools - Per-User Access
+
+```json
+// Each user can only access their own S3 folder
+{
+  ""Effect"": ""Allow"",
+  ""Action"": [""s3:GetObject"", ""s3:PutObject""],
+  ""Resource"": ""arn:aws:s3:::bucket/users/${cognito-identity.amazonaws.com:sub}/*""
+}
+
+// User can only access their own DynamoDB items
+{
+  ""Effect"": ""Allow"",
+  ""Action"": [""dynamodb:GetItem"", ""dynamodb:PutItem""],
+  ""Resource"": ""arn:aws:dynamodb:...:table/UserData"",
+  ""Condition"": {
+    ""ForAllValues:StringEquals"": {
+      ""dynamodb:LeadingKeys"": [""${cognito-identity.amazonaws.com:sub}""]
+    }
+  }
+}
+```
+
+### Cognito Flows
+
+```
+FLOW 1: API Gateway with Cognito Authorizer
+  Client -> Cognito User Pool (sign-in) -> JWT tokens -> API Gateway -> Lambda
+
+FLOW 2: Direct AWS Access (mobile uploads)
+  Client -> User Pool (sign-in) -> Identity Pool (exchange tokens) -> AWS creds -> S3/DynamoDB
+```
+
+---
+
+## API Gateway Authorization
+
+| Method | Best For | Token Type |
+|--------|----------|-----------|
+| **IAM** | Service-to-service | Sig V4 |
+| **Cognito Authorizer** | User-facing apps with Cognito | JWT |
+| **Lambda Authorizer** | Custom/third-party auth | Any token |
+| **API Keys** | Rate limiting only (NOT auth!) | API Key header |
+
+### Lambda Authorizer
+
+```python
+def handler(event, context):
+    token = event['authorizationToken']
+    claims = verify_token(token.replace('Bearer ', ''))
+    return {
+        'principalId': claims['sub'],
+        'policyDocument': {
+            'Version': '2012-10-17',
+            'Statement': [{
+                'Action': 'execute-api:Invoke',
+                'Effect': 'Allow',
+                'Resource': event['methodArn']
+            }]
+        },
+        'context': {'userId': claims['sub'], 'role': claims['role']}
+    }
+```
+
+**Caching:** Set TTL > 0 to avoid invoking authorizer on every request. Wildcard resource = cache across all methods.
+
+---
+
+## AWS KMS
+
+### Key Types
+
+| Type | Management | Cost | Use Case |
+|------|-----------|------|----------|
+| **AWS Owned** | AWS entirely | Free | S3 default (SSE-S3) |
+| **AWS Managed** | AWS in your account | Free + API calls | Default for services (aws/s3) |
+| **Customer Managed** | You control | $1/month + API | Full control, cross-account, audit |
+
+### Envelope Encryption
+
+```
+ENCRYPT:
+1. Call KMS GenerateDataKey
+2. KMS returns: plaintext data key + encrypted data key
+3. Encrypt data locally with plaintext key
+4. Delete plaintext key from memory
+5. Store: encrypted data + encrypted data key
+
+DECRYPT:
+1. Call KMS Decrypt (send encrypted data key)
+2. KMS returns: plaintext data key
+3. Decrypt data locally
+4. Delete plaintext key from memory
+
+WHY: KMS only encrypts up to 4 KB. Envelope encryption handles unlimited data.
+```
+
+### Encryption Context
+
+- Key-value pairs (additional authenticated data)
+- Must match on decrypt (prevents misuse)
+- Appears in CloudTrail (audit trail)
+- NOT encrypted (don't put secrets in it)
+
+### S3 Encryption Options
+
+| Option | Key Management | Audit Trail |
+|--------|---------------|-------------|
+| **SSE-S3** | AWS manages entirely | No |
+| **SSE-KMS** | KMS (AWS or customer managed) | Yes (CloudTrail) |
+| **SSE-C** | Customer provides key each request | No |
+| **Client-side** | You encrypt before upload | N/A |
+
+**KMS throttling:** High-throughput S3 can be throttled by KMS API limits. Fix: S3 Bucket Keys (reduces calls 99%), request quota increase, or use SSE-S3.
+
+---
+
+## Secrets Management
+
+### Secrets Manager vs. Parameter Store
+
+| Feature | Secrets Manager | Parameter Store |
+|---------|----------------|----------------|
+| **Auto-rotation** | Built-in (Lambda-based) | No |
+| **Cost** | $0.40/secret/month | Free (Standard) |
+| **Max size** | 64 KB | 4 KB (Standard) / 8 KB (Advanced) |
+| **Cross-account** | Resource policy | Limited |
+| **Best for** | DB credentials, API keys | Config values, feature flags |
+
+**Decision:** Need rotation? -> Secrets Manager. Simple config? -> Parameter Store.
+
+### Accessing Secrets in Code
+
+```python
+# Secrets Manager (cache outside handler!)
+secrets_client = boto3.client('secretsmanager')
+_cached_secret = None
+
+def get_secret():
+    global _cached_secret
+    if _cached_secret is None:
+        response = secrets_client.get_secret_value(SecretId='prod/db')
+        _cached_secret = json.loads(response['SecretString'])
+    return _cached_secret
+
+# SSM Parameter Store
+ssm = boto3.client('ssm')
+response = ssm.get_parameter(Name='/app/prod/endpoint', WithDecryption=True)
+```
+
+### ECS Secrets Injection
+
+```json
+// Task definition - secrets from Secrets Manager/SSM
+""secrets"": [
+  {""name"": ""DB_PASSWORD"", ""valueFrom"": ""arn:aws:secretsmanager:...:prod/db""},
+  {""name"": ""API_KEY"", ""valueFrom"": ""arn:aws:ssm:...:parameter/prod/api-key""}
+]
+// Task Execution Role needs: secretsmanager:GetSecretValue + ssm:GetParameters + kms:Decrypt
+```
+
+---
+
+## ACM (Certificates)
+
+| Feature | Description |
+|---------|-------------|
+| **Cost** | Free for public certificates |
+| **Renewal** | Automatic (DNS-validated) |
+| **Integration** | ALB, CloudFront, API Gateway, NLB |
+| **Cannot use with** | EC2 directly (need ALB/CloudFront in front) |
+| **CloudFront** | Certificate MUST be in us-east-1 |
+| **ALB** | Certificate in same region as ALB |
+
+---
+
+## Security Best Practices
+
+### Credential Management
+
+```
+NEVER: Hard-code credentials, commit to Git, use long-term keys in apps
+ALWAYS: Use IAM roles, Secrets Manager/SSM, temporary credentials, least privilege
+
+SDK Credential Chain (resolution order):
+1. Explicit in code (avoid!)
+2. Environment variables
+3. Shared credentials file
+4. ECS container credentials (task role)
+5. EC2 instance metadata (instance profile)
+
+BEST: Let SDK use default chain -> picks up IAM role automatically
+```
+
+### Enforcing Encryption
+
+```json
+// Deny unencrypted S3 uploads
+{""Effect"": ""Deny"", ""Action"": ""s3:PutObject"", ""Resource"": ""arn:aws:s3:::bucket/*"",
+ ""Condition"": {""StringNotEquals"": {""s3:x-amz-server-side-encryption"": ""aws:kms""}}}
+
+// Deny insecure transport
+{""Effect"": ""Deny"", ""Action"": ""s3:*"", ""Resource"": ""arn:aws:s3:::bucket/*"",
+ ""Condition"": {""Bool"": {""aws:SecureTransport"": ""false""}}}
+```
+
+---
+
+## Key Exam Patterns
+
+**IAM:**
+- **""EC2 needs S3 access""** -> IAM Role (instance profile)
+- **""Cross-account without assuming role""** -> Resource-based policy
+- **""Restrict user to own DynamoDB items""** -> Policy with dynamodb:LeadingKeys condition
+- **""Debug Access Denied""** -> STS DecodeAuthorizationMessage
+- **""Limit max permissions""** -> Permission Boundary
+
+**Cognito:**
+- **""User sign-up/sign-in for app""** -> Cognito User Pool
+- **""Mobile app needs direct S3 access""** -> Cognito Identity Pool
+- **""Validate JWT at API Gateway""** -> Cognito Authorizer
+- **""Add custom claims to token""** -> Pre Token Generation trigger
+- **""Per-user S3 folders""** -> Identity Pool + ${cognito-identity:sub}
+
+**KMS:**
+- **""Encrypt data > 4 KB""** -> Envelope Encryption (GenerateDataKey)
+- **""Audit who decrypted""** -> SSE-KMS (CloudTrail logs)
+- **""KMS throttling S3""** -> S3 Bucket Keys or SSE-S3
+- **""Cross-account encrypted objects""** -> CMK key policy grants Decrypt
+
+**Secrets:**
+- **""Auto-rotating DB password""** -> Secrets Manager
+- **""Free config storage""** -> SSM Parameter Store
+- **""Inject secrets into ECS""** -> Task definition secrets field
+- **""Lambda needs DB creds""** -> Secrets Manager + cache outside handler
+
+---
+
+## Quick Exam Tips
+
+- **IAM roles** always preferred over access keys. SDK auto-picks up role credentials.
+- **Resource-based policies** allow cross-account WITHOUT assuming role (caller keeps permissions).
+- **Cognito User Pools** = authentication (JWT). **Identity Pools** = authorization (AWS creds).
+- **Lambda Authorizer caching** (TTL > 0) avoids invoking on every request.
+- **Envelope encryption** = how KMS handles data > 4 KB. GenerateDataKey -> encrypt locally.
+- **Encryption Context** = plaintext metadata; must match on decrypt; logged in CloudTrail.
+- **SSE-KMS** has API rate limits. S3 Bucket Keys reduce calls by 99%.
+- **Secrets Manager** = rotation. **Parameter Store** = config (free).
+- **ACM for CloudFront** must be in us-east-1.
+- **Permission Boundaries** cap maximum permissions (even if policy grants more).
+- **API Keys** are NOT authentication. Use IAM/Cognito/Lambda Authorizer for security.
+
+---
+
+## Summary
+
+This covers all objectives in DVA-C02 Domain 2:
+
+- **IAM** - Policies, roles, STS, cross-account, policy variables, least privilege
+- **Cognito** - User Pools (auth), Identity Pools (AWS creds), triggers, per-user access
+- **API Gateway Auth** - IAM, Cognito Authorizer, Lambda Authorizer, API Keys
+- **KMS** - Key types, envelope encryption, encryption context, S3 encryption options
+- **Secrets** - Secrets Manager (rotation), Parameter Store (config), ECS injection
+- **ACM** - TLS certificates, auto-renewal, regional requirements
+- **Best Practices** - Credential chain, enforce encryption, security layers
+
+---
+
+## Domain 2 Concept Map
+
+```
+SECURITY
+|
++-- IAM
+|   +-- Policies: Identity-based, Resource-based, Boundary, SCP
+|   +-- Roles: Lambda execution, EC2 instance profile, ECS task
+|   +-- STS: AssumeRole, GetCallerIdentity, DecodeAuthorizationMessage
+|   +-- Policy Variables: ${aws:username}, ${cognito-identity:sub}
+|   +-- Conditions: IpAddress, StringEquals, DateLessThan, MFA
+|   +-- Cross-Account: Resource policy (direct) vs. AssumeRole (controlled)
+|   +-- Best Practice: Least privilege, no long-term keys, use roles
+|
++-- COGNITO
+|   +-- User Pools: Authentication (sign-up/in -> JWT tokens)
+|   |   +-- Tokens: ID (identity), Access (authorization), Refresh
+|   |   +-- Federation: Google, Facebook, SAML, OIDC
+|   |   +-- Lambda Triggers: Pre/Post auth, token generation, migration
+|   |   +-- Hosted UI: Pre-built sign-in pages
+|   +-- Identity Pools: Authorization (tokens -> AWS credentials)
+|   |   +-- Authenticated role: Logged-in user permissions
+|   |   +-- Unauthenticated role: Guest access
+|   |   +-- Fine-grained: Policy variables for per-user access
+|   +-- Integration: API Gateway Cognito Authorizer
+|
++-- API GATEWAY AUTHORIZATION
+|   +-- IAM: Sig V4 signing (service-to-service)
+|   +-- Cognito Authorizer: JWT validation (user-facing)
+|   +-- Lambda Authorizer: Custom logic (third-party tokens)
+|   +-- API Keys: Identification only (not auth!)
+|
++-- KMS (ENCRYPTION)
+|   +-- Key Types: AWS Owned, AWS Managed, Customer Managed
+|   +-- Envelope Encryption: GenerateDataKey -> encrypt locally
+|   +-- Encryption Context: AAD (must match on decrypt, logged)
+|   +-- Key Policies: Control who can use/manage keys
+|   +-- S3: SSE-S3, SSE-KMS, SSE-C, Client-side
+|   +-- S3 Bucket Keys: Reduce KMS API calls at scale
+|   +-- Cross-Account: Key policy + IAM policy in target account
+|
++-- SECRETS MANAGEMENT
+|   +-- Secrets Manager: Auto-rotation, database creds, cross-account
+|   +-- SSM Parameter Store: Config values, hierarchy, free tier
+|   +-- Lambda: Cache outside handler; use extensions for caching
+|   +-- ECS: Inject via task definition (secrets field)
+|   +-- Best Practice: Never in code; always from managed service
+|
++-- CERTIFICATES (ACM)
+|   +-- Public Certs: Free, auto-renewal, DNS/email validation
+|   +-- Integration: ALB, CloudFront, API Gateway, NLB
+|   +-- Regional: CloudFront requires us-east-1
+|   +-- Cannot attach directly to EC2 (use ALB/CloudFront)
+|
++-- NETWORK SECURITY
+|   +-- Security Groups: Stateful, allow-only, instance-level
+|   +-- NACLs: Stateless, allow+deny, subnet-level, ordered rules
+|   +-- VPC Endpoints: Private access to AWS services
+|   |   +-- Gateway: S3, DynamoDB (free, route table entry)
+|   |   +-- Interface: All other services (ENI, cost)
+|   +-- Lambda in VPC: Needs NAT for internet; endpoints for AWS
+|   +-- Private Subnets: Backend services (EC2, RDS, ECS, Lambda)
+|
++-- WAF AND DDOS
+|   +-- WAF: SQL injection, XSS, rate limiting, geo-blocking
+|   +-- Attaches to: ALB, API Gateway, CloudFront, AppSync
+|   +-- Shield Standard: Free DDoS (automatic)
+|   +-- Shield Advanced: Enhanced + cost protection + DRT
+|
++-- SIGNING REQUESTS
+|   +-- Sig V4: All AWS API requests signed (SDK handles it)
+|   +-- Pre-signed URLs: Sig V4 in query string (temporary access)
+|   +-- IAM Auth at API Gateway: Client signs with Sig V4
+|
++-- SECURITY PATTERNS
+    +-- Defense in Depth: Network -> Application -> Data -> Identity
+    +-- Least Privilege: Minimum permissions needed
+    +-- Credential Chain: SDK auto-resolves (role preferred)
+    +-- Encryption Everywhere: At rest (KMS) + in transit (TLS)
+    +-- Audit: CloudTrail (API calls) + Config (compliance)
+    +-- Separation: Dev/staging/prod accounts + roles per environment
+```
+
+---
+
+## Summary Table
+
+| Topic | Key Services | Critical Concepts |
+|-------|-------------|------------------|
+| **IAM** | IAM, STS | Roles over keys, least privilege, cross-account, policy evaluation |
+| **Cognito** | User Pools, Identity Pools | JWT tokens, triggers, per-user access, federation |
+| **API Auth** | API Gateway, Lambda Authorizer | IAM (Sig V4), Cognito (JWT), Lambda (custom), API Keys (not auth) |
+| **Encryption** | KMS, ACM | Envelope encryption, context, SSE options, S3 Bucket Keys |
+| **Secrets** | Secrets Manager, SSM | Auto-rotation, caching, ECS injection, cost comparison |
+| **Network** | VPC, SGs, NACLs | Stateful vs. stateless, VPC endpoints, Lambda VPC |
+| **App Security** | WAF, Shield | OWASP, rate limiting, managed rules, DDoS |
+| **Signing** | STS, SDK | Sig V4, pre-signed URLs, credential chain |
+
+---
+
+## Critical Decision Framework
+
+```
+AUTHENTICATION (Who are you?):
++-- Users (mobile/web) -> Cognito User Pool
++-- AWS services -> IAM Role
++-- Third-party systems -> Lambda Authorizer or OIDC federation
++-- Internal services -> IAM (Sig V4)
+
+AUTHORIZATION (What can you do?):
++-- AWS resource access from client -> Cognito Identity Pool
++-- API access control -> API Gateway authorizers
++-- Per-user data isolation -> IAM policy variables (LeadingKeys, prefix)
++-- Cross-account -> Resource policy OR AssumeRole
+
+ENCRYPTION (Protect data):
++-- At rest (default, no audit) -> SSE-S3
++-- At rest (audit trail needed) -> SSE-KMS
++-- At rest (customer controls key) -> SSE-C or Client-side
++-- In transit -> TLS (ACM certificate on ALB/CloudFront)
++-- Large data encryption -> Envelope encryption (GenerateDataKey)
+
+SECRETS (Protect credentials):
++-- Database password + rotation -> Secrets Manager
++-- Config values + hierarchy -> SSM Parameter Store
++-- In Lambda -> Cache outside handler + Secrets Manager
++-- In ECS -> Task definition secrets field
++-- In EC2 -> Instance profile (no credentials needed)
+```"

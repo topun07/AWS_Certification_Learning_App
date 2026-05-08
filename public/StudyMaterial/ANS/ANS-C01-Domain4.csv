@@ -1,0 +1,630 @@
+certCode,domain,title,content
+"ANS-C01","Domain 4: Network Security","Network Security, Compliance, and Governance","## ANS-C01 Domain 4: Network Security, Compliance, and Governance
+
+**Weight:** ~24% of scored exam content
+**Exam Level:** Specialty
+**Target Audience:** Network engineers preparing for the AWS Certified Advanced Networking - Specialty exam
+
+This domain tests your ability to secure AWS networks at every layer - perimeter, transit, and endpoint. You must understand how security controls interact, where to apply them, and how to meet compliance requirements for encryption, isolation, and auditability. Defense-in-depth is the guiding principle.
+
+---
+
+## Objective 4.1: Traffic Filtering - Security Groups and NACLs
+
+### Security Groups vs. Network ACLs - Deep Comparison
+
+| Feature | Security Groups | Network ACLs |
+|---------|----------------|-------------|
+| **Scope** | ENI (instance/resource level) | Subnet level |
+| **State** | Stateful (return traffic auto-allowed) | Stateless (must explicitly allow return traffic) |
+| **Rules** | Allow only (implicit deny) | Allow AND Deny (explicit) |
+| **Evaluation** | All rules evaluated together | Rules evaluated in number order (first match wins) |
+| **Default** | Denies all inbound; allows all outbound | Allows all inbound and outbound |
+| **Association** | Multiple SGs per ENI; multiple ENIs per SG | One NACL per subnet; one subnet per NACL |
+| **Rule limit** | 60 inbound + 60 outbound (per SG) | 20 inbound + 20 outbound (default; can increase) |
+| **Reference other SGs** | Yes (powerful for service-to-service) | No (CIDR-based only) |
+| **Applies to** | Only traffic to/from the associated ENI | All traffic entering/leaving the subnet |
+
+### Security Group Design Patterns
+
+**Pattern 1: Layered Application (reference chaining)**
+
+```
+SG-ALB:
+  Inbound: TCP/443 from 0.0.0.0/0
+
+SG-App:
+  Inbound: TCP/8080 from SG-ALB  <- References ALB security group
+
+SG-DB:
+  Inbound: TCP/3306 from SG-App  <- References App security group
+```
+
+This ensures only the ALB can reach app servers, and only app servers can reach the database - regardless of IP changes.
+
+**Pattern 2: Shared Services Access**
+
+```
+SG-VPCEndpoint:
+  Inbound: TCP/443 from 10.0.0.0/8  <- All corporate IPs
+
+SG-Monitoring:
+  Inbound: TCP/9090 from SG-MonitoringServer
+  (Applied to all monitored instances)
+```
+
+**Pattern 3: Prefix Lists in Security Groups**
+
+```
+SG-App:
+  Inbound: TCP/443 from pl-xxx (managed prefix list containing partner CIDRs)
+```
+
+- Managed prefix lists allow centralized CIDR management.
+- Share via RAM across accounts.
+- Update once -> all referencing SGs/route tables update automatically.
+
+### NACL Design Patterns
+
+**When to Use NACLs (in addition to Security Groups):**
+
+- **Explicit deny** - Block known malicious IPs/CIDRs (SGs can't deny).
+- **Subnet-level protection** - Defense-in-depth below the SG layer.
+- **Compliance requirements** - Some frameworks require network-level ACLs.
+- **Emergency blocking** - Quickly block an attacking IP across all resources in a subnet.
+
+**NACL Rule Numbering Strategy:**
+
+```
+Rule 100: ALLOW TCP/443 from 0.0.0.0/0 (HTTPS)
+Rule 110: ALLOW TCP/80 from 0.0.0.0/0 (HTTP)
+Rule 200: DENY TCP/22 from 0.0.0.0/0 (Block SSH from internet)
+Rule 300: ALLOW TCP/1024-65535 from 0.0.0.0/0 (Ephemeral ports - return traffic)
+Rule *:   DENY all (implicit)
+```
+
+**Critical NACL Gotcha - Ephemeral Ports:**
+
+- NACLs are stateless -> return traffic is NOT automatically allowed.
+- Clients use ephemeral ports (1024-65535) for return traffic.
+- You MUST allow ephemeral ports in the outbound rules (for inbound connections) and inbound rules (for outbound connections).
+- **Exam trap:** ""Instance can initiate connections but can't receive responses"" -> Missing ephemeral port rule in NACL.
+
+---
+
+## Objective 4.2: AWS WAF (Web Application Firewall)
+
+### WAF Architecture and Deployment
+
+AWS WAF protects web applications at Layer 7:
+
+**Supported Resources:**
+
+| Resource | What WAF Protects |
+|----------|------------------|
+| **CloudFront** | Global edge protection |
+| **ALB** | Regional application protection |
+| **API Gateway** | API protection |
+| **AppSync** | GraphQL API protection |
+| **Cognito User Pools** | Authentication endpoint protection |
+| **App Runner** | Container application protection |
+| **Verified Access** | Zero-trust access protection |
+
+**WAF Components:**
+
+| Component | Description |
+|-----------|-------------|
+| **Web ACL** | Container for rules; associated with resources |
+| **Rule** | Inspection logic + action (Allow, Block, Count, CAPTCHA, Challenge) |
+| **Rule Group** | Reusable collection of rules |
+| **Managed Rule Groups** | AWS or Marketplace pre-built rules |
+| **IP Set** | List of IPs/CIDRs for matching |
+| **Regex Pattern Set** | Regex patterns for string matching |
+| **Rate-based Rule** | Blocks IPs exceeding request threshold |
+
+### WAF Rule Types and Use Cases
+
+| Rule Type | What It Inspects | Use Case |
+|-----------|-----------------|----------|
+| **IP match** | Source IP against IP set | Block known bad actors; allow trusted IPs |
+| **Geo match** | Country of origin | Block/allow by country; compliance |
+| **Size constraint** | Request component size | Block oversized payloads |
+| **String match** | Request components (URI, headers, body) | Block SQL injection patterns; path filtering |
+| **Regex match** | Request components against regex | Complex pattern matching |
+| **Rate-based** | Request rate per IP | DDoS mitigation; brute force protection |
+| **Managed rules** | Pre-built detection logic | OWASP Top 10; known bad inputs; bot control |
+| **Label match** | Labels applied by other rules | Complex multi-rule logic |
+
+### AWS Managed Rule Groups (Key Ones for Exam)
+
+| Rule Group | What It Protects Against |
+|-----------|------------------------|
+| **AWSManagedRulesCommonRuleSet** | OWASP Top 10 (SQLi, XSS, etc.) |
+| **AWSManagedRulesSQLiRuleSet** | SQL injection attacks |
+| **AWSManagedRulesKnownBadInputsRuleSet** | Known malicious patterns (Log4j, etc.) |
+| **AWSManagedRulesAmazonIpReputationList** | AWS threat intelligence IPs |
+| **AWSManagedRulesAnonymousIpList** | VPNs, proxies, Tor exit nodes |
+| **AWSManagedRulesBotControlRuleSet** | Bot detection and management |
+| **AWSManagedRulesATPRuleSet** | Account takeover prevention |
+| **AWSManagedRulesACFPRuleSet** | Account creation fraud prevention |
+
+### WAF Rule Evaluation Order
+
+```
+Web ACL Rule Evaluation (priority order - lowest number first):
+
+Priority 1: Rate-based rule (block IPs > 2000 req/5min)     -> BLOCK
+Priority 2: IP reputation managed rules                       -> BLOCK
+Priority 3: Geo-block (deny specific countries)              -> BLOCK
+Priority 4: Custom allow list (trusted IPs)                  -> ALLOW
+Priority 5: AWS Common Rule Set (OWASP)                      -> BLOCK
+Priority 6: SQL injection rules                              -> BLOCK
+Priority 7: Custom application rules                         -> BLOCK/COUNT
+Default Action: ALLOW (if no rule matches)
+```
+
+**Key Principle:** Put cheap, broad rules first (IP blocks, geo blocks) and expensive, specific rules later (regex, body inspection). This optimizes cost and performance.
+
+---
+
+## Objective 4.3: DDoS Protection - AWS Shield
+
+### Shield Standard vs. Shield Advanced
+
+| Feature | Shield Standard | Shield Advanced |
+|---------|----------------|----------------|
+| **Cost** | Free (automatic) | $3,000/month + data transfer |
+| **Protection** | Layer 3/4 (network/transport) | Layer 3/4 + Layer 7 (application) |
+| **Resources** | All AWS resources | CloudFront, ALB, NLB, EIP, Global Accelerator |
+| **Detection** | Automatic | Automatic + enhanced detection |
+| **Mitigation** | Automatic | Automatic + DRT (DDoS Response Team) |
+| **Visibility** | None | Real-time metrics, attack diagnostics |
+| **Cost protection** | No | Yes (credits for scaling costs during attack) |
+| **WAF included** | No | Yes (WAF fees waived for protected resources) |
+| **Health checks** | No | Yes (Route 53 health checks for proactive engagement) |
+| **SRT access** | No | Yes (24/7 DDoS Response Team) |
+
+### DDoS-Resilient Architecture
+
+```
+                         +------------------+
+                         |   Route 53       | <- Anycast; absorbs DNS floods
+                         |   (Shield Std)   |
+                         +--------+---------+
+                                  |
+                         +--------v---------+
+                         |   CloudFront     | <- Edge absorption; caching reduces origin load
+                         |   (Shield Adv)   |
+                         |   + WAF          | <- Layer 7 filtering
+                         +--------+---------+
+                                  |
+                         +--------v---------+
+                         |   ALB            | <- Auto-scales; absorbs connection floods
+                         |   (Shield Adv)   |
+                         |   + WAF          | <- Additional Layer 7 rules
+                         +--------+---------+
+                                  |
+                         +--------v---------+
+                         |   Auto Scaling   | <- Scales to handle legitimate traffic surge
+                         |   EC2 Instances  |
+                         +------------------+
+```
+
+**Key DDoS Design Principles:**
+
+- **Absorb at the edge** - CloudFront's global network absorbs volumetric attacks.
+- **Filter before scaling** - WAF blocks malicious traffic before it reaches your infrastructure.
+- **Scale to absorb** - Auto Scaling handles legitimate traffic spikes during attacks.
+- **Isolate attack surface** - Minimize publicly exposed resources.
+- **Detect quickly** - Shield Advanced provides real-time attack visibility.
+
+---
+
+## Objective 4.4: Encryption in Transit
+
+### Encryption Options by Path
+
+| Traffic Path | Encryption Method | Key Management |
+|-------------|------------------|---------------|
+| Client -> CloudFront | TLS 1.2/1.3 | ACM certificate |
+| CloudFront -> Origin | TLS (origin protocol policy) | ACM or custom cert |
+| Client -> ALB | TLS termination at ALB | ACM certificate |
+| ALB -> Target | TLS (re-encrypt) or HTTP | Target certificate |
+| Client -> NLB (TLS) | TLS termination at NLB | ACM certificate |
+| Client -> NLB (TCP) | TLS passthrough (end-to-end) | Target certificate |
+| VPN (Site-to-Site) | IPsec (IKEv2, AES-256) | Pre-shared key or certificate |
+| Direct Connect | MACsec (Layer 2) | CKN/CAK key pair |
+| DX + VPN overlay | IPsec over DX (Layer 3) | Pre-shared key |
+| VPC-to-VPC (TGW) | Not encrypted by default | Use application-level TLS |
+
+### End-to-End Encryption Patterns
+
+**Pattern 1: TLS Termination at ALB (most common)**
+
+```
+Client --TLS--> ALB --HTTP--> Target
+                 ^
+          ACM certificate (easy to manage)
+
+Pros: Simple; offloads TLS from targets; ACM auto-renewal
+Cons: Traffic unencrypted between ALB and target (within VPC)
+```
+
+**Pattern 2: TLS Re-encryption (defense-in-depth)**
+
+```
+Client --TLS--> ALB --TLS--> Target
+                 ^              ^
+          ACM cert        Self-signed or ACM cert
+
+Pros: Encrypted at every hop; meets strict compliance
+Cons: More complex; higher CPU on targets; certificate management
+```
+
+**Pattern 3: TLS Passthrough (true end-to-end)**
+
+```
+Client --TLS------------------> Target (via NLB TCP listener)
+                                  ^
+                           Target's certificate
+
+Pros: ALB/NLB never sees plaintext; strongest compliance posture
+Cons: No Layer 7 routing; no WAF inspection; target manages TLS
+```
+
+**Pattern 4: Mutual TLS (mTLS)**
+
+```
+Client --mTLS--> ALB/API Gateway
+  ^                    ^
+Client cert      Server cert + CA trust store
+
+Use case: B2B APIs; zero-trust; IoT device authentication
+ALB: Supports mTLS (verify or passthrough mode)
+API Gateway: Supports mTLS with custom domain
+```
+
+### Direct Connect Encryption
+
+**Option 1: MACsec (Layer 2)**
+
+- Encrypts all traffic on the physical DX connection.
+- Line-rate encryption (no bandwidth penalty).
+- Available on 10 Gbps and 100 Gbps dedicated connections.
+- Encrypts between your router and AWS DX router only.
+
+**Option 2: IPsec VPN over DX (Layer 3)**
+
+- Create a VPN connection that uses the DX path.
+- Encrypts end-to-end (your router to AWS VPN endpoint).
+- Bandwidth limited to VPN throughput (1.25 Gbps per tunnel).
+- Can use ECMP on TGW for higher aggregate bandwidth.
+
+**Option 3: Application-level TLS over DX**
+
+- Applications use TLS/HTTPS regardless of transport.
+- No infrastructure-level encryption needed.
+- Most flexible; works with any DX configuration.
+
+| Requirement | Solution |
+|-------------|----------|
+| Encrypt all DX traffic at line rate | MACsec |
+| Encrypt specific traffic end-to-end; compliance requires IPsec | VPN over DX |
+| Encrypt only application data; flexibility needed | Application TLS |
+| Encrypt DX + need >1.25 Gbps encrypted throughput | MACsec (line rate) |
+
+---
+
+## Objective 4.5: AWS Network Firewall - Security Implementation
+
+### Network Firewall Rule Strategies
+
+**Deny-All-Allow-Exception (most secure):**
+
+```
+Stateful Default Action: DROP ALL
+
+Stateful Rules (allow specific traffic):
+  Rule 1: ALLOW TCP to .amazonaws.com:443 (AWS services)
+  Rule 2: ALLOW TCP to .github.com:443 (code repos)
+  Rule 3: ALLOW TCP to approved-vendor.com:443
+  Rule 4: ALERT any traffic to known-bad-domains (log but already dropped by default)
+```
+
+**Allow-All-Deny-Exception (less restrictive):**
+
+```
+Stateful Default Action: PASS
+
+Stateful Rules (block specific traffic):
+  Rule 1: DROP TCP to malware-domain.com (known bad)
+  Rule 2: DROP TCP to .ru, .cn (geo-block by domain TLD)
+  Rule 3: ALERT TCP to any:22 (log SSH attempts)
+  Rule 4: DROP any matching Suricata threat signatures
+```
+
+### Network Firewall + TLS Inspection
+
+**Implementation for HTTPS inspection:**
+
+1. Create/import CA certificate in ACM.
+2. Configure TLS inspection in firewall policy.
+3. Firewall decrypts traffic using its CA cert.
+4. Inspects plaintext against stateful rules (domain filtering, IPS).
+5. Re-encrypts and forwards to destination.
+6. Client trust: Clients must trust the firewall's CA certificate.
+
+**What TLS Inspection Enables:**
+
+- Domain filtering on HTTPS (without TLS inspection, you can only see SNI in ClientHello).
+- Deep packet inspection of encrypted payloads.
+- Suricata IPS rules against decrypted content.
+- Data loss prevention (DLP) on encrypted traffic.
+
+**Without TLS Inspection (SNI-only):**
+
+- Can filter by domain name (from SNI field in TLS ClientHello).
+- Cannot inspect payload content.
+- Sufficient for basic domain allow/deny lists.
+
+### Centralized vs. Distributed Firewall Deployment
+
+| Pattern | Architecture | Pros |
+|---------|-------------|------|
+| **Centralized** | Single inspection VPC with Network Firewall; all traffic routes through TGW | Single policy; easier management; lower cost |
+| **Distributed** | Network Firewall in each VPC | Lower latency; no TGW dependency; independent scaling |
+| **Combined** | Centralized for north-south; distributed for east-west | Balanced approach |
+
+---
+
+## Objective 4.6: AWS Firewall Manager
+
+Centralized security policy management across AWS Organizations:
+
+| Policy Type | What It Controls |
+|-------------|-----------------|
+| **WAF** | Web ACL rules across all ALBs, CloudFront, API Gateways |
+| **Shield Advanced** | Shield Advanced protection across all accounts |
+| **Security Groups** | Common SG rules; audit unused/redundant SGs |
+| **Network Firewall** | Firewall policies across all VPCs |
+| **Route 53 Resolver DNS Firewall** | DNS filtering rules across all VPCs |
+| **Third-party firewalls** | Palo Alto, Fortinet via Firewall Manager |
+
+**Key Features:**
+
+- **Auto-remediation** - Automatically applies policies to new resources/accounts.
+- **Compliance reporting** - Shows which resources are non-compliant.
+- **Cross-account** - Single pane of glass across all Organization accounts.
+- **Prerequisite:** Requires AWS Organizations and a Firewall Manager administrator account.
+
+---
+
+## Objective 4.7: DNS Security
+
+### Route 53 Resolver DNS Firewall
+
+Filters outbound DNS queries from VPCs:
+
+```
+VPC Resource -> Route 53 Resolver -> DNS Firewall -> Internet DNS
+                                        |
+                                   +----+----+
+                                   | Rules:  |
+                                   | ALLOW   | -> Resolve normally
+                                   | BLOCK   | -> Return NXDOMAIN or custom response
+                                   | ALERT   | -> Log and resolve normally
+                                   +---------+
+```
+
+**Use Cases:**
+
+- Block DNS exfiltration (data encoded in DNS queries to attacker-controlled domains).
+- Prevent communication with known C2 (command and control) domains.
+- Enforce DNS-based allow lists (only resolve approved domains).
+- Block newly registered domains (common malware technique).
+
+**Managed Domain Lists:**
+
+- AWSManagedDomainsMalwareDomainList - Known malware domains.
+- AWSManagedDomainsBotnetCommandAndControlDomainList - C2 domains.
+- Custom domain lists - Your own allow/deny lists.
+
+### DNSSEC
+
+Route 53 supports DNSSEC for domain validation:
+
+- **DNSSEC signing** - Route 53 signs your hosted zone records.
+- **DNSSEC validation** - Route 53 Resolver validates signed responses.
+- Prevents DNS spoofing/cache poisoning attacks.
+- Enable on public hosted zones for external-facing domains.
+
+---
+
+## Objective 4.8: Network Isolation and Segmentation
+
+### VPC Isolation Patterns
+
+**Pattern 1: Complete Isolation (no connectivity)**
+
+```
+VPC-A: No peering, no TGW attachment, no shared subnets
+-> Completely isolated; only accessible via public endpoints (if any)
+```
+
+**Pattern 2: Controlled Connectivity (TGW segmentation)**
+
+```
+TGW Route Table: Production
+  - Routes to: Prod VPCs, Shared Services
+  - NO routes to: Dev, Stage
+
+TGW Route Table: Non-Production
+  - Routes to: Dev VPCs, Stage VPCs, Shared Services
+  - NO routes to: Production
+```
+
+**Pattern 3: Service-Level Isolation (PrivateLink)**
+
+```
+Consumer VPC -> Interface Endpoint -> Provider VPC (specific service only)
+- No broad network connectivity
+- Only the exposed service is accessible
+- Works with overlapping CIDRs
+- Unidirectional (consumer -> provider)
+```
+
+**Pattern 4: Subnet-Level Isolation**
+
+```
+Isolated Subnet:
+  - Route table: Local only (no IGW, no NAT, no TGW)
+  - NACL: Deny all except specific internal CIDRs
+  - SG: Allow only from specific application SGs
+  - Use case: Databases, HSMs, sensitive workloads
+```
+
+---
+
+## Objective 4.9: Compliance and Governance
+
+### Network Compliance Controls
+
+| Compliance Requirement | AWS Implementation |
+|-----------------------|-------------------|
+| Encrypt all data in transit | TLS everywhere; MACsec on DX; VPN for hybrid |
+| No internet access for sensitive workloads | Isolated subnets; no IGW/NAT; VPC endpoints only |
+| Log all network traffic | VPC Flow Logs (all VPCs); Network Firewall logs |
+| Restrict cross-border data transfer | VPC in specific region; no cross-region peering; DX in-country |
+| Audit network changes | CloudTrail; AWS Config; Config Rules |
+| Prevent unauthorized access | SGs + NACLs + WAF + Network Firewall; least privilege |
+| DDoS protection | Shield Advanced; WAF rate limiting; CloudFront |
+| Network segmentation | TGW route tables; NACLs; separate VPCs per environment |
+
+### Service Control Policies (SCPs) for Network Governance
+
+```json
+{
+  ""Effect"": ""Deny"",
+  ""Action"": [
+    ""ec2:CreateInternetGateway"",
+    ""ec2:AttachInternetGateway"",
+    ""ec2:CreateVpcPeeringConnection""
+  ],
+  ""Resource"": ""*"",
+  ""Condition"": {
+    ""StringNotEquals"": {
+      ""aws:PrincipalOrgPaths"": ""o-xxx/r-xxx/ou-network/*""
+    }
+  }
+}
+```
+
+This SCP prevents any account (except the Network OU) from creating internet gateways or VPC peering - enforcing centralized network control.
+
+---
+
+## Objective 4.10: Defense-in-Depth - Layered Security Model
+
+```
+LAYER 1: EDGE (Global)
++-- Route 53 (DNSSEC, DNS Firewall)
++-- CloudFront (TLS, geo-restriction, signed URLs)
++-- AWS Shield (DDoS absorption)
++-- AWS WAF (Layer 7 filtering)
+
+LAYER 2: PERIMETER (VPC boundary)
++-- Network Firewall (stateful inspection, IPS, domain filtering)
++-- Gateway Load Balancer (third-party appliances)
++-- NACLs (subnet-level allow/deny)
+
+LAYER 3: TRANSIT (between VPCs/on-premises)
++-- TGW route table segmentation (network isolation)
++-- VPN/MACsec encryption (in-transit encryption)
++-- PrivateLink (service-level isolation)
+
+LAYER 4: WORKLOAD (instance/container level)
++-- Security Groups (stateful, ENI-level)
++-- Instance-level firewall (iptables, Windows Firewall)
++-- Application-level TLS (end-to-end encryption)
+
+LAYER 5: GOVERNANCE (organizational)
++-- SCPs (prevent unauthorized network changes)
++-- AWS Config (continuous compliance monitoring)
++-- Firewall Manager (centralized policy enforcement)
++-- CloudTrail (audit trail for all API calls)
+```
+
+---
+
+## Key Exam Patterns for ANS-C01 Domain 4
+
+- **""Block specific IPs from reaching the application""** - NACL (explicit deny) or WAF IP set (if behind ALB/CloudFront)
+- **""Protect against SQL injection and XSS""** - AWS WAF with AWSManagedRulesCommonRuleSet
+- **""DDoS protection with cost protection and DRT access""** - Shield Advanced
+- **""Encrypt all traffic on Direct Connect at line rate""** - MACsec (10/100 Gbps dedicated connections)
+- **""End-to-end encryption - no decryption at any intermediate point""** - NLB TCP passthrough (TLS terminates at target only)
+- **""Centrally manage WAF rules across all accounts""** - AWS Firewall Manager WAF policy
+- **""Block DNS-based data exfiltration""** - Route 53 Resolver DNS Firewall
+- **""Prevent any account from creating internet gateways""** - SCP denying ec2:CreateInternetGateway
+- **""Inspect HTTPS traffic for threats""** - Network Firewall with TLS inspection (requires CA cert distribution)
+- **""Filter outbound traffic by domain name without TLS inspection""** - Network Firewall domain list rules (uses SNI)
+- **""Security group allows 0.0.0.0/0 on port 22 - detect and remediate""** - AWS Config rule (restricted-ssh) + auto-remediation
+- **""Protect ALB from Layer 7 floods""** - WAF rate-based rule (block IPs exceeding threshold)
+- **""Mutual authentication between client and server""** - mTLS on ALB or API Gateway
+- **""Prevent VPC resources from resolving malicious domains""** - DNS Firewall with managed malware domain list
+- **""Instance can send traffic but can't receive responses""** - NACL missing ephemeral port rule (stateless - must allow return traffic)
+
+---
+
+## Quick Exam Tips for Domain 4
+
+- **Security Groups are stateful; NACLs are stateless.** This is the #1 tested concept. If return traffic is being blocked, it's almost always a NACL issue (missing ephemeral port rule), not a security group issue.
+- **WAF can only attach to ALB, CloudFront, API Gateway, AppSync, Cognito, App Runner, and Verified Access.** It CANNOT attach to NLB or EC2 directly.
+- **Shield Standard is free and automatic. Shield Advanced costs $3,000/month.** The exam tests when Advanced is justified (cost protection, DRT access, Layer 7 protection, proactive engagement).
+- **MACsec vs. VPN over DX:** MACsec = Layer 2, line-rate, no bandwidth penalty, only on 10/100 Gbps dedicated. VPN over DX = Layer 3, limited to 1.25 Gbps per tunnel. If the question says ""encrypt at line rate"" -> MACsec.
+- **TLS passthrough (NLB TCP)** is the answer when ""no intermediate decryption"" is required. ALB always terminates TLS.
+- **DNS Firewall** operates on outbound DNS queries only. It's specifically for preventing DNS-based exfiltration and C2 communication.
+- **Firewall Manager requires AWS Organizations.** It's the answer whenever ""centrally manage security policies across all accounts"" appears.
+- **Network Firewall domain filtering** works on HTTPS without TLS inspection by reading the SNI field in the TLS ClientHello.
+- **SCPs are preventive controls** (deny actions). **AWS Config rules are detective controls** (detect violations). Use both together for comprehensive governance.
+- **NACL rule evaluation stops at the first match** (by rule number). **Security group evaluation considers ALL rules together.** This difference is critical.
+- **Prefix lists in security groups** are the answer when ""manage a dynamic list of partner IPs across multiple security groups"" is described.
+
+---
+
+## Security Controls Quick Reference
+
+```
+WHAT ARE YOU PROTECTING AGAINST?          -> USE THIS
+
+Layer 3/4 DDoS (volumetric)              -> Shield Standard (automatic)
+Layer 7 DDoS (application)               -> Shield Advanced + WAF rate rules
+SQL injection / XSS                       -> WAF managed rules
+Bot traffic                               -> WAF Bot Control
+Brute force login                         -> WAF rate-based + ATP rules
+Known malicious IPs                       -> WAF IP reputation list + NACL deny
+Unauthorized domains (outbound)           -> Network Firewall domain list
+DNS exfiltration                          -> DNS Firewall
+Unencrypted DX traffic                    -> MACsec or VPN over DX
+Overly permissive security groups         -> Config rules + Firewall Manager audit
+Unauthorized network changes              -> SCPs + Config + CloudTrail
+Cross-environment access                  -> TGW route table segmentation
+Unauthorized internet access              -> SCP deny IGW + centralized egress
+```
+
+---
+
+## Summary
+
+This covers all objectives in ANS-C01 Domain 4:
+
+- **Traffic filtering** - Security Groups, NACLs, stateful vs. stateless, ephemeral ports
+- **AWS WAF** - Web ACLs, managed rules, rule evaluation order, rate limiting
+- **DDoS protection** - Shield Standard vs. Advanced, DDoS-resilient architecture
+- **Encryption in transit** - TLS patterns, MACsec, VPN over DX, mTLS
+- **Network Firewall security** - Rule strategies, TLS inspection, centralized vs. distributed
+- **Firewall Manager** - Centralized policy management across Organizations
+- **DNS security** - DNS Firewall, DNSSEC, domain filtering
+- **Network isolation** - VPC segmentation, PrivateLink, TGW route tables
+- **Compliance and governance** - Config rules, SCPs, audit controls
+- **Defense-in-depth** - Layered security model from edge to instance"

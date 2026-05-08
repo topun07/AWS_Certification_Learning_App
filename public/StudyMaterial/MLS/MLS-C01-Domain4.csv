@@ -1,0 +1,490 @@
+certCode,domain,title,content
+"MLS-C01","Domain 4: ML Implementation & Operations","ML Implementation & Operations","## MLS-C01 Domain 4: ML Implementation & Operations
+
+**Weight:** ~20% of scored exam content
+**Exam Level:** Specialty
+
+This domain covers deploying, monitoring, securing, and maintaining ML models in production on AWS.
+
+---
+
+## SageMaker Deployment Options
+
+### Endpoint Types
+
+| Type | Use Case | Latency | Cost Model |
+|------|----------|---------|-----------|
+| **Real-time Endpoint** | Low-latency predictions (< 1 sec) | Milliseconds | Pay per instance-hour (always on) |
+| **Serverless Inference** | Infrequent/unpredictable traffic | Cold start possible | Pay per request + duration |
+| **Batch Transform** | Large datasets, no real-time need | Minutes-hours | Pay per instance-hour (job duration) |
+| **Async Inference** | Large payloads, queue-based | Seconds-minutes | Pay per instance-hour + queue |
+
+### Real-time Endpoint Features
+
+| Feature | Description | Use Case |
+|---------|-------------|----------|
+| **Multi-Model Endpoint (MME)** | Multiple models on one endpoint | Cost savings, many similar models |
+| **Multi-Container Endpoint** | Multiple containers (different frameworks) | Ensemble, pipeline |
+| **Auto Scaling** | Scale instances based on metrics | Handle traffic spikes |
+| **A/B Testing (Production Variants)** | Split traffic between model versions | Canary deployments |
+| **Shadow Testing** | Send traffic to new model without serving | Validate before switching |
+| **Elastic Inference** | Attach fractional GPU to CPU instance | Cost-effective GPU inference |
+
+### Deployment Strategies
+
+| Strategy | Description | Risk Level |
+|----------|-------------|-----------|
+| **All-at-once** | Replace old model immediately | High (instant rollback needed) |
+| **Canary** | Small % traffic to new model, then full | Medium (gradual validation) |
+| **Linear** | Gradually shift traffic over time | Low (slow rollout) |
+| **Blue/Green** | Two full environments, switch DNS | Low (instant rollback) |
+| **Shadow** | New model receives traffic but doesn't serve | Lowest (no user impact) |
+
+---
+
+## Model Inference Optimization
+
+### Techniques
+
+| Technique | Description | Tradeoff |
+|-----------|-------------|----------|
+| **Model Compilation (Neo)** | Compile model for target hardware | Faster inference, same accuracy |
+| **Quantization** | Reduce precision (FP32 -> INT8) | Faster, slight accuracy loss |
+| **Pruning** | Remove unnecessary weights | Smaller model, slight accuracy loss |
+| **Knowledge Distillation** | Train small model to mimic large | Much smaller, some accuracy loss |
+| **Elastic Inference** | Fractional GPU attachment | Cost savings for inference |
+| **Inference Pipelines** | Chain containers (preprocess -> predict -> postprocess) | Modular, reusable |
+
+### SageMaker Neo
+
+- Compiles models for specific hardware (CPU, GPU, ARM)
+- Supports: TensorFlow, PyTorch, MXNet, XGBoost, ONNX
+- Deploys to: Cloud instances, edge devices (Greengrass)
+- Benefit: Up to 2x faster inference, no code changes
+
+### Inference Pipelines
+
+- Chain up to 15 containers in sequence
+- Each container handles one step (preprocessing, inference, postprocessing)
+- Containers can use different frameworks
+- Deployed as a single endpoint
+- Use case: Feature engineering + model prediction in one call
+
+---
+
+## Model Monitoring
+
+### SageMaker Model Monitor
+
+| Monitor Type | What It Detects | How It Works |
+|-------------|----------------|-------------|
+| **Data Quality** | Feature drift (schema, statistics) | Compare incoming data to training baseline |
+| **Model Quality** | Accuracy degradation | Compare predictions to ground truth |
+| **Bias Drift** | Fairness metric changes | Compare bias metrics over time |
+| **Feature Attribution** | Explanation drift | Compare SHAP values over time |
+
+### Setup Process
+
+1. **Create Baseline:** Capture statistics from training data
+2. **Schedule Monitoring:** Hourly, daily, or custom
+3. **Configure Alerts:** CloudWatch alarms on violations
+4. **Review Reports:** JSON reports in S3
+
+### Data Drift Detection
+
+| Metric | Description | Action |
+|--------|-------------|--------|
+| **Feature distribution shift** | Input data statistics change | Retrain with new data |
+| **Missing value increase** | More nulls than baseline | Fix data pipeline |
+| **Schema violation** | New/missing columns, type changes | Fix upstream data |
+| **Outlier increase** | More extreme values | Investigate data source |
+
+### Model Retraining Triggers
+
+- Data drift detected (distribution shift)
+- Model quality degradation (accuracy drops)
+- Scheduled (weekly, monthly)
+- Business metric decline
+- New data available (significant volume)
+
+---
+
+## MLOps with SageMaker Pipelines
+
+### Pipeline Components
+
+| Component | Purpose |
+|-----------|---------|
+| **Processing Step** | Data preprocessing, feature engineering |
+| **Training Step** | Model training |
+| **Tuning Step** | Hyperparameter optimization |
+| **Transform Step** | Batch inference |
+| **Condition Step** | Branching logic (if accuracy > threshold) |
+| **Register Step** | Add model to Model Registry |
+| **Callback Step** | Wait for external process |
+| **Lambda Step** | Run Lambda function |
+
+### Model Registry
+
+- Version control for models
+- Approval workflow (Pending -> Approved -> Rejected)
+- Model lineage tracking (data, code, parameters)
+- Deploy approved models to endpoints
+- Cross-account model sharing
+
+### CI/CD for ML
+
+| Stage | Tools | Actions |
+|-------|-------|---------|
+| **Source** | CodeCommit, GitHub | Code changes trigger pipeline |
+| **Build** | CodeBuild | Run tests, build containers |
+| **Train** | SageMaker Training | Train model, evaluate |
+| **Register** | Model Registry | Version and approve model |
+| **Deploy** | CodeDeploy, SageMaker | Deploy to staging/production |
+| **Monitor** | Model Monitor | Track performance |
+
+---
+
+## Edge Deployment
+
+### SageMaker Edge Manager
+
+- Deploy models to edge devices (IoT, mobile)
+- Model optimization with Neo compilation
+- Fleet management (monitor edge devices)
+- Data capture from edge for retraining
+- Supports: ARM, x86, GPU (Jetson)
+
+### AWS IoT Greengrass ML
+
+- Run ML inference on IoT devices
+- Pre-built ML components
+- Local inference (no cloud connectivity needed)
+- Sync with cloud for updates
+
+### Deployment Flow
+
+```
+SageMaker Training -> Neo Compilation -> Edge Manager -> Device Fleet
+                                                    |
+                                              Data Capture -> S3 -> Retraining
+```
+
+---
+
+## Security for ML
+
+### Data Security
+
+| Layer | Service/Feature | Purpose |
+|-------|----------------|---------|
+| **At Rest** | KMS encryption | Encrypt training data, model artifacts, notebooks |
+| **In Transit** | TLS/SSL | Encrypt data between services |
+| **S3** | Bucket policies, VPC endpoints | Control data access |
+| **Notebooks** | KMS, VPC, IAM | Secure development environment |
+| **Training** | VPC, inter-container encryption | Isolate training jobs |
+
+### IAM for SageMaker
+
+| Role | Purpose | Key Permissions |
+|------|---------|----------------|
+| **Execution Role** | SageMaker accesses AWS resources | S3, ECR, CloudWatch, KMS |
+| **User Role** | Data scientist accesses SageMaker | CreateTrainingJob, CreateEndpoint |
+| **Pipeline Role** | Pipeline executes steps | All step permissions |
+| **Model Role** | Endpoint accesses resources | S3 (model artifacts), ECR (container) |
+
+### Network Security
+
+| Feature | Purpose |
+|---------|---------|
+| **VPC Configuration** | Run training/inference in private subnet |
+| **VPC Endpoints** | Access SageMaker API without internet |
+| **Security Groups** | Control inbound/outbound traffic |
+| **Inter-container Encryption** | Encrypt communication between distributed training nodes |
+| **Network Isolation** | No internet access for training containers |
+
+### Compliance
+
+- **HIPAA eligible:** SageMaker, S3, KMS
+- **SOC 1/2/3:** All SageMaker features
+- **PCI DSS:** For payment data ML
+- **FedRAMP:** Government workloads
+- **Audit:** CloudTrail logs all SageMaker API calls
+
+---
+
+## Cost Optimization
+
+### Training Cost Reduction
+
+| Strategy | Savings | Tradeoff |
+|----------|---------|----------|
+| **Spot Instances** | Up to 90% | Can be interrupted (use checkpointing) |
+| **Managed Spot Training** | Up to 90% | SageMaker handles interruptions |
+| **Right-sizing** | Variable | Monitor utilization, downsize |
+| **Pipe Mode** | Faster start | Streaming (no full download) |
+| **Early Stopping** | Less compute | Stop when converged |
+
+### Inference Cost Reduction
+
+| Strategy | Savings | Use Case |
+|----------|---------|----------|
+| **Serverless Inference** | Pay per request | Infrequent traffic |
+| **Multi-Model Endpoints** | Share infrastructure | Many similar models |
+| **Elastic Inference** | Fractional GPU | GPU for inference only |
+| **Auto Scaling** | Scale to zero possible | Variable traffic |
+| **Neo Compilation** | Faster = less compute | All deployments |
+| **Batch Transform** | No always-on endpoint | Periodic predictions |
+| **Savings Plans** | Up to 64% | Steady-state workloads |
+
+### Spot Instance Best Practices
+
+- Enable **checkpointing** (save model state to S3)
+- SageMaker **Managed Spot** handles interruptions automatically
+- Set **max wait time** and **max run time**
+- Best for: Training jobs (not real-time endpoints)
+- Savings: Typically 60-90% vs. on-demand
+
+---
+
+## A/B Testing and Experimentation
+
+### Production Variants
+
+- Deploy multiple model versions on one endpoint
+- Split traffic by percentage (e.g., 90% model A, 10% model B)
+- Monitor metrics per variant
+- Gradually shift traffic to winner
+- Instant rollback by changing traffic weights
+
+### Shadow Testing
+
+- New model receives real traffic
+- Predictions are logged but NOT served to users
+- Compare new model predictions vs. current model
+- Zero risk to users during validation
+- Validate before any traffic shift
+
+### Experiment Tracking
+
+| Feature | Purpose |
+|---------|---------|
+| **SageMaker Experiments** | Track training runs, parameters, metrics |
+| **Trial Components** | Individual training jobs within experiment |
+| **Lineage Tracking** | Data -> Training -> Model -> Endpoint |
+| **Model Cards** | Document model purpose, performance, limitations |
+
+---
+
+## Containerization
+
+### Custom Containers
+
+| Approach | When to Use |
+|----------|-------------|
+| **Built-in Algorithm** | Standard algorithms (XGBoost, Linear Learner) |
+| **Script Mode** | Custom code with built-in framework container |
+| **BYOC (Bring Your Own Container)** | Custom framework or dependencies |
+| **Pre-built Framework Container** | TensorFlow, PyTorch, MXNet, Hugging Face |
+
+### Container Requirements
+
+- **Training:** Must read from /opt/ml/input, write to /opt/ml/model
+- **Inference:** Must implement /ping (health) and /invocations (predict)
+- **Registry:** Store in Amazon ECR
+- **Multi-container:** Up to 15 containers in inference pipeline
+
+### Docker File Structure
+
+```
+/opt/ml/
+  +-- input/
+  |   +-- config/ (hyperparameters.json, resourceConfig.json)
+  |   +-- data/ (training data channels)
+  +-- model/ (output model artifacts)
+  +-- output/ (failure info)
+  +-- code/ (your training script)
+```
+
+---
+
+## Monitoring and Logging
+
+### CloudWatch Integration
+
+| Metric | Source | Alert On |
+|--------|--------|----------|
+| **Invocations** | Endpoint | Sudden drop (service issue) |
+| **Latency (P99, P50)** | Endpoint | Exceeds SLA |
+| **ModelLatency** | Container | Model too slow |
+| **OverheadLatency** | SageMaker | Infrastructure overhead |
+| **4xx/5xx Errors** | Endpoint | Client/server errors |
+| **CPUUtilization** | Instance | Over/under provisioned |
+| **GPUUtilization** | Instance | GPU bottleneck |
+| **DiskUtilization** | Instance | Storage full |
+
+### CloudWatch Logs
+
+- Training job logs (stdout/stderr)
+- Endpoint container logs
+- Processing job logs
+- Pipeline execution logs
+- Model Monitor violation reports
+
+### Debugging with SageMaker Debugger
+
+| Feature | Purpose |
+|---------|---------|
+| **Built-in Rules** | Detect vanishing gradients, overfitting, loss not decreasing |
+| **Custom Rules** | Your own debugging logic |
+| **Profiling** | CPU/GPU utilization, bottlenecks |
+| **Tensors** | Capture intermediate values during training |
+| **Actions** | Stop training, send SNS notification |
+
+---
+
+## Key Exam Patterns
+
+**Deployment:**
+- **""Low latency, always available""** -> Real-time endpoint
+- **""Infrequent traffic, cost-sensitive""** -> Serverless inference
+- **""Large dataset, no real-time need""** -> Batch Transform
+- **""Large payloads (video, images)""** -> Async inference
+- **""Many similar models, save cost""** -> Multi-Model Endpoint
+- **""Gradual rollout""** -> Canary deployment (production variants)
+- **""Validate without user impact""** -> Shadow testing
+
+**Monitoring:**
+- **""Input data changed""** -> Data Quality Monitor (drift detection)
+- **""Model accuracy dropped""** -> Model Quality Monitor
+- **""Bias changed over time""** -> Bias Drift Monitor
+- **""Explain predictions""** -> Feature Attribution (SHAP)
+- **""When to retrain""** -> Data drift detected OR accuracy degradation
+
+**MLOps:**
+- **""Automate ML workflow""** -> SageMaker Pipelines
+- **""Version control models""** -> Model Registry
+- **""Approval before deploy""** -> Model Registry approval workflow
+- **""CI/CD for ML""** -> CodePipeline + SageMaker Pipelines
+
+**Security:**
+- **""Encrypt training data""** -> KMS (at rest) + TLS (in transit)
+- **""Isolate training""** -> VPC configuration + network isolation
+- **""Audit ML API calls""** -> CloudTrail
+- **""Control who can deploy""** -> IAM roles and policies
+
+**Cost:**
+- **""Reduce training cost""** -> Managed Spot Training (up to 90% savings)
+- **""Spot interrupted""** -> Checkpointing (save state to S3)
+- **""Reduce inference cost""** -> Serverless, Multi-Model, Auto Scaling
+- **""Steady inference traffic""** -> Savings Plans or Reserved
+
+**Edge:**
+- **""Deploy to IoT devices""** -> Edge Manager + Neo compilation
+- **""No internet on device""** -> Greengrass ML (local inference)
+- **""Optimize for hardware""** -> Neo compilation
+
+---
+
+## Quick Exam Tips
+
+- **Real-time endpoint** for low-latency. **Batch Transform** for large offline jobs.
+- **Serverless inference** for unpredictable/infrequent traffic (cold starts possible).
+- **Multi-Model Endpoint** saves cost when you have many models with similar resource needs.
+- **Production Variants** enable A/B testing by splitting traffic percentages.
+- **Shadow testing** validates new models with zero user risk.
+- **Model Monitor** detects 4 types of drift: data quality, model quality, bias, feature attribution.
+- **Managed Spot Training** saves up to 90% - always enable checkpointing.
+- **SageMaker Pipelines** is the MLOps orchestrator (not Step Functions for ML).
+- **Model Registry** provides versioning + approval workflow for models.
+- **Neo** compiles models for target hardware (up to 2x faster inference).
+- **Inference Pipeline** chains up to 15 containers (preprocess + predict + postprocess).
+- **VPC + Network Isolation** for maximum security (no internet access).
+- **CloudTrail** audits ALL SageMaker API calls.
+- **Debugger** catches training issues (vanishing gradients, overfitting) automatically.
+- **BYOC** containers must implement /ping and /invocations for inference.
+- **Checkpointing** is critical for Spot Training (resume after interruption).
+- **/opt/ml/** is the standard directory structure for SageMaker containers.
+
+---
+
+## Domain 4 Concept Map
+
+```
+ML IMPLEMENTATION & OPERATIONS
+|
++-- DEPLOYMENT
+|   +-- Real-time: Always-on endpoint, low latency, auto scaling
+|   +-- Serverless: Pay per request, cold starts, infrequent traffic
+|   +-- Batch Transform: Large datasets, offline, no endpoint
+|   +-- Async: Large payloads, queue-based, auto scaling to zero
+|   +-- Multi-Model: Many models, shared infrastructure, cost savings
+|   +-- Strategies: All-at-once, Canary, Linear, Blue/Green, Shadow
+|
++-- INFERENCE OPTIMIZATION
+|   +-- Neo Compilation: Hardware-specific optimization (2x faster)
+|   +-- Elastic Inference: Fractional GPU for inference
+|   +-- Inference Pipeline: Chain containers (preprocess + predict)
+|   +-- Quantization: FP32 -> INT8 (faster, smaller)
+|   +-- Pruning: Remove unnecessary weights
+|
++-- MONITORING
+|   +-- Data Quality: Feature drift, schema violations
+|   +-- Model Quality: Accuracy degradation, prediction drift
+|   +-- Bias Drift: Fairness metrics over time
+|   +-- Feature Attribution: SHAP value changes
+|   +-- CloudWatch: Latency, errors, utilization metrics
+|   +-- Debugger: Training issues (gradients, overfitting)
+|
++-- MLOps
+|   +-- Pipelines: Orchestrate ML workflow (process, train, evaluate, deploy)
+|   +-- Model Registry: Version, approve, deploy models
+|   +-- Experiments: Track runs, parameters, metrics
+|   +-- Lineage: Data -> Training -> Model -> Endpoint
+|   +-- CI/CD: CodePipeline + SageMaker Pipelines
+|
++-- SECURITY
+|   +-- Encryption: KMS (at rest), TLS (in transit), inter-container
+|   +-- Network: VPC, endpoints, security groups, network isolation
+|   +-- IAM: Execution roles, user roles, pipeline roles
+|   +-- Compliance: HIPAA, SOC, PCI DSS, FedRAMP
+|   +-- Audit: CloudTrail (all API calls)
+|
++-- COST OPTIMIZATION
+|   +-- Training: Managed Spot (90% savings), checkpointing, right-sizing
+|   +-- Inference: Serverless, Multi-Model, Auto Scaling, Neo
+|   +-- Storage: Pipe Mode (no download), lifecycle policies
+|   +-- Plans: Savings Plans for steady workloads
+|
++-- EDGE DEPLOYMENT
+|   +-- Edge Manager: Deploy, monitor, manage edge models
+|   +-- Neo: Compile for target hardware (ARM, GPU, x86)
+|   +-- Greengrass: Local inference without internet
+|   +-- Data Capture: Edge data back to cloud for retraining
+|
++-- CONTAINERS
+    +-- Built-in: Standard algorithms (simplest)
+    +-- Script Mode: Custom code + built-in container
+    +-- BYOC: Full custom container (ECR)
+    +-- Requirements: /opt/ml structure, /ping, /invocations
+    +-- Pipeline: Up to 15 containers chained
+```
+
+---
+
+## Summary Table
+
+| Topic | Key Services | Critical Concepts |
+|-------|-------------|------------------|
+| **Deployment** | SageMaker Endpoints | Real-time vs. Serverless vs. Batch vs. Async |
+| **Multi-Model** | SageMaker MME | Cost savings, shared infrastructure, dynamic loading |
+| **A/B Testing** | Production Variants | Traffic splitting, canary, shadow testing |
+| **Monitoring** | Model Monitor, CloudWatch | 4 drift types, baselines, scheduled checks |
+| **MLOps** | Pipelines, Model Registry | Orchestration, versioning, approval workflow |
+| **Security** | IAM, KMS, VPC | Execution roles, encryption, network isolation |
+| **Cost** | Spot Training, Serverless | Checkpointing, auto scaling, right-sizing |
+| **Edge** | Edge Manager, Neo, Greengrass | Compilation, fleet management, local inference |
+| **Containers** | ECR, Docker | /opt/ml structure, /ping, /invocations |
+| **Debugging** | SageMaker Debugger | Built-in rules, profiling, tensor capture |
+| **Optimization** | Neo, Elastic Inference | Compilation, quantization, fractional GPU |
+| **Logging** | CloudWatch, CloudTrail | Metrics, logs, API audit trail |"

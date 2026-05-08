@@ -4,7 +4,7 @@ import com.example.awsMachineLearningExam.model.Flashcard;
 import com.example.awsMachineLearningExam.model.QuizQuestion;
 import com.example.awsMachineLearningExam.repository.FlashcardRepository;
 import com.example.awsMachineLearningExam.repository.QuizQuestionRepository;
-import com.example.awsMachineLearningExam.repository.PipelineScenarioRepository; // 🚨 Added the import!
+import com.example.awsMachineLearningExam.repository.PipelineScenarioRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -19,11 +19,9 @@ public class CsvParserService {
 
     private final QuizQuestionRepository quizRepository;
     private final FlashcardRepository flashcardRepository;
-
-    // 🚨 THE FIX 1: Add the repository at the Class level
     private final PipelineScenarioRepository pipelineRepository;
 
-    // 🚨 THE FIX 2: Inject it through the constructor so Spring Boot wires it up perfectly
+    // Injecting through the constructor so Spring Boot wires it up perfectly
     public CsvParserService(QuizQuestionRepository quizRepository,
                             FlashcardRepository flashcardRepository,
                             PipelineScenarioRepository pipelineRepository) {
@@ -33,11 +31,9 @@ public class CsvParserService {
     }
 
     // ==========================================
-    // 1. THE 16-COLUMN QUIZ PIPELINE
+    // 1. THE QUIZ PIPELINE
     // ==========================================
     public String processCsvFile(MultipartFile file) {
-
-        // 🚨 REMOVE THE @Autowired BLOCK THAT WAS SITTING HERE!
 
         if (file.isEmpty()) return "Error: File is empty.";
 
@@ -60,7 +56,6 @@ public class CsvParserService {
                 // Split by comma, ignoring commas wrapped in quotes
                 String[] data = line.split(",(?=(?:[^\"]*\"[^\"]*\")*[^\"]*$)", -1);
 
-                // The new CSV structure (Category, ExamCode, Question, Explanation, Opt1, isOpt1, etc.)
                 if (data.length >= 6) {
                     String domain = data[0].replace("\"", "").trim();
                     String certCode = data[1].replace("\"", "").trim();
@@ -113,29 +108,28 @@ public class CsvParserService {
     }
 
     // ==========================================
-    // 2. THE 4-COLUMN FLASHCARD PIPELINE
+    // 2. THE FLASHCARD PIPELINE
     // ==========================================
     public String processFlashcardCsvFile(org.springframework.web.multipart.MultipartFile file) {
+
+        if (file.isEmpty()) return "Error: File is empty.";
+
         try (java.io.BufferedReader br = new java.io.BufferedReader(new java.io.InputStreamReader(file.getInputStream()))) {
             String line;
             boolean isFirstLine = true;
             java.util.List<com.example.awsMachineLearningExam.model.Flashcard> cardsToSave = new java.util.ArrayList<>();
 
             while ((line = br.readLine()) != null) {
-                // 1. Skip the header row completely! We don't trust it.
                 if (isFirstLine) {
                     isFirstLine = false;
                     continue;
                 }
 
-                // 2. Split the row by commas, but ignore commas that are inside quotation marks!
                 String[] columns = line.split(",(?=(?:[^\"]*\"[^\"]*\")*[^\"]*$)");
 
-                // 3. Map the data by strict column index (0, 1, 2, 3)
                 if (columns.length >= 4) {
                     com.example.awsMachineLearningExam.model.Flashcard card = new com.example.awsMachineLearningExam.model.Flashcard();
 
-                    // .trim() removes invisible spaces, .replace() removes rogue quotation marks
                     card.setExamCode(columns[0].trim().replace("\"", ""));
                     card.setCategory(columns[1].trim().replace("\"", ""));
                     card.setTerm(columns[2].trim().replace("\"", ""));
@@ -145,17 +139,22 @@ public class CsvParserService {
                 }
             }
 
-            // 4. Save the flawless data to the database
             flashcardRepository.saveAll(cardsToSave);
-            return "✅ Successfully injected " + cardsToSave.size() + " flashcards into the Matrix!";
+
+            return "Successfully injected " + cardsToSave.size() + " flashcards into the Matrix!";
 
         } catch (Exception e) {
             return "❌ Error parsing CSV: " + e.getMessage();
         }
     }
 
-    // 🚨 THE NEW PIPELINE PARSER
+    // ==========================================
+    // 3. THE ARCHITECTURE PIPELINE
+    // ==========================================
     public String processPipelineCsvFile(org.springframework.web.multipart.MultipartFile file) {
+
+        if (file.isEmpty()) return "Error: File is empty.";
+
         try (java.io.BufferedReader br = new java.io.BufferedReader(new java.io.InputStreamReader(file.getInputStream()))) {
             String line;
             int count = 0;
@@ -177,10 +176,9 @@ public class CsvParserService {
                     String[] solution = data[3].replace("\"", "").split("\\|");
                     scenario.setCorrectPipelineOrder(java.util.Arrays.asList(solution));
 
-                    // 🚨 GRAB THE NEW COLUMNS
                     scenario.setHint(data[4].replace("\"", "").trim());
-                    scenario.setExplanation(data[5].replace("\"", "").trim());
 
+                    // Note: I cleaned up the assignment logic here based on your model!
                     scenario.setHint2(data[5].replace("\"", "").trim());
                     scenario.setExplanation(data[6].replace("\"", "").trim());
 
@@ -188,7 +186,10 @@ public class CsvParserService {
                     count++;
                 }
             }
-            return "Mission Accomplished: Injected " + count + " architecture pipelines into the Matrix.";
+
+            // 🚨 ADDED RETURN STATEMENT!
+            return "Successfully injected " + count + " architecture pipelines into the Matrix!";
+
         } catch (Exception e) {
             return "Error parsing CSV: " + e.getMessage();
         }

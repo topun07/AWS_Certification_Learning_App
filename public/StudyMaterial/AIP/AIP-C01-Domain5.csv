@@ -1,0 +1,462 @@
+certCode,domain,title,content
+"AIP-C01","Domain 5: Testing & Troubleshooting","Testing, Validation, and Troubleshooting","## AIP-C01 Domain 5: Testing, Validation, and Troubleshooting
+
+**Weight:** ~11% of scored exam content (smallest domain)
+**Exam Level:** Professional
+**Target Audience:** Developers preparing for the AWS Certified Generative AI Developer - Professional exam
+
+This domain tests whether you can evaluate GenAI output quality, build systematic testing frameworks, diagnose failures in RAG/agent systems, and implement continuous evaluation pipelines. The Professional-level expectation: you don't just know that something failed - you know why and how to fix it.
+
+---
+
+## Objective 5.1: Develop Assessment Frameworks for FM Output Quality
+
+### GenAI Evaluation Is Different from Traditional ML
+
+Traditional ML has clear metrics (accuracy, precision, recall, F1). GenAI evaluation is harder because:
+
+- Outputs are open-ended (no single ""correct"" answer).
+- Quality is subjective (fluency, helpfulness, tone).
+- Failures are subtle (hallucination that sounds correct).
+- Context matters (a good answer for one user may be wrong for another).
+
+### Evaluation Dimensions for GenAI
+
+| Dimension | What It Measures | How to Evaluate |
+|-----------|-----------------|----------------|
+| **Relevance** | Does the response address the user's question? | LLM-as-judge; human rating |
+| **Factual accuracy** | Are the stated facts correct? | Ground truth comparison; source verification |
+| **Faithfulness/Groundedness** | Is the response supported by provided context (RAG)? | Compare response claims to retrieved chunks |
+| **Consistency** | Does the model give the same answer to equivalent questions? | Run paraphrased queries; compare outputs |
+| **Fluency** | Is the language natural and well-structured? | Human rating; perplexity scores |
+| **Completeness** | Does the response cover all aspects of the question? | Checklist evaluation; human review |
+| **Harmlessness** | Is the response free from toxic/biased/harmful content? | Toxicity classifiers; Guardrails |
+| **Conciseness** | Is the response appropriately brief without losing information? | Token count analysis; human preference |
+| **Instruction following** | Does the response obey format/style/constraint instructions? | Automated format checks; regex validation |
+
+### Evaluation Methods
+
+#### 1. Automated Metrics (Programmatic)
+
+| Metric | What It Measures | When to Use |
+|--------|-----------------|-------------|
+| **BLEU** | N-gram overlap with reference text | Translation; highly constrained outputs |
+| **ROUGE** | Recall-oriented overlap with reference | Summarization |
+| **BERTScore** | Semantic similarity using embeddings | General text comparison |
+| **Exact match** | Binary correct/incorrect | Classification; extraction; structured output |
+| **Regex/schema validation** | Output format compliance | JSON/XML outputs; structured responses |
+| **Toxicity scores** | Harmful content detection | Safety evaluation |
+
+#### 2. LLM-as-Judge (Model-Based Evaluation)
+
+Use a powerful FM to evaluate another FM's outputs:
+
+```
+System: You are an expert evaluator. Rate the following response on a scale of 1-5 for:
+- Relevance (does it answer the question?)
+- Accuracy (are the facts correct?)
+- Completeness (does it cover all aspects?)
+
+Question: {question}
+Context: {retrieved_context}
+Response: {model_response}
+Ground Truth: {expected_answer}
+
+Provide scores and brief justification for each.
+```
+
+**Advantages:** Scalable; consistent; can evaluate nuanced quality.
+**Limitations:** Evaluator model has its own biases; can be expensive; may miss subtle errors.
+
+#### 3. Human Evaluation
+
+- **Preference ranking** - Show evaluators two responses; ask which is better.
+- **Likert scale rating** - Rate responses on 1-5 scales across dimensions.
+- **Binary judgment** - Is this response acceptable? Yes/No.
+- **Amazon A2I (Augmented AI)** - Managed human review workflows integrated with ML pipelines.
+
+**When to use:** High-stakes applications; establishing ground truth; calibrating automated evaluators.
+
+### Amazon Bedrock Model Evaluation
+
+Bedrock provides built-in evaluation capabilities:
+
+**Automatic Evaluation:**
+- Compare model outputs against ground truth datasets.
+- Metrics: accuracy, robustness, toxicity.
+- Run across multiple models to compare performance.
+
+**Human Evaluation (via Bedrock):**
+- Define evaluation criteria and rating scales.
+- Assign human reviewers to evaluate model outputs.
+- Aggregate scores and generate reports.
+- Supports custom evaluation templates.
+
+**Model Evaluation Workflow:**
+
+```
+1. Create evaluation dataset (questions + expected answers)
+2. Select models to evaluate
+3. Choose evaluation type (automatic, human, or both)
+4. Define metrics and criteria
+5. Run evaluation job
+6. Compare results across models
+7. Select best-performing model for deployment
+```
+
+---
+
+## Objective 5.2: RAG Evaluation - The RAGAS Framework
+
+### RAG-Specific Evaluation Metrics
+
+RAG systems have unique failure modes that require specialized metrics. The RAGAS (Retrieval Augmented Generation Assessment) framework is the industry standard:
+
+| Metric | What It Measures | Formula/Approach |
+|--------|-----------------|-----------------|
+| **Faithfulness** | Is the answer supported by retrieved context? | % of answer claims found in context |
+| **Answer Relevance** | Does the answer address the question? | Semantic similarity between answer and question |
+| **Context Precision** | Are the retrieved chunks relevant to the question? | % of retrieved chunks that are actually useful |
+| **Context Recall** | Did retrieval find all necessary information? | % of ground truth covered by retrieved chunks |
+| **Answer Correctness** | Is the answer factually correct? | Comparison with ground truth answer |
+
+### Interpreting RAGAS Scores - Diagnostic Framework
+
+```
+LOW Faithfulness + HIGH Context Recall
+-> The right documents were retrieved, but the model is hallucinating beyond them.
+-> FIX: Strengthen grounding instructions; enable Guardrails grounding checks; lower temperature.
+
+HIGH Faithfulness + LOW Context Recall
+-> The model is faithful to what it received, but retrieval missed key documents.
+-> FIX: Improve chunking; increase top-K; add hybrid search; check embedding model quality.
+
+LOW Context Precision + HIGH Context Recall
+-> Retrieval finds relevant docs but also returns too much noise.
+-> FIX: Add re-ranking; reduce top-K; improve metadata filtering; refine embedding model.
+
+LOW Answer Relevance + HIGH Faithfulness
+-> The answer is grounded but doesn't address the actual question.
+-> FIX: Improve query understanding; add query transformation; check prompt template.
+
+ALL SCORES LOW
+-> Systemic issue - likely poor chunking, wrong embedding model, or broken pipeline.
+-> FIX: Audit entire pipeline from ingestion to generation.
+```
+
+### The Six RAG Failure Modes
+
+| # | Failure Mode | Symptom |
+|---|-------------|---------|
+| 1 | **Missing content** | ""I don't have information about that"" |
+| 2 | **Missed retrieval** | Wrong answer despite correct document existing |
+| 3 | **Not extracted** | Correct chunk retrieved but answer not generated from it |
+| 4 | **Not in context** | Correct info exists but wasn't in top-K results |
+| 5 | **Wrong format** | Correct info but presented incorrectly |
+| 6 | **Conflicting context** | Multiple retrieved chunks contradict each other |
+
+---
+
+## Objective 5.3: Testing Strategies for GenAI Applications
+
+### Testing Pyramid for GenAI
+
+```
+         +-------------+
+         |   E2E Tests |  <- Full pipeline (user query -> final response)
+        +---------------+
+        | Integration    |  <- Component interactions (retrieval + generation)
+       +-----------------+
+       |  Component Tests |  <- Individual components (chunking, embedding, retrieval)
+      +-------------------+
+      |   Unit Tests       |  <- Functions, parsers, validators, formatters
+     +---------------------+
+```
+
+### Unit Tests for GenAI Components
+
+| Component | What to Test | Example Assertion |
+|-----------|-------------|-------------------|
+| **Input parser** | Handles edge cases (empty, too long, special chars) | assert parse_input("""") raises ValidationError |
+| **Chunking logic** | Produces expected chunk sizes and overlap | assert all(len(c) <= max_size for c in chunks) |
+| **Metadata extraction** | Correctly extracts source, date, author | assert chunk.metadata[""source""] == ""policy_v2.pdf"" |
+| **Output formatter** | Structures response correctly | assert json.loads(response) (valid JSON) |
+| **Guardrail integration** | Blocked content returns safe fallback | assert ""I cannot help with that"" in response |
+| **Token counter** | Accurately counts tokens for cost tracking | assert count_tokens(text) == expected_count |
+
+### Integration Tests
+
+| Integration Point | What to Test | Example |
+|-------------------|-------------|---------|
+| **Retrieval pipeline** | Correct chunks returned for known queries | Query ""refund policy"" -> returns refund_policy.pdf chunks |
+| **Agent tool calls** | Agent invokes correct tool with valid parameters | ""Book a flight"" -> calls book_flight action group |
+| **Guardrails + model** | Guardrails correctly filter harmful inputs/outputs | Injection attempt -> blocked; clean input -> passes |
+| **Knowledge base sync** | New documents become searchable after ingestion | Upload doc -> wait -> query -> doc appears in results |
+
+### End-to-End (E2E) Tests
+
+- **Golden dataset testing** - Maintain a curated set of questions with expected answers; run periodically.
+- **Regression testing** - After any change (prompt update, model swap, config change), verify no degradation.
+- **A/B testing** - Compare new version against baseline with real traffic.
+- **Load testing** - Verify system handles expected concurrency without degradation.
+- **Adversarial testing** - Red-team the full pipeline with injection attempts and edge cases.
+
+### Evaluation Datasets - Best Practices
+
+- **Diverse coverage** - Include easy, medium, and hard questions across all topics.
+- **Edge cases** - Questions that require multi-hop reasoning, disambiguation, or ""I don't know"" responses.
+- **Negative examples** - Questions the system should refuse to answer.
+- **Versioned** - Track dataset versions alongside model/prompt versions.
+- **Representative** - Mirror real user query distribution (not just cherry-picked examples).
+- **Size** - Minimum 100-200 examples for statistical significance; 500+ for production evaluation.
+
+---
+
+## Objective 5.4: Troubleshooting GenAI Applications
+
+### Systematic Debugging Framework
+
+```
+1. IDENTIFY the symptom
+   - What exactly is wrong? (Wrong answer? No answer? Error? Slow? Toxic output?)
+
+2. ISOLATE the component
+   - Is it retrieval? Generation? Tool execution? Network? Permissions?
+   - Test each component independently.
+
+3. REPRODUCE consistently
+   - Can you trigger the issue with a specific input?
+   - Is it intermittent or consistent?
+
+4. DIAGNOSE root cause
+   - Check logs (CloudWatch, invocation logs, CloudTrail).
+   - Compare working vs. failing cases.
+
+5. FIX and VERIFY
+   - Apply fix to the isolated component.
+   - Re-run failing test cases.
+   - Run full regression suite.
+```
+
+### Common Failure Modes and Fixes
+
+**Problem: Model returns ""I don't know"" when the answer exists in the knowledge base**
+
+| Possible Cause | How to Diagnose | Fix |
+|---------------|----------------|-----|
+| Document not ingested | Check S3 bucket; verify sync status | Re-sync knowledge base |
+| Poor chunking split the answer | Inspect chunk boundaries around the answer | Use semantic/overlap chunking |
+| Embedding mismatch | Compare query embedding to document embeddings | Try different embedding model; rephrase query |
+| Top-K too low | Check if answer chunk is in top-20 but not top-5 | Increase top-K; add re-ranking |
+| Metadata filter too restrictive | Check if filter excludes the relevant document | Broaden filter or fix metadata |
+
+**Problem: Model hallucinating (generating false information)**
+
+| Possible Cause | How to Diagnose | Fix |
+|---------------|----------------|-----|
+| No grounding check | Check if Guardrails grounding is enabled | Enable grounding checks with threshold |
+| Temperature too high | Check inference parameters | Lower temperature (0.0-0.3 for factual tasks) |
+| Prompt doesn't enforce grounding | Review system prompt | Add ""Only answer based on provided context"" |
+| Retrieved context is insufficient | Check context recall score | Improve retrieval; increase top-K |
+| Conflicting sources | Inspect retrieved chunks for contradictions | Add recency weighting; deduplicate sources |
+
+**Problem: Agent stuck in infinite loop**
+
+| Possible Cause | How to Diagnose | Fix |
+|---------------|----------------|-----|
+| Ambiguous instructions | Review agent instructions | Clarify when to stop; add explicit completion criteria |
+| Tool returning unhelpful results | Check tool response logs | Fix tool implementation; add error handling |
+| No max iteration limit | Check agent configuration | Set maximum iterations (e.g., 5 turns) |
+| Circular reasoning | Inspect agent trace | Improve instructions; add ""do not repeat previous actions"" |
+
+**Problem: High latency (>10 seconds)**
+
+| Possible Cause | How to Diagnose | Fix |
+|---------------|----------------|-----|
+| Throttling | Check CloudWatch throttle metrics | Provisioned Throughput; cross-region inference |
+| Long prompt | Count input tokens | Enable prompt caching; shorten system prompt |
+| Large output | Check output token count | Set maxTokens; request concise responses |
+| Cold starts | Check Lambda cold start metrics | Provisioned concurrency; use ECS/Fargate |
+| Slow retrieval | Measure retrieval latency separately | Optimize vector store; reduce top-K |
+
+**Problem: Agent calling wrong tool**
+
+| Possible Cause | How to Diagnose | Fix |
+|---------------|----------------|-----|
+| Ambiguous tool descriptions | Review action group descriptions | Make descriptions more specific and distinct |
+| Overlapping tool functionality | Compare tool definitions | Consolidate or clearly differentiate tools |
+| Poor agent instructions | Review agent system prompt | Add explicit routing logic (""Use tool X for Y scenarios"") |
+| Missing tool | Agent has no appropriate tool available | Add the needed action group |
+
+### Debugging with AWS Services
+
+| Service | What It Reveals | How to Access |
+|---------|----------------|---------------|
+| **Bedrock Invocation Logs** | Full prompt/response content; token counts; latency | S3 bucket or CloudWatch Logs |
+| **Bedrock Agent Trace** | Step-by-step agent reasoning; tool calls; observations | Agent invocation response (trace enabled) |
+| **CloudWatch Logs** | Lambda execution logs; errors; custom log statements | CloudWatch console; Logs Insights queries |
+| **CloudWatch Metrics** | Invocation counts, latency percentiles, error rates | CloudWatch dashboards |
+| **AWS X-Ray** | End-to-end request tracing across services | X-Ray console; trace maps |
+| **CloudTrail** | API call audit trail (who did what, when) | CloudTrail event history |
+
+### Agent Trace - The Most Powerful Debugging Tool
+
+When you enable tracing on a Bedrock Agent invocation, you get the full reasoning chain:
+
+```json
+{
+  ""trace"": {
+    ""orchestrationTrace"": {
+      ""rationale"": ""The user wants to book a flight. I need to search for available flights first."",
+      ""invocationInput"": {
+        ""actionGroupName"": ""FlightSearch"",
+        ""function"": ""search_flights"",
+        ""parameters"": {""origin"": ""SEA"", ""destination"": ""JFK"", ""date"": ""2026-06-15""}
+      },
+      ""observation"": {
+        ""actionGroupOutput"": {""flights"": [{""id"": ""AA123"", ""price"": 450}, {""id"": ""UA456"", ""price"": 380}]}
+      },
+      ""rationale"": ""I found 2 flights. The cheapest is UA456 at $380. I'll present options to the user.""
+    }
+  }
+}
+```
+
+This trace shows you exactly:
+- What the agent thought (rationale)
+- What it did (tool call with parameters)
+- What it observed (tool response)
+- What it decided next
+
+---
+
+## Objective 5.5: Continuous Evaluation in Production
+
+### Building an Evaluation Pipeline
+
+```
+Production Traffic
+       |
+       v
++------------------+
+| Sample requests  | <- Random sample (e.g., 5% of traffic)
+| (async)          |
++--------+---------+
+         |
+         v
++------------------+
+| Automated Eval   | <- LLM-as-judge; RAGAS metrics; format checks
+| (Step Functions) |
++--------+---------+
+         |
+         v
++------------------+
+| Score Aggregation| <- CloudWatch custom metrics
+| and Alerting     |
++--------+---------+
+         |
+    +----+----+
+    v         v
+[Dashboard]  [Alarm -> SNS -> PagerDuty]
+             (if quality drops below threshold)
+```
+
+### Key Production Monitoring Signals
+
+| Signal | What It Indicates | Alert Threshold |
+|--------|------------------|----------------|
+| **Faithfulness score drop** | Model hallucinating more | <0.8 average over 1 hour |
+| **User thumbs-down rate spike** | Quality degradation perceived by users | >15% negative feedback |
+| **""I don't know"" rate increase** | Retrieval failing more often | >20% of queries |
+| **Guardrail intervention spike** | Potential attack or prompt issue | >5% of requests blocked |
+| **Latency p99 increase** | Performance degradation | >15 seconds |
+| **Token consumption spike** | Prompt/response bloat | >2x baseline average |
+
+### Regression Detection
+
+After any change (prompt update, model swap, knowledge base refresh):
+
+- **Run golden dataset** - Compare scores before/after.
+- **A/B test** - Route small traffic to new version; compare metrics.
+- **Shadow mode** - Run new version in parallel without serving to users; compare outputs.
+- **Rollback criteria** - Define automatic rollback triggers (e.g., faithfulness <0.7 for 15 minutes).
+
+---
+
+## Key Exam Patterns for AIP-C01 Domain 5
+
+- **""RAG system returns wrong answers despite having correct documents""** - Check faithfulness score; likely hallucination -> enable Guardrails grounding checks; lower temperature
+- **""Retrieval returns irrelevant chunks""** - Low context precision -> add re-ranking; improve chunking; try hybrid search
+- **""System misses information that exists in the knowledge base""** - Low context recall -> increase top-K; check chunking (info split across chunks); verify document ingestion
+- **""How to evaluate model quality at scale?""** - LLM-as-judge (automated, scalable) + periodic human evaluation (calibration)
+- **""Compare two models for a use case""** - Bedrock Model Evaluation (automatic + human evaluation jobs)
+- **""Agent is making incorrect tool calls""** - Enable agent trace; inspect rationale; fix tool descriptions or agent instructions
+- **""How to detect quality degradation in production?""** - Continuous evaluation pipeline (sample traffic -> automated scoring -> CloudWatch alarms)
+- **""RAG answer is correct but doesn't address the question""** - Low answer relevance -> improve query transformation; check prompt template
+- **""Need to test before deploying a prompt change""** - Golden dataset regression test + A/B testing via Bedrock Prompt Management
+- **""Debug why a specific query fails""** - Check invocation logs (full prompt/response) + agent trace (reasoning chain)
+- **""Evaluate summarization quality""** - ROUGE (automated) + human evaluation (completeness, accuracy)
+- **""System works in testing but fails in production""** - Input distribution shift; test with production-representative queries; monitor with continuous evaluation
+- **""How to measure if RAG is hallucinating?""** - Faithfulness metric (RAGAS) - compares answer claims to retrieved context
+
+---
+
+## Quick Exam Tips for Domain 5
+
+- **RAGAS metrics are heavily tested.** Know all five (faithfulness, answer relevance, context precision, context recall, answer correctness) and what each diagnoses.
+- The **diagnostic framework** is key: Low faithfulness = generation problem. Low context recall = retrieval problem. Low context precision = noise problem. Learn to map symptoms to root causes.
+- **Agent trace** is the primary debugging tool for agent issues. If a question mentions ""agent doing the wrong thing,"" the first step is always ""enable tracing and inspect the reasoning chain.""
+- **LLM-as-judge** is the scalable evaluation method. Human evaluation is the gold standard but doesn't scale. The exam tests when to use each.
+- **Bedrock Model Evaluation** is the managed service for comparing models. Know that it supports both automatic (metrics-based) and human evaluation.
+- **Invocation logging** is your forensic tool. If something went wrong, the logs contain the full prompt and response. Remember: it must be explicitly enabled.
+- **Continuous evaluation** is the Professional-level expectation. You don't just test before deployment - you monitor quality continuously in production.
+- Over **70% of RAG failures trace back to retrieval or chunking** - not the LLM itself. When a RAG question appears, investigate retrieval first.
+- **Regression testing is required after ANY change:** prompt updates, model swaps, knowledge base refreshes, guardrail modifications. The exam will present scenarios where a change caused degradation.
+- Don't confuse **faithfulness** (is the answer supported by context?) with **correctness** (is the answer actually right?). A response can be faithful to wrong context, or correct despite not being grounded.
+
+---
+
+## Domain 5 Troubleshooting Quick Reference
+
+```
+SYMPTOM -> FIRST CHECK -> LIKELY FIX
+
+Wrong answer (hallucination)
+    -> Faithfulness score    -> Grounding checks + lower temp
+
+""I don't know"" (false negative)
+    -> Context recall        -> Better chunking + increase top-K
+
+Irrelevant chunks retrieved
+    -> Context precision     -> Re-ranking + hybrid search
+
+Answer misses the point
+    -> Answer relevance      -> Query transformation + prompt fix
+
+Agent wrong tool call
+    -> Agent trace           -> Fix tool descriptions
+
+Agent infinite loop
+    -> Agent trace           -> Max iterations + clearer instructions
+
+Slow responses
+    -> Latency metrics       -> Caching + streaming + right-size model
+
+Intermittent failures
+    -> CloudWatch errors     -> Retry logic + error handling
+
+Quality degraded after change
+    -> Golden dataset scores -> Rollback + investigate diff
+```
+
+---
+
+## Summary
+
+This covers all objectives in AIP-C01 Domain 5:
+
+- **Assessment frameworks** - evaluation dimensions, automated metrics, LLM-as-judge, human evaluation
+- **RAG evaluation** - RAGAS metrics, diagnostic interpretation, six failure modes
+- **Testing strategies** - testing pyramid, unit/integration/E2E tests, evaluation datasets
+- **Troubleshooting** - systematic debugging, common failures, agent trace, AWS debugging tools
+- **Continuous evaluation** - production monitoring, regression detection, alerting"

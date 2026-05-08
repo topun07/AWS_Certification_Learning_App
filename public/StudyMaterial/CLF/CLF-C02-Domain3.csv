@@ -1,0 +1,308 @@
+certCode,domain,title,content
+"CLF-C02","Domain 3: Cloud Technology & Services","Cloud Technology and Services","## CLF-C02 Domain 3: Cloud Technology and Services
+
+**Weight:** ~34% of scored exam content (largest domain)
+**Exam Level:** Foundational
+
+This domain is the ""AWS services catalog"" - you must recognize dozens of services, understand their primary purpose, and match them to use cases.
+
+---
+
+## Compute Services
+
+| Service | What It Is | Use Case |
+|---------|-----------|----------|
+| **Amazon EC2** | Virtual servers in the cloud | Full control over OS; traditional applications |
+| **AWS Lambda** | Serverless compute (run code without servers) | Event-driven; short tasks (<15 min) |
+| **AWS Fargate** | Serverless containers | Run containers without managing servers |
+| **Amazon ECS** | Container orchestration (Docker) | Run and manage Docker containers |
+| **Amazon EKS** | Managed Kubernetes | Run Kubernetes workloads |
+| **AWS Elastic Beanstalk** | PaaS - deploy apps without managing infrastructure | Upload code and go |
+| **Amazon Lightsail** | Simple virtual servers | Small websites; dev/test; beginners |
+
+### EC2 Instance Families
+
+- **General Purpose (M, T)** - Balanced; web servers, small databases
+- **Compute Optimized (C)** - High-performance processors; batch processing, gaming
+- **Memory Optimized (R, X)** - Large in-memory datasets; real-time analytics
+- **Storage Optimized (I, D, H)** - High sequential read/write; data warehousing
+- **Accelerated Computing (P, G, Inf)** - GPUs; ML training, graphics
+
+### EC2 Pricing
+
+| Model | Savings | Best For |
+|-------|---------|----------|
+| **On-Demand** | 0% | Unpredictable workloads; testing |
+| **Savings Plans** | Up to 72% | Steady-state; flexible instance types |
+| **Reserved Instances** | Up to 72% | Predictable, steady workloads |
+| **Spot Instances** | Up to 90% | Fault-tolerant; batch processing |
+| **Dedicated Hosts** | Varies | Licensing compliance |
+
+### Serverless vs. Server-Based
+
+| Aspect | EC2 | Lambda/Fargate |
+|--------|-----|---------------|
+| **You manage** | OS, patching, scaling | Just your code |
+| **Scaling** | Manual/Auto Scaling | Automatic |
+| **Billing** | Per hour (even idle) | Per request (zero idle) |
+| **Best for** | Long-running; full control | Event-driven; variable traffic |
+
+---
+
+## Storage Services
+
+| Service | Type | Use Case |
+|---------|------|----------|
+| **Amazon S3** | Object storage | Files, backups, static websites, data lakes |
+| **Amazon EBS** | Block storage | EC2 instance hard drives |
+| **Amazon EFS** | File storage (Linux) | Shared file system across instances |
+| **Amazon FSx** | Managed file systems | Windows or high-performance (Lustre) |
+| **AWS Storage Gateway** | Hybrid storage | Connect on-premises to cloud storage |
+| **AWS Snow Family** | Physical data transfer | Move petabytes when network is too slow |
+
+### S3 Storage Classes
+
+| Class | Access Pattern | Cost |
+|-------|--------------|------|
+| **S3 Standard** | Frequent access | Highest |
+| **S3 Intelligent-Tiering** | Unknown/changing | Auto-optimizes |
+| **S3 Standard-IA** | Infrequent access | Lower |
+| **S3 One Zone-IA** | Infrequent; single AZ | Even lower |
+| **S3 Glacier Instant Retrieval** | Archive; millisecond access | Low |
+| **S3 Glacier Flexible Retrieval** | Archive; minutes-hours | Very low |
+| **S3 Glacier Deep Archive** | Archive; 12-48 hours | Lowest |
+
+### Snow Family
+
+- **Snowcone** (8-14 TB) - Edge computing; small transfers
+- **Snowball Edge** (80 TB) - Large data migration; edge computing
+- **Snowmobile** (100 PB) - Massive data center migrations
+
+---
+
+## Database Services
+
+| Service | Type | Use Case |
+|---------|------|----------|
+| **Amazon RDS** | Relational (managed) | SQL apps (MySQL, PostgreSQL, Oracle) |
+| **Amazon Aurora** | Relational (cloud-native) | High-performance MySQL/PostgreSQL |
+| **Amazon DynamoDB** | NoSQL (key-value) | High-scale, low-latency; serverless |
+| **Amazon ElastiCache** | In-memory cache | Caching; session storage |
+| **Amazon Redshift** | Data warehouse | Analytics; BI; large datasets |
+| **Amazon Neptune** | Graph database | Social networks; fraud detection |
+| **Amazon QLDB** | Ledger database | Immutable audit trail |
+
+### RDS vs. DynamoDB
+
+| Feature | RDS | DynamoDB |
+|---------|-----|----------|
+| **Type** | Relational (SQL) | NoSQL (key-value) |
+| **Schema** | Fixed | Flexible |
+| **Scaling** | Vertical + read replicas | Horizontal (unlimited) |
+| **Queries** | Complex SQL joins | Simple key-based lookups |
+| **Latency** | Milliseconds | Single-digit milliseconds |
+| **Best for** | Complex queries; transactions | High-scale; simple access patterns |
+
+---
+
+## Networking Services
+
+| Service | What It Does | Key Fact |
+|---------|-------------|---------|
+| **Amazon VPC** | Your private network in AWS | You control IPs, subnets, routing |
+| **Internet Gateway** | Connects VPC to internet | Enables public subnet internet access |
+| **NAT Gateway** | Private instances reach internet (outbound only) | Instances can download but aren't reachable |
+| **Security Groups** | Instance-level firewall (stateful) | Allow rules only; return traffic auto-allowed |
+| **Network ACLs** | Subnet-level firewall (stateless) | Allow + Deny; must allow return traffic |
+| **Route 53** | DNS service | Routing policies: simple, weighted, latency, failover, geolocation |
+| **CloudFront** | CDN | Caches content at edge locations globally |
+| **Direct Connect** | Dedicated private connection to AWS | Bypasses internet; consistent performance |
+| **Site-to-Site VPN** | Encrypted connection over internet | Quick setup; encrypted; uses existing internet |
+| **Elastic Load Balancing** | Distribute traffic across instances | ALB (Layer 7), NLB (Layer 4) |
+| **Transit Gateway** | Connect multiple VPCs centrally | Hub-and-spoke; replaces complex peering |
+
+### VPN vs. Direct Connect
+
+| Feature | VPN | Direct Connect |
+|---------|-----|---------------|
+| **Connection** | Over internet (encrypted) | Dedicated private line |
+| **Setup time** | Minutes | Weeks to months |
+| **Cost** | Low | Higher |
+| **Performance** | Variable | Consistent |
+| **Best for** | Quick setup; backup | Production hybrid; large data |
+
+---
+
+## Application Integration Services
+
+| Service | What It Does | Key Fact |
+|---------|-------------|---------|
+| **Amazon SQS** | Message queue (decouple components) | Pull-based; messages stored until processed |
+| **Amazon SNS** | Pub/sub notifications (fan-out) | Push to many subscribers (email, SMS, Lambda) |
+| **Amazon EventBridge** | Event bus | Routes events between AWS services and SaaS |
+| **AWS Step Functions** | Orchestrate workflows | Coordinate multiple services in sequence |
+| **Amazon API Gateway** | Create and manage APIs | RESTful and WebSocket APIs |
+| **Amazon Kinesis** | Real-time streaming data | Process IoT, clickstreams, logs |
+
+### SQS vs. SNS
+
+| Feature | SQS (Queue) | SNS (Notification) |
+|---------|-------------|-------------------|
+| **Pattern** | Point-to-point (one consumer) | Pub/sub (many subscribers) |
+| **Delivery** | Pull (consumer polls) | Push (SNS pushes) |
+| **Persistence** | Messages stored until processed | No persistence |
+| **Use case** | Decouple services; buffer | Fan-out notifications; alerts |
+
+---
+
+## Management and Governance Services
+
+| Service | What It Does |
+|---------|-------------|
+| **AWS CloudFormation** | Infrastructure as Code (IaC) - define resources in templates |
+| **AWS CloudWatch** | Monitoring - metrics, logs, alarms, dashboards |
+| **AWS CloudTrail** | API activity logging - who did what, when |
+| **AWS Config** | Configuration tracking and compliance |
+| **AWS Trusted Advisor** | Best practice recommendations (cost, performance, security) |
+| **AWS Organizations** | Multi-account management; consolidated billing; SCPs |
+| **AWS Control Tower** | Multi-account governance; automated landing zone |
+| **AWS Systems Manager** | Operational management; patch management; session manager |
+
+### CloudWatch vs. CloudTrail vs. Config
+
+| Service | Question It Answers |
+|---------|-------------------|
+| **CloudWatch** | ""How is it performing?"" (CPU at 90%; errors increasing) |
+| **CloudTrail** | ""Who did what?"" (Alice deleted the bucket at 3:15 PM) |
+| **Config** | ""What changed?"" (SG had port 22 opened at 3:14 PM) |
+
+### Trusted Advisor - Five Categories
+
+- **Cost Optimization** - Unused resources; idle instances
+- **Performance** - Over-utilized resources; bottlenecks
+- **Security** - Open security groups; MFA not enabled
+- **Fault Tolerance** - Single points of failure; no backups
+- **Service Limits** - Approaching AWS quotas
+
+---
+
+## AI/ML Services
+
+| Service | What It Does | Use Case |
+|---------|-------------|----------|
+| **Amazon SageMaker** | Build, train, deploy ML models | Custom ML |
+| **Amazon Rekognition** | Image and video analysis | Facial recognition; content moderation |
+| **Amazon Comprehend** | NLP | Sentiment analysis; entity extraction |
+| **Amazon Transcribe** | Speech to text | Transcribe audio; subtitles |
+| **Amazon Polly** | Text to speech | Read text aloud; accessibility |
+| **Amazon Translate** | Language translation | Real-time translation |
+| **Amazon Lex** | Conversational AI (chatbots) | Build chatbots; voice assistants |
+| **Amazon Kendra** | Intelligent search | Enterprise search powered by ML |
+| **Amazon Textract** | Extract text from documents | OCR; forms; tables; PDFs |
+| **Amazon Bedrock** | Generative AI | Access foundation models via API |
+
+---
+
+## Analytics Services
+
+| Service | What It Does | Use Case |
+|---------|-------------|----------|
+| **Amazon Athena** | Query S3 data with SQL (serverless) | Ad-hoc queries on data lake |
+| **Amazon Redshift** | Data warehouse | BI analytics; complex queries |
+| **Amazon Kinesis** | Real-time data streaming | IoT; clickstreams; dashboards |
+| **Amazon QuickSight** | BI dashboards | Visualizations; reports |
+| **AWS Glue** | ETL (Extract, Transform, Load) | Prepare and transform data |
+| **Amazon EMR** | Big data (Hadoop/Spark) | Large-scale data processing |
+| **Amazon OpenSearch** | Search and log analytics | Log analysis; full-text search |
+
+---
+
+## Developer Tools
+
+| Service | What It Does |
+|---------|-------------|
+| **AWS CodeCommit** | Git repository (source control) |
+| **AWS CodeBuild** | Build and test code |
+| **AWS CodeDeploy** | Automate deployments |
+| **AWS CodePipeline** | CI/CD pipeline orchestration |
+| **AWS X-Ray** | Distributed tracing (debug microservices) |
+| **AWS CDK** | Define infrastructure in programming languages |
+
+---
+
+## Migration Services
+
+| Service | What It Does | Use Case |
+|---------|-------------|----------|
+| **AWS MGN** | Lift-and-shift server migration | Rehost servers to EC2 |
+| **AWS DMS** | Migrate databases | Move databases to AWS |
+| **AWS DataSync** | Fast data transfer (online) | Move datasets to S3/EFS |
+| **AWS Snow Family** | Physical data transfer (offline) | Petabyte-scale migration |
+| **AWS Migration Hub** | Central tracking | Dashboard for migration progress |
+
+---
+
+## Key Exam Patterns for Domain 3
+
+**Compute:**
+- ""Run code without servers"" -> Lambda
+- ""Full control over OS"" -> EC2
+- ""Run containers without managing infrastructure"" -> Fargate
+- ""Deploy web app without managing infrastructure"" -> Elastic Beanstalk
+- ""Fault-tolerant, lowest cost"" -> Spot Instances
+
+**Storage:**
+- ""Store unlimited files"" -> S3
+- ""Hard drive for EC2"" -> EBS
+- ""Shared file system"" -> EFS
+- ""Archive data rarely accessed"" -> S3 Glacier Deep Archive
+- ""Move petabytes physically"" -> Snow Family
+
+**Database:**
+- ""Relational, AWS manages it"" -> RDS
+- ""NoSQL, any scale"" -> DynamoDB
+- ""Caching layer"" -> ElastiCache
+- ""Data warehouse"" -> Redshift
+
+**Networking:**
+- ""Private network in AWS"" -> VPC
+- ""Global DNS"" -> Route 53
+- ""CDN"" -> CloudFront
+- ""Dedicated private connection"" -> Direct Connect
+- ""Encrypted over internet"" -> VPN
+
+**Integration:**
+- ""Decouple with queue"" -> SQS
+- ""Notify multiple subscribers"" -> SNS
+- ""Orchestrate workflows"" -> Step Functions
+- ""Real-time streaming"" -> Kinesis
+
+**AI/ML:**
+- ""Analyze images"" -> Rekognition
+- ""Understand text"" -> Comprehend
+- ""Speech to text"" -> Transcribe
+- ""Build chatbot"" -> Lex
+- ""Generative AI"" -> Bedrock
+
+**Management:**
+- ""Infrastructure as Code"" -> CloudFormation
+- ""Monitor metrics"" -> CloudWatch
+- ""Audit API calls"" -> CloudTrail
+- ""Best practice recommendations"" -> Trusted Advisor
+
+---
+
+## Quick Exam Tips for Domain 3
+
+- This is **34% of the exam** - the broadest domain. Know ~60+ services by name and purpose.
+- **S3** is the most versatile service - appears in storage, backup, data lake, static website, and analytics scenarios.
+- **Lambda vs. EC2** is the most common compute comparison. Lambda = event-driven, serverless. EC2 = long-running, full control.
+- **RDS vs. DynamoDB** is the most common database comparison. RDS = SQL, complex queries. DynamoDB = NoSQL, unlimited scale.
+- **SQS vs. SNS** - SQS = queue (one consumer pulls). SNS = notification (push to many).
+- **CloudWatch vs. CloudTrail** - CloudWatch = performance. CloudTrail = security audit.
+- **Serverless services:** Lambda, Fargate, DynamoDB, S3, Aurora Serverless, Athena, API Gateway, SQS, SNS, Step Functions.
+- **""Managed""** means AWS handles patching, backups, scaling. You focus on using it.
+- **Snow Family** = physical transfer. ""Petabytes"" + ""network too slow"" -> Snow Family.
+- **Direct Connect vs. VPN:** Direct Connect = dedicated, consistent, weeks. VPN = encrypted, internet, minutes.
+- **CloudFront** = CDN (caching). **Global Accelerator** = performance (AWS backbone, static IPs).
+- **Elastic Beanstalk** is PaaS - upload code, AWS handles everything else."

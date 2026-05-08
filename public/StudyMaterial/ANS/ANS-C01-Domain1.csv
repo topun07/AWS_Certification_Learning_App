@@ -1,0 +1,544 @@
+certCode,domain,title,content
+"ANS-C01","Domain 1: Network Design","Network Design","## ANS-C01 Domain 1: Network Design
+
+**Weight:** ~30% of scored exam content (largest domain)
+**Exam Level:** Specialty
+**Target Audience:** Network engineers and architects preparing for the AWS Certified Advanced Networking - Specialty exam
+
+This domain is about designing networks from scratch - VPC architecture, IP addressing, hybrid connectivity, multi-region topologies, and edge networking. You're expected to make architectural decisions that balance performance, cost, security, and operational complexity at enterprise scale.
+
+---
+
+## Objective 1.1: VPC Architecture and Design
+
+### VPC Fundamentals - Specialty Depth
+
+At the Specialty level, you must design VPCs for enterprise-scale environments, not just understand the components:
+
+| Component | Purpose | Key Design Decisions |
+|-----------|---------|---------------------|
+| **VPC** | Isolated virtual network | CIDR size; single vs. multi-VPC; tenancy |
+| **Subnet** | Segment within an AZ | Public/private/isolated; CIDR allocation; AZ placement |
+| **Route Table** | Controls traffic routing | Per-subnet associations; propagation; priority |
+| **Internet Gateway (IGW)** | Public internet access | One per VPC; enables public IPs |
+| **NAT Gateway** | Outbound internet for private subnets | Per-AZ for HA; bandwidth considerations |
+| **Elastic Network Interface (ENI)** | Virtual NIC attached to instances | Multiple ENIs; source/dest check; security groups |
+
+### CIDR Planning - The Foundation of Network Design
+
+CIDR planning is the single most critical decision in AWS networking. Mistakes here are expensive to fix.
+
+**Key Principles:**
+
+- **Plan for growth** - Allocate larger CIDRs than currently needed (you can't easily shrink).
+- **Avoid overlaps** - Overlapping CIDRs prevent VPC peering, Transit Gateway routing, and VPN connectivity.
+- **Align with on-premises** - Reserve non-overlapping ranges for AWS that don't conflict with corporate networks.
+- **Use RFC 1918 ranges** - 10.0.0.0/8, 172.16.0.0/12, 192.168.0.0/16.
+- **VPC CIDR limits** - Primary CIDR (/16 to /28); up to 5 secondary CIDRs per VPC.
+
+**Enterprise CIDR Allocation Strategy:**
+
+```
+Corporate Network: 10.0.0.0/8 (entire Class A)
++-- On-premises:     10.0.0.0/12   (10.0.0.0 - 10.15.255.255)
++-- AWS Production:  10.16.0.0/12  (10.16.0.0 - 10.31.255.255)
++-- AWS Non-Prod:    10.32.0.0/12  (10.32.0.0 - 10.47.255.255)
++-- AWS Shared Svcs: 10.48.0.0/12  (10.48.0.0 - 10.63.255.255)
++-- Future/Reserved: 10.64.0.0/10  (remaining space)
+```
+
+**Subnet Sizing Best Practices:**
+
+- AWS reserves 5 IPs per subnet (first 4 + last 1).
+- /24 = 251 usable IPs (good for most workloads).
+- /20 = 4,091 usable IPs (large workloads, EKS clusters).
+- /28 = 11 usable IPs (minimum; use for isolated firewall subnets).
+- Always create subnets in at least 2 AZs (3 preferred for production).
+
+### Multi-Tier VPC Design Pattern
+
+```
++-------------------------------------------------------------+
+|                         VPC (10.16.0.0/16)                   |
+|                                                              |
+|  +----------------------------------------------------------+
+|  | PUBLIC SUBNETS (10.16.0.0/20 per AZ)                     |
+|  | - ALB/NLB                                                 |
+|  | - NAT Gateways                                            |
+|  | - Bastion hosts (if needed)                               |
+|  | Route: 0.0.0.0/0 -> IGW                                   |
+|  +----------------------------------------------------------+
+|                                                              |
+|  +----------------------------------------------------------+
+|  | PRIVATE SUBNETS (10.16.16.0/20 per AZ)                   |
+|  | - Application servers (EC2, ECS, EKS)                     |
+|  | - Lambda (VPC-attached)                                   |
+|  | Route: 0.0.0.0/0 -> NAT Gateway                           |
+|  +----------------------------------------------------------+
+|                                                              |
+|  +----------------------------------------------------------+
+|  | ISOLATED/DATA SUBNETS (10.16.32.0/20 per AZ)             |
+|  | - RDS, ElastiCache, OpenSearch                            |
+|  | - No route to internet (no NAT)                           |
+|  | Route: Local only + VPC endpoints                         |
+|  +----------------------------------------------------------+
+|                                                              |
+|  +----------------------------------------------------------+
+|  | FIREWALL SUBNETS (10.16.48.0/28 per AZ)                  |
+|  | - AWS Network Firewall endpoints                          |
+|  | - Gateway Load Balancer endpoints                         |
+|  +----------------------------------------------------------+
++-------------------------------------------------------------+
+```
+
+### IPv6 in VPC Design
+
+- VPCs support dual-stack (IPv4 + IPv6) or IPv6-only.
+- AWS assigns a /56 IPv6 CIDR to the VPC (from Amazon's pool or BYOIP).
+- Subnets get /64 IPv6 CIDRs.
+- **Egress-only Internet Gateway** - allows outbound IPv6 traffic but blocks inbound (equivalent to NAT for IPv6).
+- IPv6 addresses are globally unique - no NAT needed.
+- Security groups and NACLs apply to both IPv4 and IPv6 independently.
+
+---
+
+## Objective 1.2: Multi-Account Network Architecture
+
+### AWS Organizations Network Patterns
+
+At enterprise scale, networking spans hundreds of accounts. The standard pattern:
+
+```
++------------------------------------------------------------------+
+|                    AWS ORGANIZATION                                |
+|                                                                    |
+|  +--------------+  +--------------+  +------------------------+   |
+|  | Network/     |  | Shared       |  | Workload Accounts      |   |
+|  | Connectivity |  | Services     |  | (Prod, Dev, Stage)     |   |
+|  | Account      |  | Account      |  |                        |   |
+|  |              |  |              |  |  +----+ +----+ +----+  |   |
+|  | - TGW        |  | - DNS (R53)  |  |  |App1| |App2| |App3|  |   |
+|  | - DX Gateway |  | - Directory  |  |  |VPC | |VPC | |VPC |  |   |
+|  | - VPN        |  | - Logging    |  |  +----+ +----+ +----+  |   |
+|  | - Firewalls  |  | - Endpoints  |  |                        |   |
+|  +--------------+  +--------------+  +------------------------+   |
+|         |                  |                    |                  |
+|         +------------------+--------------------+                  |
+|                            |                                       |
+|                   Transit Gateway                                  |
++------------------------------------------------------------------+
+```
+
+### AWS Transit Gateway - The Hub
+
+Transit Gateway (TGW) is the central routing hub for multi-account, multi-VPC architectures:
+
+**Key Concepts:**
+
+| Concept | Description | Exam Relevance |
+|---------|-------------|---------------|
+| **Attachment** | Connection to TGW (VPC, VPN, DX, peering, Connect) | Know all attachment types |
+| **Route Table** | Controls routing between attachments | Multiple route tables for segmentation |
+| **Association** | Links an attachment to a route table | Each attachment associated with exactly one RT |
+| **Propagation** | Automatically adds routes from an attachment to a route table | VPN/DX propagate learned routes |
+| **Prefix list reference** | Reference a managed prefix list in TGW route tables | Simplifies route management |
+| **Multicast** | TGW supports multicast routing | Unique to TGW (VPC peering doesn't) |
+| **Inter-region peering** | Connect TGWs across regions | Static routes only (no propagation) |
+
+**TGW Route Table Segmentation:**
+
+```
++----------------------------------------------------------+
+|                    TRANSIT GATEWAY                         |
+|                                                           |
+|  +--------------------+    +---------------------+       |
+|  | Production RT      |    | Non-Production RT   |       |
+|  |                    |    |                     |       |
+|  | Routes:            |    | Routes:             |       |
+|  | - Prod VPCs        |    | - Dev/Stage VPCs    |       |
+|  | - Shared Svcs      |    | - Shared Svcs       |       |
+|  | - On-premises      |    | - On-premises       |       |
+|  | - X No Dev/Stage   |    | - X No Prod         |       |
+|  +--------------------+    +---------------------+       |
+|                                                           |
+|  +--------------------+                                  |
+|  | Shared Services RT |                                  |
+|  |                    |                                  |
+|  | Routes:            |                                  |
+|  | - ALL VPCs         |                                  |
+|  | - On-premises      |                                  |
+|  +--------------------+                                  |
++----------------------------------------------------------+
+```
+
+This ensures Production VPCs cannot communicate with Dev/Stage VPCs, but both can reach Shared Services.
+
+### VPC Peering vs. Transit Gateway
+
+| Feature | VPC Peering | Transit Gateway |
+|---------|-------------|----------------|
+| **Topology** | Point-to-point (1:1) | Hub-and-spoke (1:many) |
+| **Transitive routing** | Not supported | Supported |
+| **Cross-region** | Supported | Supported (peering) |
+| **Cross-account** | Supported | Supported (RAM sharing) |
+| **Bandwidth** | No limit (uses AWS backbone) | Up to 50 Gbps per attachment |
+| **Cost** | Data transfer only | Hourly + data transfer |
+| **Route table segmentation** | N/A | Multiple route tables |
+| **Multicast** | Not supported | Supported |
+| **Best for** | Few VPCs; high bandwidth needs | Many VPCs; complex routing; segmentation |
+
+**Exam rule of thumb:** If the scenario has >3 VPCs or requires segmentation -> Transit Gateway. If it's 2-3 VPCs with simple connectivity -> VPC Peering.
+
+### AWS Resource Access Manager (RAM)
+
+Share network resources across accounts without duplication:
+
+- **Transit Gateway** - Share TGW with member accounts.
+- **Subnets** - Share subnets across accounts (resources in different accounts, same subnet).
+- **Prefix lists** - Share managed prefix lists for consistent security group/route table rules.
+- **Route 53 Resolver rules** - Share DNS forwarding rules.
+
+---
+
+## Objective 1.3: Hybrid Connectivity Design
+
+### AWS Direct Connect (DX)
+
+Direct Connect provides dedicated, private network connections from on-premises to AWS:
+
+**Connection Types:**
+
+| Type | Bandwidth | Port |
+|------|-----------|------|
+| **Dedicated** | 1 Gbps, 10 Gbps, 100 Gbps | Physical port at DX location |
+| **Hosted** | 50 Mbps - 10 Gbps | Sub-port from DX Partner |
+
+**Virtual Interfaces (VIFs):**
+
+| VIF Type | Purpose | Connects To |
+|----------|---------|-------------|
+| **Private VIF** | Access VPC resources via private IPs | VPC (via VGW) or DX Gateway |
+| **Public VIF** | Access AWS public services (S3, DynamoDB) | AWS public IP ranges |
+| **Transit VIF** | Access multiple VPCs via Transit Gateway | Transit Gateway (via DX Gateway) |
+
+**DX Gateway:**
+
+- Regional construct that connects DX connections to VGWs or TGWs in any region.
+- One DX connection -> DX Gateway -> multiple VGWs/TGWs across regions.
+- Does NOT provide VPC-to-VPC routing (only on-premises to VPC).
+
+**High Availability for Direct Connect:**
+
+```
+MAXIMUM RESILIENCY (recommended for production):
+
++----------+     +-------------+     +-------------+     +----------+
+| On-prem  |---->| DX Location |---->|             |     |          |
+| Router 1 |     | A           |     |  DX Gateway |---->|  AWS     |
++----------+     +-------------+     |             |     |  (TGW)   |
+                                      |             |     |          |
++----------+     +-------------+     |             |     |          |
+| On-prem  |---->| DX Location |---->|             |---->|          |
+| Router 2 |     | B           |     +-------------+     +----------+
++----------+     +-------------+
+
+- Two connections at TWO DIFFERENT DX locations
+- Separate devices at each location
+- Survives: device failure, connection failure, entire location failure
+```
+
+**DX + VPN Backup:**
+
+- DX as primary (low latency, consistent bandwidth).
+- Site-to-Site VPN as backup (over internet; higher latency but fast to provision).
+- BGP handles failover (DX routes preferred via AS path or MED).
+
+### Site-to-Site VPN
+
+| Feature | Description |
+|---------|-------------|
+| **Tunnels** | 2 tunnels per VPN connection (active/passive or active/active) |
+| **Encryption** | IPsec (IKEv1 or IKEv2) |
+| **Bandwidth** | Up to 1.25 Gbps per tunnel |
+| **Routing** | Static or dynamic (BGP) |
+| **Endpoints** | Virtual Private Gateway (VGW) or Transit Gateway |
+| **Accelerated VPN** | Uses Global Accelerator for improved performance |
+| **Cost** | Hourly + data transfer |
+
+**VPN Design Decisions:**
+
+| Scenario | Solution |
+|----------|----------|
+| Single VPC connectivity | VPN -> VGW |
+| Multi-VPC connectivity | VPN -> TGW |
+| Need >1.25 Gbps over VPN | Multiple VPN connections with ECMP (TGW only) |
+| Improve VPN performance over internet | Accelerated Site-to-Site VPN |
+| Backup for Direct Connect | VPN as secondary path (BGP failover) |
+
+### BGP Routing - Critical for ANS
+
+BGP (Border Gateway Protocol) is the routing protocol for hybrid connectivity:
+
+**Key BGP Concepts for the Exam:**
+
+| Concept | Description | Exam Application |
+|---------|-------------|-----------------|
+| **ASN (Autonomous System Number)** | Identifies your network in BGP | AWS default: 64512; you choose your own |
+| **AS Path** | List of ASNs a route has traversed | Shorter path = preferred; use AS path prepending to influence |
+| **MED (Multi-Exit Discriminator)** | Suggests preferred entry point to your AS | Lower MED = preferred |
+| **Local Preference** | Internal preference for outbound path | Higher = preferred (set on your routers) |
+| **Communities** | Tags on routes for policy decisions | AWS uses communities for scope control |
+| **Prefix advertisement** | Routes you announce to AWS | Advertise on-premises CIDRs to AWS |
+| **Route propagation** | AWS propagates learned routes to route tables | Enable on VGW/TGW route tables |
+
+**BGP Path Selection (simplified for AWS):**
+
+1. Longest prefix match (most specific route wins)
+2. Local Preference (highest wins - your side)
+3. AS Path length (shortest wins)
+4. MED (lowest wins - neighbor's suggestion)
+
+**AS Path Prepending Example:**
+
+```
+Primary DX:   On-prem -> [65000] -> AWS        (AS path length = 1, preferred)
+Backup VPN:   On-prem -> [65000 65000 65000] -> AWS  (AS path length = 3, less preferred)
+```
+
+---
+
+## Objective 1.4: Multi-Region Network Design
+
+### Multi-Region Connectivity Patterns
+
+**Pattern 1: Transit Gateway Inter-Region Peering**
+
+```
+Region A (us-east-1)              Region B (eu-west-1)
++------------------+              +------------------+
+|      TGW-A       |<------------>|      TGW-B       |
+|  +----+ +----+   |   Peering   |  +----+ +----+   |
+|  |VPC1| |VPC2|   |             |  |VPC3| |VPC4|   |
+|  +----+ +----+   |             |  +----+ +----+   |
++------------------+              +------------------+
+```
+
+- Static routes only (no BGP propagation across peering).
+- Data transfer charges apply (inter-region).
+- Each region maintains its own TGW route tables.
+
+**Pattern 2: Cloud WAN**
+
+- Managed global network connecting VPCs and on-premises across regions.
+- Policy-based segmentation (similar to TGW route tables but global).
+- Centralized network management.
+- Supports both AWS and on-premises attachments.
+
+### DNS Architecture - Amazon Route 53
+
+**Route 53 Routing Policies:**
+
+| Policy | How It Works | Use Case |
+|--------|-------------|----------|
+| **Simple** | Single record; returns all values | Basic DNS resolution |
+| **Weighted** | Distribute traffic by percentage | A/B testing; gradual migration |
+| **Latency-based** | Route to lowest-latency region | Multi-region active-active |
+| **Failover** | Primary/secondary with health checks | DR; active-passive |
+| **Geolocation** | Route based on user's geographic location | Compliance; localized content |
+| **Geoproximity** | Route based on geographic distance (with bias) | Fine-tuned geographic routing |
+| **Multivalue answer** | Return multiple healthy IPs | Simple load balancing with health checks |
+| **IP-based** | Route based on client IP/CIDR | Enterprise routing by office location |
+
+**Route 53 Resolver - Hybrid DNS:**
+
+```
++------------------+         +----------------------------------+
+|  ON-PREMISES     |         |           AWS VPC                |
+|                  |         |                                   |
+|  DNS Server      |<------->|  Route 53 Resolver               |
+|  (corp.local)    |         |  +------------------------------+|
+|                  |  Rules  |  | Inbound Endpoint             ||
+|  Resolves:       |-------->|  | (on-prem -> AWS)             ||
+|  - corp.local    |         |  |                              ||
+|  - aws.internal  |<--------|  | Outbound Endpoint            ||
+|                  |  Forward|  | (AWS -> on-prem)             ||
+|                  |         |  +------------------------------+|
++------------------+         +----------------------------------+
+
+Inbound Endpoint: On-premises resolves AWS private hosted zones
+Outbound Endpoint: AWS resolves on-premises DNS names
+Forwarding Rules: Define which domains forward where
+```
+
+**Route 53 Private Hosted Zones:**
+
+- DNS resolution within VPCs (not publicly accessible).
+- Associate with multiple VPCs (same or cross-account).
+- Split-horizon DNS: same domain resolves differently internally vs. externally.
+
+---
+
+## Objective 1.5: Edge Networking and Content Delivery
+
+### AWS Global Accelerator vs. Amazon CloudFront
+
+| Feature | Global Accelerator | CloudFront |
+|---------|-------------------|------------|
+| **Purpose** | Improve TCP/UDP application performance | Cache and deliver content (HTTP/HTTPS) |
+| **Protocol** | TCP, UDP | HTTP, HTTPS, WebSocket |
+| **Caching** | No caching | Edge caching |
+| **Static IPs** | 2 anycast static IPs | Uses DNS-based routing |
+| **Health checks** | Endpoint health checks + failover | Origin failover |
+| **Use case** | Non-HTTP (gaming, IoT, VoIP); instant failover | Web content, APIs, streaming |
+| **Routing** | Anycast to nearest AWS edge -> AWS backbone | DNS to nearest edge -> cache or origin |
+| **DDoS protection** | AWS Shield Standard (Advanced available) | AWS Shield Standard (Advanced available) |
+
+### AWS PrivateLink - Service Exposure Without Public Internet
+
+PrivateLink enables private connectivity between VPCs, services, and on-premises:
+
+**Interface VPC Endpoints (powered by PrivateLink):**
+
+- Create ENIs in your VPC subnets.
+- Traffic stays on AWS network (never traverses internet).
+- Access AWS services (S3, DynamoDB, Bedrock, etc.) privately.
+- Access third-party SaaS services privately.
+- Expose your own services to other VPCs/accounts via NLB + Endpoint Service.
+
+**Gateway VPC Endpoints:**
+
+- Only for S3 and DynamoDB.
+- Route table entry (not ENI-based).
+- No additional charge.
+- Cannot be accessed from on-premises (use Interface Endpoint instead).
+
+**PrivateLink Service Architecture (exposing your service):**
+
+```
+Consumer VPC                              Provider VPC
++--------------+                         +------------------+
+|              |                         |                  |
+|  Application |--> Interface    -->     |  NLB --> Service |
+|              |    Endpoint             |                  |
+|              |    (ENI)                |                  |
++--------------+                         +------------------+
+                    PrivateLink
+                    (AWS backbone)
+```
+
+### AWS Network Firewall
+
+Managed stateful firewall for VPC traffic inspection:
+
+| Feature | Description |
+|---------|-------------|
+| **Deployment** | Firewall endpoints in dedicated subnets |
+| **Rules** | Stateless (5-tuple) + Stateful (Suricata-compatible) |
+| **Inspection** | North-south (internet) and east-west (VPC-to-VPC via TGW) |
+| **TLS inspection** | Decrypt and inspect HTTPS traffic |
+| **Domain filtering** | Allow/deny based on domain names |
+| **IPS/IDS** | Intrusion prevention/detection with Suricata rules |
+| **Logging** | Flow logs, alert logs to S3/CloudWatch/Kinesis |
+
+**Centralized Inspection Architecture:**
+
+```
+Internet
+    |
+    v
++---------------------------------------------+
+|         Inspection VPC                       |
+|  +--------------------------------------+   |
+|  |     AWS Network Firewall             |   |
+|  +--------------------------------------+   |
+|              |                               |
+|         Transit Gateway Attachment           |
++----------------------------------------------+
+               |
+        Transit Gateway
+        +------+------+
+        |      |      |
+    +---v--+ +v----+ +v----+
+    |Prod  | |Dev  | |Stage|
+    |VPC   | |VPC  | |VPC  |
+    +------+ +-----+ +-----+
+```
+
+All internet-bound traffic from workload VPCs routes through the inspection VPC for centralized firewall enforcement.
+
+---
+
+## Objective 1.6: IP Address Management (IPAM)
+
+### Amazon VPC IPAM
+
+Centralized IP address planning and tracking:
+
+- **Pools** - Hierarchical IP address pools (regional, organizational).
+- **Scopes** - Public and private scopes for different address types.
+- **Allocations** - Track which CIDRs are assigned to which VPCs.
+- **Compliance** - Detect VPCs using CIDRs outside managed pools.
+- **Integration** - Auto-assign CIDRs from pools when creating VPCs.
+
+**IPAM Hierarchy:**
+
+```
+Organization Pool (10.0.0.0/8)
++-- Regional Pool: us-east-1 (10.0.0.0/12)
+|   +-- Production (10.0.0.0/14)
+|   +-- Non-Production (10.4.0.0/14)
+|   +-- Shared Services (10.8.0.0/14)
++-- Regional Pool: eu-west-1 (10.16.0.0/12)
+|   +-- Production (10.16.0.0/14)
+|   +-- Non-Production (10.20.0.0/14)
++-- Reserved (10.32.0.0/11)
+```
+
+---
+
+## Key Exam Patterns for ANS-C01 Domain 1
+
+- **""Connect 50+ VPCs across multiple accounts""** - Transit Gateway (shared via RAM) with route table segmentation
+- **""Isolate production from development at the network level""** - TGW route table segmentation (separate route tables; no cross-propagation)
+- **""Need dedicated, consistent bandwidth to AWS""** - Direct Connect (dedicated connection)
+- **""DX connection must survive a facility failure""** - Two connections at different DX locations (maximum resiliency)
+- **""Backup connectivity if DX fails""** - Site-to-Site VPN as backup with BGP failover (AS path prepending on VPN)
+- **""Connect to multiple VPCs across regions via DX""** - DX Gateway + Transit VIF + TGW in each region
+- **""On-premises needs to resolve AWS private DNS""** - Route 53 Resolver inbound endpoint
+- **""AWS needs to resolve on-premises DNS""** - Route 53 Resolver outbound endpoint + forwarding rules
+- **""Expose a service to other VPCs without public internet""** - PrivateLink (NLB + Endpoint Service)
+- **""Inspect all internet-bound traffic centrally""** - AWS Network Firewall in inspection VPC + TGW routing
+- **""Non-HTTP application needs low-latency global access""** - AWS Global Accelerator (anycast + AWS backbone)
+- **""Overlapping CIDRs between VPCs""** - Cannot peer directly; use PrivateLink or NLB with non-overlapping endpoint IPs
+- **""Need more than 1.25 Gbps over VPN""** - Multiple VPN connections with ECMP on Transit Gateway
+- **""Route traffic to lowest-latency region""** - Route 53 latency-based routing
+- **""Centrally manage IP addresses across the organization""** - Amazon VPC IPAM
+- **""VPC-to-VPC traffic must not traverse the internet""** - TGW or VPC Peering (both use AWS backbone)
+
+---
+
+## Quick Exam Tips for Domain 1
+
+- **Transit Gateway** is the default answer for multi-VPC connectivity at scale. VPC Peering is only better for simple 2-3 VPC scenarios or when you need maximum bandwidth (no 50 Gbps cap).
+- Know **DX resiliency levels:** Single connection (no resiliency) -> LAG at one location (device resiliency) -> Two connections at one location (connection resiliency) -> Two connections at two locations (maximum resiliency).
+- **Transit VIF vs. Private VIF:** Transit VIF connects DX to TGW (access many VPCs). Private VIF connects DX to a single VGW (access one VPC). The exam loves this distinction.
+- **BGP is heavily tested.** Know AS path prepending (make a path less preferred), MED (suggest entry point), and Local Preference (internal routing decision).
+- **Route 53 Resolver** questions always involve hybrid DNS. Inbound = on-prem resolving AWS names. Outbound = AWS resolving on-prem names. Don't mix them up.
+- **PrivateLink vs. VPC Peering:** PrivateLink exposes a specific service (unidirectional). VPC Peering provides full network connectivity (bidirectional). PrivateLink works with overlapping CIDRs; peering doesn't.
+- **Gateway endpoints** (S3, DynamoDB) are free and use route tables. **Interface endpoints** cost money and create ENIs. The exam tests when to use each.
+- **Network Firewall** goes in its own subnet. Traffic must be routed through the firewall subnet via route table manipulation. Know the centralized inspection pattern with TGW.
+- **CIDR planning** questions test whether you understand that overlapping ranges prevent connectivity. Always check for overlaps when the scenario mentions ""existing on-premises network.""
+- **Cross-region TGW peering** uses static routes only - no BGP propagation. This is a common exam trap.
+
+---
+
+## Summary
+
+This covers all objectives in ANS-C01 Domain 1:
+
+- **VPC architecture** - CIDR planning, subnet tiers, IPv6, multi-tier design
+- **Multi-account networking** - Transit Gateway, route table segmentation, RAM sharing
+- **Hybrid connectivity** - Direct Connect, VPN, DX Gateway, BGP routing
+- **Multi-region design** - TGW peering, Cloud WAN, Route 53 routing policies
+- **Edge networking** - Global Accelerator, CloudFront, PrivateLink, Network Firewall
+- **IP address management** - VPC IPAM, hierarchical pools, compliance"

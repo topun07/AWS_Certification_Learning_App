@@ -1,0 +1,504 @@
+certCode,domain,title,content
+"DEA-C01","Domain 2: Data Store Management","Data Store Management","## DEA-C01 Domain 2: Data Store Management
+
+**Weight:** ~26% of scored exam content
+**Exam Level:** Associate
+
+This domain tests your ability to select appropriate storage services, design data models, manage data lifecycle, and implement data cataloging and governance.
+
+---
+
+## Amazon S3 as a Data Lake Foundation
+
+### Data Lake Architecture (Medallion Pattern)
+
+```
++----------+      +--------------+      +---------------+
+|  RAW     |      |  CURATED     |      |  PUBLISHED    |
+| (Bronze) |----->|  (Silver)    |----->|  (Gold)       |
+|          |      |              |      |               |
+| - As-is  |      | - Cleaned    |      | - Aggregated  |
+| - JSON/  |      | - Validated  |      | - Business    |
+|   CSV    |      | - Parquet    |      |   metrics     |
+| - All    |      | - Deduped    |      | - Ready for   |
+|   sources|      | - Conformed  |      |   consumption |
++----------+      +--------------+      +---------------+
+
+s3://lake/raw/    s3://lake/curated/    s3://lake/published/
+```
+
+| Zone | Format | Access |
+|------|--------|--------|
+| **Raw (Bronze)** | Original format (JSON, CSV, XML) | Data engineers only |
+| **Curated (Silver)** | Parquet/ORC; partitioned; validated | Engineers + analysts |
+| **Published (Gold)** | Parquet; aggregated; business-ready | Analysts, BI tools, apps |
+
+### S3 Storage Classes
+
+| Class | Access Pattern | Retrieval |
+|-------|--------------|-----------|
+| **Standard** | Frequent | Immediate |
+| **Intelligent-Tiering** | Unknown/changing | Immediate |
+| **Standard-IA** | Infrequent (30+ days) | Immediate |
+| **One Zone-IA** | Infrequent; reproducible | Immediate |
+| **Glacier Instant Retrieval** | Archive; millisecond access | Immediate |
+| **Glacier Flexible Retrieval** | Archive; minutes-hours | 1-5 min to 5-12 hrs |
+| **Glacier Deep Archive** | Long-term archive | 12-48 hours |
+
+### S3 Lifecycle Policies
+
+```json
+{
+  ""Rules"": [{
+    ""ID"": ""DataLakeLifecycle"",
+    ""Transitions"": [
+      {""Days"": 30, ""StorageClass"": ""STANDARD_IA""},
+      {""Days"": 90, ""StorageClass"": ""GLACIER_IR""},
+      {""Days"": 365, ""StorageClass"": ""DEEP_ARCHIVE""}
+    ],
+    ""Expiration"": {""Days"": 2555},
+    ""Filter"": {""Prefix"": ""raw/""}
+  }]
+}
+```
+
+**Minimum storage duration charges:** Standard-IA = 30 days; Glacier = 90 days; Deep Archive = 180 days.
+
+### S3 Performance Optimization
+
+| Technique | What It Does | When to Use |
+|-----------|-------------|-------------|
+| **Prefix distribution** | 3,500 PUT/5,500 GET per prefix/second | High-throughput workloads |
+| **Multipart upload** | Upload large files in parallel parts | Files > 100 MB (required > 5 GB) |
+| **S3 Transfer Acceleration** | Uses CloudFront edge for faster uploads | Global uploads |
+| **Byte-range fetches** | Download specific byte ranges | Columnar formats; partial reads |
+| **S3 Select** | Push filtering to S3 (SQL on objects) | Reduce data transferred |
+
+---
+
+## Amazon Redshift (Data Warehouse)
+
+### Redshift Architecture
+
+```
++-----------------------------------------------------+
+|                  REDSHIFT CLUSTER                     |
+|                                                      |
+|  +----------+                                       |
+|  |  Leader  |  <- Receives queries; plans execution  |
+|  |  Node    |  <- Aggregates results                 |
+|  +----+-----+                                       |
+|       |                                              |
+|  +----+-----+----------+----------+                |
+|  | Compute  | Compute  | Compute  |                 |
+|  | Node 1   | Node 2   | Node N   |                |
+|  | (slices) | (slices) | (slices) |                |
+|  +----------+----------+----------+                |
+|                                                      |
+|  Managed Storage (RMS) - auto-scales; S3-backed     |
++-----------------------------------------------------+
+```
+
+### Distribution Styles
+
+| Style | How It Works | Best For |
+|-------|-------------|----------|
+| **KEY** | Rows with same key value -> same node | Large fact tables joined on that key |
+| **EVEN** | Round-robin across all nodes | Tables not joined; no clear key |
+| **ALL** | Full copy on every node | Small dimension tables (< 3M rows) |
+| **AUTO** | Redshift chooses | Default; let Redshift optimize |
+
+**Distribution Key Selection:**
+
+```
+FACT TABLE (orders):          DIMENSION TABLE (customers):
+  Distribution: KEY(customer_id)    Distribution: ALL
+  Node 1: customer_id 1-1000       Node 1: ALL customers (copy)
+  Node 2: customer_id 1001-2000    Node 2: ALL customers (copy)
+
+  JOIN happens locally on each node (no network shuffle)
+```
+
+### Sort Keys
+
+| Type | How It Works | Best For |
+|------|-------------|----------|
+| **Compound** | Sorted by first key, then second | Queries always filter on leading columns |
+| **Interleaved** | Equal weight to all sort key columns | Queries filter on any combination |
+| **Auto** | Redshift manages sort order | Default; let Redshift optimize |
+
+### Redshift Data Loading
+
+| Method | Use Case | Performance |
+|--------|----------|-------------|
+| **COPY command** | Bulk load from S3, DynamoDB, EMR | Fastest (parallel; compressed) |
+| **INSERT** | Single rows or small batches | Slowest (avoid for bulk) |
+| **Streaming Ingestion** | Real-time from Kinesis/MSK | Near real-time |
+| **Federated Query** | Query RDS/Aurora in place | No data movement |
+| **Zero-ETL** | Auto-replicate from Aurora/DynamoDB | No pipeline to build |
+
+**COPY Best Practices:**
+
+```sql
+COPY orders FROM 's3://bucket/orders/'
+IAM_ROLE 'arn:aws:iam::123456789012:role/RedshiftRole'
+FORMAT AS PARQUET;
+
+-- Split files to match slice count
+-- Use compressed columnar formats
+-- File size: 1 MB - 1 GB each
+-- Use manifest file for explicit file list
+```
+
+### Redshift Spectrum
+
+| Feature | Description |
+|---------|-------------|
+| **What it does** | Query data in S3 directly using external tables |
+| **Schema** | Defined in Glue Data Catalog |
+| **Formats** | Parquet, ORC, JSON, CSV, Avro |
+| **Partitioning** | Supports Hive-style (partition pruning) |
+| **Cost** | Per TB scanned |
+| **Use case** | Query cold/historical data without loading |
+
+| Use Spectrum When... | Load into Redshift When... |
+|---------------------|--------------------------|
+| Data infrequently queried | Data queried frequently |
+| Data is very large (PBs) | Data fits in cluster storage |
+| Want to avoid duplication | Need fastest performance |
+| Ad-hoc/exploratory queries | Production dashboards |
+
+---
+
+## Amazon DynamoDB (NoSQL)
+
+### DynamoDB Core Concepts
+
+| Concept | Description |
+|---------|-------------|
+| **Table** | Collection of items (no fixed schema beyond keys) |
+| **Item** | Single record (max 400 KB) |
+| **Partition Key (PK)** | Primary key; determines partition placement |
+| **Sort Key (SK)** | Optional; enables range queries within partition |
+| **GSI** | Alternative partition key + sort key; eventually consistent |
+| **LSI** | Same partition key, different sort key; strongly consistent |
+
+### Capacity Modes
+
+| Mode | How It Works | Best For |
+|------|-------------|----------|
+| **On-Demand** | Auto-scales; pay per request | Unpredictable traffic |
+| **Provisioned** | You set RCU/WCU; auto-scaling available | Predictable traffic; cost optimization |
+
+**Capacity Units:**
+- 1 RCU = 1 strongly consistent read/sec (up to 4 KB) OR 2 eventually consistent reads/sec
+- 1 WCU = 1 write/sec (up to 1 KB)
+- Transactional = 2x capacity
+
+### DynamoDB for Data Pipelines
+
+| Feature | Data Engineering Use |
+|---------|-------------------|
+| **DynamoDB Streams** | CDC -> trigger Lambda -> write to S3/Kinesis |
+| **Export to S3** | Full table export (no RCU consumed) |
+| **PITR** | Restore table to any second in last 35 days |
+| **Global Tables** | Multi-region replication (active-active) |
+| **TTL** | Auto-delete expired items (no WCU cost) |
+| **Zero-ETL to Redshift** | Auto-replicate for analytics |
+
+### DynamoDB Export to S3
+
+```
+DynamoDB Table --Export--> S3 (DynamoDB JSON or Ion format)
+                              |
+                              v
+                         Glue Crawler -> Catalog -> Athena/Spectrum
+```
+
+- No RCU consumed (reads from continuous backups).
+- Full export or incremental (point-in-time).
+- Use case: Analytics without impacting production.
+
+---
+
+## RDS and Aurora
+
+### Aurora for Data Engineering
+
+| Feature | Data Engineering Use |
+|---------|-------------------|
+| **Aurora Serverless v2** | Variable analytics workloads |
+| **Aurora Global Database** | Cross-region replication (<1s lag) |
+| **Zero-ETL to Redshift** | Real-time analytics without pipelines |
+| **Export to S3** | Parallel export in Parquet |
+| **RDS Proxy** | Lambda connection management |
+
+### Zero-ETL Integrations
+
+```
+Aurora --Zero-ETL--> Redshift (near real-time; no pipeline)
+DynamoDB --Zero-ETL--> Redshift
+```
+
+Benefits: No Glue/DMS pipeline, near real-time, reduced operational overhead, automatic schema mapping.
+
+---
+
+## AWS Lake Formation
+
+### Core Capabilities
+
+| Capability | What It Does |
+|-----------|-------------|
+| **Centralized Permissions** | Single place to manage access |
+| **Fine-Grained Access** | Column-level, row-level, cell-level security |
+| **Data Sharing** | Share across accounts without copying |
+| **Governed Tables** | ACID transactions on S3 (via Iceberg) |
+| **Tag-Based Access Control (TBAC)** | Grant access by tags on columns/tables |
+
+### Lake Formation vs. IAM/S3 Policies
+
+| Feature | IAM/S3 Policies | Lake Formation |
+|---------|----------------|---------------|
+| **Granularity** | Bucket/prefix level | Database/table/column/row/cell |
+| **Management** | Distributed (per bucket) | Centralized (single console) |
+| **Column security** | Not possible | Yes |
+| **Row security** | Not possible | Yes (row-level filters) |
+| **Cross-account** | Complex | Simple (grant to account) |
+| **Best for** | Simple access control | Enterprise data governance |
+
+### Tag-Based Access Control (TBAC)
+
+```
+Tags:
+  - Classification: ""PII"", ""Public"", ""Confidential""
+  - Domain: ""Finance"", ""Marketing"", ""HR""
+
+Grants:
+  - Analysts -> Classification=""Public"" AND Domain=""Marketing""
+  - Data Scientists -> Classification IN (""Public"", ""Confidential"")
+  - HR Team -> Domain=""HR"" (all classifications)
+```
+
+Benefits: Scale permissions without individual grants; new tables auto-inherit via tags.
+
+---
+
+## Data Cataloging and Metadata
+
+### Glue Data Catalog Integration
+
+| Service | How It Uses the Catalog |
+|---------|----------------------|
+| **Athena** | Queries tables defined in catalog |
+| **Redshift Spectrum** | External tables reference catalog |
+| **EMR** | Uses catalog as Hive metastore |
+| **Glue ETL** | Reads/writes using catalog definitions |
+| **Lake Formation** | Manages permissions on catalog resources |
+
+### Partition Management
+
+| Method | When to Use |
+|--------|-------------|
+| **Crawler** | Automatic discovery; scheduled |
+| **MSCK REPAIR TABLE** | Batch add all undiscovered partitions |
+| **ALTER TABLE ADD PARTITION** | Add specific known partition |
+| **Partition projection (Athena)** | Predictable patterns; no crawler needed |
+
+### Athena Partition Projection
+
+```sql
+CREATE EXTERNAL TABLE orders (...)
+PARTITIONED BY (year STRING, month STRING, day STRING)
+TBLPROPERTIES (
+  'projection.enabled' = 'true',
+  'projection.year.type' = 'integer',
+  'projection.year.range' = '2020,2030',
+  'projection.month.type' = 'integer',
+  'projection.month.range' = '1,12',
+  'projection.month.digits' = '2',
+  'projection.day.type' = 'integer',
+  'projection.day.range' = '1,31',
+  'projection.day.digits' = '2',
+  'storage.location.template' = 's3://bucket/orders/year=${year}/month=${month}/day=${day}/'
+);
+```
+
+Benefits: No crawler needed; faster query planning; works for predictable patterns.
+
+---
+
+## Amazon Athena
+
+### Athena Cost Optimization
+
+| Technique | How It Reduces Cost | Impact |
+|-----------|-------------------|--------|
+| **Columnar formats (Parquet/ORC)** | Only reads needed columns | 30-90% reduction |
+| **Partition data** | Only scans relevant partitions | 10-99% reduction |
+| **Compress data** | Less data to scan | 20-50% reduction |
+| **Partition projection** | Eliminates GetPartitions calls | Faster planning |
+| **CTAS for repeated queries** | Materialize results | Significant savings |
+| **Workgroup data scan limits** | Cap maximum scan | Prevent runaway costs |
+
+### Athena CTAS
+
+```sql
+CREATE TABLE curated.orders
+WITH (
+  format = 'PARQUET',
+  partitioned_by = ARRAY['year', 'month'],
+  external_location = 's3://bucket/curated/orders/'
+) AS
+SELECT order_id, customer_id, amount,
+  year(order_date) as year, month(order_date) as month
+FROM raw.orders
+WHERE status != 'CANCELLED';
+```
+
+Use cases: Format conversion, repartitioning, aggregation, SQL-based ETL.
+
+---
+
+## Data Modeling Concepts
+
+### Star Schema
+
+```
++-------------+                    
+| dim_customer|                    
+| - customer_id                    
+| - name      |                    
++------+------+                    
+       |
++------+------+    +----------+    +----------+
+| dim_product |    | fact_sales|    | dim_date |
+| - product_id|----|  - sale_id|----|  - date_id|
+| - name      |    |  - amount |    |  - year  |
+| - category  |    |  - qty    |    |  - month |
++-------------+    +-----------+    +----------+
+```
+
+### Schema Types
+
+| Schema | Structure | Best For |
+|--------|-----------|----------|
+| **Star Schema** | Fact + dimension tables (one level) | BI/analytics; Redshift |
+| **Snowflake Schema** | Normalized dimensions (multi-level) | Storage efficiency |
+| **Data Vault** | Hub + Link + Satellite | Auditability; history |
+| **Flat/Denormalized** | Single wide table | Simple queries; data lake |
+
+### Slowly Changing Dimensions (SCD)
+
+| Type | How It Handles Changes | Example |
+|------|----------------------|---------|
+| **SCD Type 1** | Overwrite old value | Address updated; old lost |
+| **SCD Type 2** | Add new row with date range | Keep history; is_current flag |
+| **SCD Type 3** | Add column for previous value | current_address, previous_address |
+
+---
+
+## Data Lifecycle Management
+
+### Lifecycle by Data Store
+
+| Data Store | Strategy | Implementation |
+|-----------|----------|---------------|
+| **S3** | Storage class transitions; expiration | S3 Lifecycle Policies |
+| **Redshift** | Unload old data to S3; query via Spectrum | UNLOAD + Spectrum |
+| **DynamoDB** | TTL for auto-expiration; export to S3 | TTL attribute |
+| **RDS/Aurora** | Backups; snapshots; export to S3 | Backup retention |
+| **Kinesis** | Retention period (24hr-365 days) | Stream settings |
+
+### Data Temperature
+
+```
+HOT (0-30 days): S3 Standard / Redshift local / DynamoDB
+WARM (30-90 days): S3 Standard-IA / Redshift Spectrum
+COLD (90-365 days): S3 Glacier Instant Retrieval
+ARCHIVE (1-10+ years): S3 Glacier Deep Archive
+EXPIRED: Delete (S3 expiration; DynamoDB TTL)
+```
+
+---
+
+## Data Sharing
+
+| Method | Use Case | How It Works |
+|--------|----------|-------------|
+| **Lake Formation cross-account** | Share catalog tables | Grant permissions; no data copy |
+| **Redshift Data Sharing** | Share across clusters/accounts | Consumer reads producer's data live |
+| **S3 Access Points** | Simplified shared S3 access | Named endpoints with permissions |
+| **AWS Data Exchange** | Share/sell data externally | Marketplace for data |
+
+### Redshift Data Sharing
+
+```sql
+-- PRODUCER:
+CREATE DATASHARE sales_share;
+ALTER DATASHARE sales_share ADD TABLE public.orders;
+GRANT USAGE ON DATASHARE sales_share TO ACCOUNT '123456789012';
+
+-- CONSUMER:
+CREATE DATABASE sales_from_a FROM DATASHARE sales_share;
+SELECT * FROM sales_from_a.public.orders;  -- Live data, no copy!
+```
+
+---
+
+## Key Exam Patterns for DEA-C01 Domain 2
+
+- **""Store raw data in original format""** -> S3 (Raw/Bronze zone)
+- **""Optimize Athena query costs""** -> Parquet + partitioning + compression
+- **""Query S3 from Redshift without loading""** -> Redshift Spectrum
+- **""Fastest analytics on structured data""** -> Redshift (local tables)
+- **""Column-level security on data lake""** -> Lake Formation
+- **""Share data without copying""** -> Lake Formation cross-account or Redshift Data Sharing
+- **""Auto-delete expired items""** -> DynamoDB TTL or S3 Lifecycle expiration
+- **""Move data to cheaper storage""** -> S3 Lifecycle Policies
+- **""Replicate to Redshift without pipeline""** -> Zero-ETL integration
+- **""Avoid partition management overhead""** -> Athena Partition Projection
+- **""Optimize Redshift joins""** -> Distribution key on join column; ALL for small dims
+- **""Reduce Redshift storage for old data""** -> UNLOAD to S3 + Spectrum
+- **""Export DynamoDB without impacting production""** -> DynamoDB Export to S3 (no RCU)
+- **""Row-level security""** -> Lake Formation row-level filters
+- **""Tag-based access at scale""** -> Lake Formation TBAC (LF-Tags)
+- **""ACID on S3 data lake""** -> Apache Iceberg
+- **""Handle burst queries on Redshift""** -> Concurrency Scaling
+- **""Separate ETL and BI workloads""** -> Redshift WLM
+
+---
+
+## Quick Exam Tips for Domain 2
+
+- **S3** is the foundation of every data lake. Know storage classes, lifecycle, partitioning, performance.
+- **Redshift distribution and sort keys** are heavily tested. Distribution key = join column. Sort key = filter column. ALL = small dimensions.
+- **Lake Formation** = any ""fine-grained access control"" question. Column, row, cell, tag-based.
+- **Zero-ETL** = modern answer for ""replicate to Redshift."" No Glue, no DMS needed.
+- **Partition Projection** eliminates crawlers for predictable patterns.
+- **DynamoDB Export to S3** doesn't consume RCU - reads from backups.
+- **Redshift Spectrum** = query cold data in S3 without loading.
+- **COPY command** = fastest Redshift loading. Never INSERT for bulk.
+- **Athena cost = data scanned.** Columnar + partitions + compression = lower cost.
+- **Star schema** is standard for Redshift. Fact (KEY) + dimensions (ALL).
+- **S3 Lifecycle minimums:** IA=30 days, Glacier=90 days, Deep Archive=180 days.
+- **Redshift Serverless** = variable workloads without cluster management.
+- **Data Sharing** = live access, no copy. Different from UNLOAD (creates copy).
+- **Glue Data Catalog** = universal metastore for Athena, Spectrum, EMR, Glue, Lake Formation.
+
+---
+
+## Summary
+
+This covers all objectives in DEA-C01 Domain 2:
+
+- **S3 data lake** - Zones, storage classes, lifecycle, partitioning, performance
+- **Amazon Redshift** - Distribution, sort keys, loading, Spectrum, Serverless
+- **Amazon DynamoDB** - Keys, capacity, streams, export, TTL, Zero-ETL
+- **RDS/Aurora** - Read replicas, Serverless, Zero-ETL, export
+- **Lake Formation** - Permissions, TBAC, cross-account, governed tables
+- **Data Catalog** - Glue Catalog, crawlers, partition management, projection
+- **Amazon Athena** - Serverless SQL, cost optimization, CTAS, workgroups
+- **Data modeling** - Star/snowflake schema, SCD types, Redshift best practices
+- **Data lifecycle** - Hot/warm/cold/archive, retention, UNLOAD, TTL
+- **Data sharing** - Lake Formation, Redshift Data Sharing, cross-account"

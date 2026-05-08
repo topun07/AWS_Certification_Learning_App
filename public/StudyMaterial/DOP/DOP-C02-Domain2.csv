@@ -1,0 +1,427 @@
+certCode,domain,title,content
+"DOP-C02","Domain 2: Configuration & IaC","Configuration Management and IaC","## DOP-C02 Domain 2: Configuration Management and IaC
+
+**Weight:** ~17% of scored exam content
+**Exam Level:** Professional
+
+This domain covers defining cloud infrastructure with IaC, deploying automation for multi-account environments, and managing configuration compliance at scale.
+
+---
+
+## AWS CloudFormation
+
+### Template Anatomy
+
+- **Parameters** - Input values (type, constraints, defaults)
+- **Mappings** - Static key-value lookups (region -> AMI)
+- **Conditions** - Conditional resource creation (IsProd)
+- **Resources** - AWS resources to create (required section)
+- **Outputs** - Values to export or display
+
+### Key Intrinsic Functions
+
+| Function | What It Does |
+|----------|-------------|
+| **!Ref** | Returns parameter value or resource physical ID |
+| **!GetAtt** | Returns resource attribute |
+| **!Sub** | String substitution with variables |
+| **!Join** | Join strings with delimiter |
+| **!Select** | Select item from list by index |
+| **!If** | Conditional value based on condition |
+| **!FindInMap** | Lookup value in Mappings |
+| **!ImportValue** | Import cross-stack reference |
+
+### Resource Attributes
+
+| Attribute | What It Does | Use Case |
+|-----------|-------------|----------|
+| **DependsOn** | Explicit creation order | Wait for IGW before route |
+| **DeletionPolicy** | Action on resource removal (Retain, Snapshot, Delete) | Protect databases |
+| **UpdateReplacePolicy** | Action on replacement (Retain, Snapshot, Delete) | Protect during updates |
+| **UpdatePolicy** | How to handle ASG updates | Rolling update for instances |
+| **CreationPolicy** | Wait for signal before complete | Wait for cfn-signal from EC2 |
+| **Condition** | Only create if condition true | Create replica only in prod |
+
+### DeletionPolicy Options
+
+| Policy | Effect |
+|--------|--------|
+| **Delete** (default) | Resource deleted when removed from template |
+| **Retain** | Resource kept (orphaned) when removed |
+| **Snapshot** | Snapshot taken before deletion (RDS, EBS, Redshift) |
+
+---
+
+## Stack Management
+
+### Stack Types
+
+| Type | Description | Use Case |
+|------|-------------|----------|
+| **Standard Stack** | Single template; independent | Simple applications |
+| **Nested Stacks** | Parent references child stacks | Reusable components; overcome 500-resource limit |
+| **Cross-Stack References** | Export/Import values between stacks | Shared infrastructure (VPC) |
+| **StackSets** | Deploy across accounts/regions | Organization-wide governance |
+
+### Nested vs. Cross-Stack References
+
+| Feature | Nested Stacks | Cross-Stack References |
+|---------|--------------|----------------------|
+| **Lifecycle** | Managed together (parent controls) | Independent |
+| **Coupling** | Tightly coupled | Loosely coupled |
+| **Deletion** | Delete parent -> deletes all children | Must remove imports first |
+| **Best for** | Component reuse; large apps | Shared infrastructure |
+
+### StackSets
+
+- Deploy stacks across multiple accounts and regions from single template
+- **Deployment targets:** Accounts (by ID or OU) and regions
+- **Permission model:** Self-managed (IAM roles) or Service-managed (Organizations)
+- **Auto-deployment:** Automatically deploy to new accounts added to OU
+- **MaxConcurrent:** How many accounts deploy simultaneously
+- **FailureTolerance:** How many can fail before stopping
+
+### Change Sets
+
+```
+1. Create change set (proposed changes)
+2. Review (what will be added/modified/removed)
+3. Execute (apply) OR Delete (discard)
+
+Change types: Add, Modify, Remove
+Replacement: True (new physical ID), False (in-place), Conditional
+```
+
+### Stack Policies
+
+- Protect resources from unintentional updates
+- Once applied, cannot be removed (only modified)
+- Can be temporarily overridden during specific update
+- Default with policy: all updates denied unless explicitly allowed
+
+---
+
+## CloudFormation Advanced Features
+
+### Custom Resources
+
+- Invoke Lambda for anything CloudFormation can't do natively
+- Use cases: lookup existing resources, provision unsupported resources, run initialization
+- **CRITICAL:** Lambda must ALWAYS send response (SUCCESS/FAILED). If not, stack hangs 1 hour.
+
+### Helper Scripts (EC2)
+
+| Script | Purpose |
+|--------|---------|
+| **cfn-init** | Configure instance (packages, files, services) |
+| **cfn-signal** | Signal CloudFormation instance is ready |
+| **cfn-hup** | Detect metadata changes; re-run cfn-init |
+
+### CreationPolicy + cfn-signal Pattern
+
+```yaml
+CreationPolicy:
+  ResourceSignal:
+    Count: 1
+    Timeout: PT15M  # Wait 15 minutes for signal
+
+UserData:
+  # ... run cfn-init ...
+  # cfn-signal -e $? --stack ... --resource ...
+```
+
+### UpdatePolicy (ASG)
+
+| Strategy | How It Works |
+|----------|-------------|
+| **AutoScalingRollingUpdate** | Replace instances in batches (MinInstancesInService, MaxBatchSize) |
+| **AutoScalingReplacingUpdate** | Create new ASG; delete old (immutable) |
+| **WaitOnResourceSignals** | Wait for cfn-signal from new instances |
+
+### Drift Detection
+
+- Compares actual resource state vs. template definition
+- Status: IN_SYNC, MODIFIED, DELETED
+- Automate: EventBridge scheduled -> Lambda -> DetectStackDrift API
+
+### Transforms
+
+| Transform | What It Does |
+|-----------|-------------|
+| **AWS::Include** | Include snippets from S3 |
+| **AWS::Serverless (SAM)** | Expand SAM shorthand |
+| **AWS::LanguageExtensions** | ForEach, length, advanced functions |
+| **Custom Macros** | Your own transformations (Lambda-backed) |
+
+---
+
+## AWS Systems Manager
+
+### Core Capabilities
+
+| Feature | What It Does | Use Case |
+|---------|-------------|----------|
+| **Run Command** | Execute commands on fleet (no SSH) | Ad-hoc tasks at scale |
+| **State Manager** | Enforce desired state (scheduled) | Maintain consistent config |
+| **Patch Manager** | Automated patching | Baselines + patch groups + maintenance windows |
+| **Automation** | Multi-step runbooks | Remediation; AMI creation; DR |
+| **Parameter Store** | Configuration data storage | DB endpoints, feature flags, AMI IDs |
+| **Session Manager** | Secure shell without SSH/port 22 | No bastion needed |
+| **Inventory** | Collect instance metadata | Software inventory across fleet |
+| **Compliance** | View patch/state compliance | Dashboard for compliance status |
+
+### Run Command vs. State Manager
+
+| Feature | Run Command | State Manager |
+|---------|-------------|---------------|
+| **Execution** | One-time (ad-hoc) | Recurring (scheduled) |
+| **Purpose** | Execute task now | Maintain desired state |
+| **Compliance** | No tracking | Reports compliance |
+| **Drift** | Doesn't detect | Re-applies on schedule |
+
+### Patch Manager Workflow
+
+```
+1. Define Patch Baseline (OS, classification, severity, auto-approval delay)
+2. Define Patch Group (tag instances: ""Patch Group"" = ""production"")
+3. Define Maintenance Window (schedule, duration, cutoff)
+4. Execute: Scan only (report) or Scan and Install (apply)
+5. View Compliance (compliant/non-compliant dashboard)
+```
+
+### Parameter Store
+
+| Feature | Standard | Advanced |
+|---------|----------|---------|
+| **Max parameters** | 10,000 | 100,000 |
+| **Max value size** | 4 KB | 8 KB |
+| **Parameter policies** | No | Yes (expiration, notification) |
+| **Cost** | Free | $0.05 per 10K API calls |
+
+**Types:** String, StringList, SecureString (KMS-encrypted)
+
+**CloudFormation Integration:**
+
+```yaml
+Parameters:
+  LatestAmiId:
+    Type: AWS::SSM::Parameter::Value<AWS::EC2::Image::Id>
+    Default: /aws/service/ami-amazon-linux-latest/amzn2-ami-hvm-x86_64-gp2
+```
+
+### SSM Automation
+
+- Multi-step runbooks for operational tasks
+- Use cases: remediate Config violations, create AMIs, DR failover, approval workflows
+- Can be triggered by Config rules for auto-remediation
+
+---
+
+## AMI Management
+
+### Golden AMI Pipeline
+
+```
+1. SOURCE: Base AMI (Amazon Linux / Ubuntu / Windows)
+2. BUILD: Install packages, harden, configure (Image Builder or SSM Automation)
+3. TEST: Launch instance, validate, run security checks
+4. PUBLISH: Tag AMI, store ID in Parameter Store, share with accounts
+5. CONSUME: CloudFormation/Launch Template references Parameter Store
+6. LIFECYCLE: Deprecate old AMIs, delete snapshots
+```
+
+### EC2 Image Builder vs. SSM Automation
+
+| Feature | Image Builder | SSM Automation |
+|---------|--------------|---------------|
+| **Purpose** | Purpose-built for AMI/container images | General-purpose automation |
+| **Ease** | Visual pipeline; managed components | Write automation documents |
+| **Testing** | Built-in test phase | Custom test steps |
+| **Distribution** | Built-in multi-account/region | Custom distribution |
+| **Best for** | Standardized AMI pipelines | Custom/complex workflows |
+
+---
+
+## Multi-Account Governance
+
+### AWS Control Tower
+
+| Feature | Description |
+|---------|-------------|
+| **Landing Zone** | Pre-configured multi-account environment |
+| **Account Factory** | Automated account provisioning |
+| **Guardrails** | Preventive (SCPs) + Detective (Config rules) |
+| **Drift detection** | Detect when accounts deviate from baseline |
+| **AFT** | Account Factory for Terraform |
+
+### Service Catalog
+
+| Feature | Description |
+|---------|-------------|
+| **Products** | CloudFormation templates packaged for consumption |
+| **Portfolios** | Collections shared with specific users/accounts |
+| **Constraints** | Launch constraints (IAM role), template constraints |
+| **Use case** | Self-service approved infrastructure; governance without bottlenecks |
+
+---
+
+## AWS CDK
+
+### Core Concepts
+
+| Concept | Description |
+|---------|-------------|
+| **App** | Root; contains stacks |
+| **Stack** | Unit of deployment (maps to CloudFormation stack) |
+| **Construct** | Building block (L1=CFN, L2=abstractions, L3=patterns) |
+| **Synth** | Generate CloudFormation from CDK code |
+| **CDK Pipelines** | Self-mutating CI/CD (pipeline updates itself) |
+
+### CDK vs. CloudFormation vs. Terraform
+
+| Feature | CloudFormation | CDK | Terraform |
+|---------|---------------|-----|-----------|
+| **Language** | YAML/JSON | TypeScript, Python, Java, Go | HCL |
+| **Abstraction** | Low (resource-level) | High (constructs, patterns) | Medium (modules) |
+| **Multi-cloud** | AWS only | AWS only | Multi-cloud |
+| **State** | Managed by AWS | Managed by AWS (generates CFN) | Self-managed (S3+DynamoDB) |
+
+---
+
+## Terraform on AWS
+
+### State Management
+
+```
+Backend: S3 (encrypted, versioned)
+Locking: DynamoDB table (prevent concurrent changes)
+Encryption: KMS key
+
+terraform {
+  backend ""s3"" {
+    bucket         = ""my-terraform-state""
+    key            = ""prod/terraform.tfstate""
+    region         = ""us-east-1""
+    encrypt        = true
+    dynamodb_table = ""terraform-locks""
+  }
+}
+```
+
+---
+
+## Configuration Compliance
+
+### AWS Config
+
+| Feature | Description |
+|---------|-------------|
+| **Configuration recorder** | Records resource configurations |
+| **Config rules** | Evaluate compliance (managed or custom) |
+| **Remediation** | Auto-fix via SSM Automation |
+| **Aggregator** | Multi-account/region view |
+| **Conformance packs** | Collection of rules (CIS, PCI DSS, NIST) |
+
+### Config Rule + Auto-Remediation Pattern
+
+```
+Config Rule detects non-compliance
+    -> Triggers SSM Automation document
+    -> Fixes the resource automatically
+    -> Logs remediation action
+```
+
+### Desired State Enforcement
+
+```
+PREVENTIVE (before creation):
++-- SCPs - Block non-compliant actions
++-- Stack Policies - Prevent dangerous updates
++-- Service Catalog Constraints - Limit choices
++-- IAM Policies - Deny non-compliant configs
+
+DETECTIVE (after creation):
++-- Config Rules - Detect non-compliant resources
++-- CloudFormation Drift - Detect manual changes
++-- SSM Compliance - Detect patch/state issues
+
+CORRECTIVE (auto-fix):
++-- Config Auto-Remediation - SSM Automation
++-- State Manager - Re-apply desired config
++-- EventBridge + Lambda - Custom remediation
+```
+
+---
+
+## Key Exam Patterns for DOP-C02 Domain 2
+
+**CloudFormation:**
+- **""Reuse components across stacks""** -> Nested Stacks or Modules
+- **""Share VPC across independent stacks""** -> Cross-Stack References (Export/Import)
+- **""Deploy security baseline to all accounts""** -> StackSets with auto-deployment
+- **""Prevent accidental DB deletion""** -> DeletionPolicy: Snapshot + Stack Policy
+- **""Wait for instance to be configured""** -> CreationPolicy + cfn-signal
+- **""Update ASG instances one at a time""** -> UpdatePolicy: AutoScalingRollingUpdate
+- **""Detect manual changes""** -> Drift Detection
+- **""Preview changes before applying""** -> Change Sets
+- **""Provision unsupported resources""** -> Custom Resources (Lambda)
+- **""Always use latest AMI""** -> SSM Parameter Type in CloudFormation
+
+**Systems Manager:**
+- **""Execute commands without SSH""** -> Run Command
+- **""Maintain consistent config over time""** -> State Manager
+- **""Automated patching on schedule""** -> Patch Manager + Maintenance Windows
+- **""Automated runbook for remediation""** -> SSM Automation
+- **""Store config securely""** -> Parameter Store (SecureString)
+- **""Secure shell without port 22""** -> Session Manager
+- **""Auto-fix non-compliant resources""** -> Config Rule + SSM Automation
+
+**Multi-Account:**
+- **""Automated account provisioning""** -> Control Tower Account Factory or AFT
+- **""Self-service infrastructure""** -> Service Catalog
+- **""Enforce compliance across all accounts""** -> Config Conformance Packs
+- **""Prevent disabling CloudTrail""** -> SCP
+
+**CDK/Terraform:**
+- **""IaC with programming language""** -> CDK
+- **""Self-updating pipeline""** -> CDK Pipelines (self-mutation)
+- **""Secure Terraform state""** -> S3 + DynamoDB locking + KMS
+- **""Multi-cloud IaC""** -> Terraform
+
+---
+
+## Quick Exam Tips for Domain 2
+
+- **CloudFormation** is the primary IaC service. Know template anatomy, intrinsic functions, resource attributes deeply.
+- **Nested vs. Cross-Stack:** Nested = tightly coupled, managed together. Cross-Stack = loosely coupled, independent.
+- **StackSets** deploy to multiple accounts/regions. Know MaxConcurrent, FailureTolerance, auto-deployment.
+- **CreationPolicy + cfn-signal** = ""wait until instance is ready."" Without signal, stack completes at launch (not config).
+- **UpdatePolicy** for ASG: Rolling replaces in batches. WaitOnResourceSignals ensures health before proceeding.
+- **Custom Resources** MUST always send response. If Lambda doesn't respond, stack hangs 1 hour.
+- **DeletionPolicy: Retain** keeps resource when removed (orphaned). **Snapshot** takes backup first.
+- **Stack Policies** prevent updates to specific resources. Can't be removed, only modified.
+- **SSM Parameter Store** integrates with CloudFormation via AWS::SSM::Parameter::Value type.
+- **Patch Manager:** baselines (what), patch groups (which instances), maintenance windows (when).
+- **State Manager** = continuous enforcement. **Run Command** = one-time execution.
+- **SSM Automation** is the remediation engine for Config rules.
+- **Image Builder** is purpose-built for AMI pipelines. SSM Automation works for custom workflows.
+- **Control Tower** = landing zone + Account Factory + Guardrails.
+- **Service Catalog** = self-service with governance (approved templates + constraints).
+- **CDK Pipelines self-mutation** = pipeline updates itself when code changes.
+- **Terraform state:** S3 (versioned, encrypted) + DynamoDB (locking) + KMS.
+- **Config Conformance Packs** bundle rules for compliance frameworks (CIS, PCI DSS).
+- **Drift detection** identifies changes but doesn't fix them. Remediate manually or via automation.
+
+---
+
+## Summary
+
+This covers all objectives in DOP-C02 Domain 2:
+
+- **CloudFormation** - Templates, stacks, nested/cross-stack, StackSets, custom resources, drift
+- **Systems Manager** - Run Command, State Manager, Patch Manager, Automation, Parameter Store
+- **AMI Management** - Golden AMI pipeline, Image Builder, lifecycle
+- **Multi-Account** - Control Tower, Service Catalog, StackSets, account vending
+- **CDK** - Constructs, CDK Pipelines, self-mutation
+- **Terraform** - State management on AWS (S3 + DynamoDB)
+- **Compliance** - Config rules, auto-remediation, conformance packs, desired state"

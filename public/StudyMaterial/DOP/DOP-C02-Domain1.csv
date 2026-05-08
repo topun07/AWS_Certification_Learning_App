@@ -1,0 +1,472 @@
+certCode,domain,title,content
+"DOP-C02","Domain 1: SDLC Automation","SDLC Automation","## DOP-C02 Domain 1: SDLC Automation
+
+**Weight:** ~22% of scored exam content (largest domain)
+**Exam Level:** Professional
+**Exam Format:** 75 questions, 180 minutes, passing score 750/1000
+
+This domain tests your ability to implement CI/CD pipelines, integrate automated testing, manage build artifacts, and implement deployment strategies across EC2, containers, and serverless.
+
+---
+
+## AWS CI/CD Service Stack
+
+```
+SOURCE         BUILD           TEST           DEPLOY
++----------+  +----------+  +----------+  +--------------+
+|CodeCommit|  |CodeBuild |  |CodeBuild |  | CodeDeploy   |
+|GitHub    |->|          |->|(test     |->| ECS Deploy   |
+|S3        |  |          |  | stage)   |  | CloudFormation|
+|Bitbucket |  |          |  |          |  | SAM/Serverless|
++----------+  +----------+  +----------+  +--------------+
+
++----------------------------------------------------------+
+|              AWS CODEPIPELINE (Orchestrator)              |
++----------------------------------------------------------+
+```
+
+---
+
+## AWS CodePipeline
+
+| Concept | Description |
+|---------|-------------|
+| **What it is** | Fully managed continuous delivery orchestrator |
+| **Stages** | Sequential groups of actions (Source -> Build -> Test -> Deploy) |
+| **Actions** | Individual tasks within a stage |
+| **Artifacts** | Input/output files passed between stages (stored in S3) |
+| **Transitions** | Connections between stages (can be disabled for gates) |
+| **Triggers** | What starts the pipeline (push, schedule, manual, EventBridge) |
+| **Pipeline types** | V1 (legacy) and V2 (recommended) |
+
+### CodePipeline V2 Features
+
+| Feature | Description | Use Case |
+|---------|-------------|----------|
+| **Triggers** | Fine-grained control over what starts pipeline | Only trigger on specific branches/tags/files |
+| **Git tags** | Trigger on tag creation | Release workflows (tag v1.0 -> deploy) |
+| **Branch filtering** | Trigger only for specific branches | main -> prod; develop -> staging |
+| **File path filtering** | Trigger only when specific files change | Only deploy when src/ changes |
+| **Pipeline variables** | Pass dynamic values between stages | Branch name, commit ID, environment |
+| **Execution modes** | SUPERSEDED, QUEUED, PARALLEL | Control concurrent behavior |
+
+### Execution Modes
+
+| Mode | Behavior | Use Case |
+|------|----------|----------|
+| **SUPERSEDED** (default) | New execution replaces in-progress | Always deploy latest; skip intermediate |
+| **QUEUED** | Executions run sequentially in order | Maintain deployment order; audit trail |
+| **PARALLEL** | Multiple executions simultaneously | Independent deployments; multi-tenant |
+
+### Cross-Account Pipelines
+
+```
+ACCOUNT A (Tooling/DevOps):
+  CodePipeline, CodeBuild, Artifact S3 (KMS encrypted)
+         |                    |
+         v                    v
+ACCOUNT B (Staging):        ACCOUNT C (Production):
+  CodeDeploy                  CodeDeploy
+  Cross-account IAM role      Cross-account IAM role
+
+Requirements:
+- KMS key policy grants decrypt to Account B & C roles
+- S3 bucket policy allows cross-account access
+- CodePipeline assumes cross-account role via STS
+```
+
+---
+
+## AWS CodeBuild
+
+### buildspec.yml
+
+```yaml
+version: 0.2
+
+env:
+  variables:
+    ENV_NAME: ""production""
+  parameter-store:
+    DB_PASSWORD: ""/prod/db/password""
+  secrets-manager:
+    API_KEY: ""prod/api-key:api_key""
+  exported-variables:
+    - IMAGE_TAG
+
+phases:
+  install:
+    runtime-versions:
+      java: corretto17
+      docker: 20
+    commands:
+      - pip install -r requirements.txt
+
+  pre_build:
+    commands:
+      - aws ecr get-login-password | docker login --username AWS --password-stdin $ECR_REPO
+      - IMAGE_TAG=$(echo $CODEBUILD_RESOLVED_SOURCE_VERSION | cut -c 1-7)
+
+  build:
+    commands:
+      - mvn clean package -DskipTests
+      - docker build -t $ECR_REPO:$IMAGE_TAG .
+      - docker push $ECR_REPO:$IMAGE_TAG
+
+  post_build:
+    commands:
+      - printf '[{""name"":""app"",""imageUri"":""%s""}]' $ECR_REPO:$IMAGE_TAG > imagedefinitions.json
+
+artifacts:
+  files:
+    - target/*.jar
+    - imagedefinitions.json
+    - appspec.yml
+
+reports:
+  unit-test-report:
+    files:
+      - ""target/surefire-reports/*.xml""
+    file-format: JUNITXML
+```
+
+### CodeBuild Key Features
+
+| Feature | Description | Use Case |
+|---------|-------------|----------|
+| **Build environments** | Managed images or custom Docker | Standard builds; custom toolchains |
+| **Compute types** | SMALL/MEDIUM/LARGE/2XLARGE; ARM; Lambda | Match to build requirements |
+| **VPC access** | Run builds inside VPC | Access private resources (RDS, internal repos) |
+| **Caching** | Local, S3, or Docker layer | Speed up builds |
+| **Batch builds** | Multiple builds in parallel/sequential | Matrix builds; multi-platform |
+| **Reports** | Test and code coverage reports | Visualize results in console |
+| **Secrets** | Parameter Store and Secrets Manager | Inject credentials securely |
+
+### Caching Strategies
+
+| Cache Type | How It Works | Best For |
+|-----------|-------------|----------|
+| **No cache** | Fresh environment every build | Reproducibility; security |
+| **S3 cache** | Upload/download between builds | Dependencies (Maven, npm, pip) |
+| **Local cache** | Reuse Docker layers on same host | Docker builds; large source |
+| **Docker layer cache** | Cache image layers | Faster Docker builds |
+
+---
+
+## Build and Manage Artifacts
+
+### Amazon ECR
+
+| Feature | Description |
+|---------|-------------|
+| **Image scanning** | Vulnerability scanning (Basic or Enhanced with Inspector) |
+| **Lifecycle policies** | Auto-delete old/untagged images |
+| **Cross-region replication** | Replicate images to other regions |
+| **Immutable tags** | Prevent image tag overwriting |
+| **Pull-through cache** | Cache public registry images |
+
+**ECR Lifecycle Policy:**
+
+```json
+{
+  ""rules"": [{
+    ""rulePriority"": 1,
+    ""description"": ""Keep last 10 production images"",
+    ""selection"": {
+      ""tagStatus"": ""tagged"",
+      ""tagPrefixList"": [""prod-""],
+      ""countType"": ""imageCountMoreThan"",
+      ""countNumber"": 10
+    },
+    ""action"": {""type"": ""expire""}
+  }, {
+    ""rulePriority"": 2,
+    ""description"": ""Delete untagged images older than 7 days"",
+    ""selection"": {
+      ""tagStatus"": ""untagged"",
+      ""countType"": ""sinceImagePushed"",
+      ""countUnit"": ""days"",
+      ""countNumber"": 7
+    },
+    ""action"": {""type"": ""expire""}
+  }]
+}
+```
+
+### AWS CodeArtifact
+
+| Feature | Description |
+|---------|-------------|
+| **What it is** | Managed artifact repository for packages |
+| **Formats** | npm, Maven, Gradle, pip, NuGet, Swift, Cargo |
+| **Upstream repos** | Proxy public registries (npmjs, Maven Central, PyPI) |
+| **Benefits** | Cache external packages; survive registry outages; audit downloads |
+
+---
+
+## Deployment Strategies
+
+### Strategy Comparison
+
+| Strategy | How It Works | Downtime | Risk |
+|----------|-------------|----------|------|
+| **In-Place (All-at-Once)** | Update all simultaneously | Yes (brief) | High |
+| **Rolling** | Update in batches | No (reduced capacity) | Medium |
+| **Immutable** | Deploy to new instances; swap | No | Low |
+| **Blue/Green** | Parallel environment; switch traffic | No | Low |
+| **Canary** | Small % of traffic to new version | No | Lowest |
+| **Linear** | Gradually shift traffic over time | No | Lowest |
+
+### AWS CodeDeploy
+
+| Feature | Description |
+|---------|-------------|
+| **Compute platforms** | EC2, ECS, Lambda, on-premises |
+| **Deployment types** | In-place (EC2) or Blue/Green (EC2, ECS, Lambda) |
+| **AppSpec file** | Defines deployment actions |
+| **Rollback** | Automatic (on failure/alarm) or manual |
+| **Lifecycle hooks** | Scripts at each deployment phase |
+
+### CodeDeploy for EC2 (AppSpec.yml)
+
+```yaml
+version: 0.0
+os: linux
+files:
+  - source: /
+    destination: /var/www/html
+
+hooks:
+  BeforeInstall:
+    - location: scripts/stop_server.sh
+      timeout: 300
+  AfterInstall:
+    - location: scripts/install_dependencies.sh
+      timeout: 600
+  ApplicationStart:
+    - location: scripts/start_server.sh
+      timeout: 300
+  ValidateService:
+    - location: scripts/health_check.sh
+      timeout: 300
+```
+
+**EC2 Lifecycle Hooks:**
+
+```
+IN-PLACE: ApplicationStop -> DownloadBundle -> BeforeInstall -> Install ->
+          AfterInstall -> ApplicationStart -> ValidateService
+
+BLUE/GREEN (replacement): BeforeInstall -> Install -> AfterInstall ->
+          ApplicationStart -> ValidateService -> BeforeAllowTraffic ->
+          AllowTraffic -> AfterAllowTraffic
+```
+
+### CodeDeploy for ECS (Blue/Green)
+
+```yaml
+version: 0.0
+Resources:
+  - TargetService:
+      Type: AWS::ECS::Service
+      Properties:
+        TaskDefinition: ""arn:aws:ecs:...:task-definition/my-app:2""
+        LoadBalancerInfo:
+          ContainerName: ""my-app""
+          ContainerPort: 8080
+
+Hooks:
+  - AfterAllowTestTraffic: ""LambdaToRunIntegrationTests""
+  - AfterAllowTraffic: ""LambdaToRunSmokeTests""
+```
+
+**ECS Blue/Green Flow:**
+
+1. Create new task set (Green) with new task definition
+2. Route TEST traffic to Green (test listener)
+3. Run AfterAllowTestTraffic hook (integration tests)
+4. If pass -> shift PRODUCTION traffic (AllAtOnce, Canary, or Linear)
+5. Wait for bake time (monitoring period)
+6. If healthy -> terminate Blue; If unhealthy -> rollback
+
+### CodeDeploy for Lambda
+
+| Configuration | Traffic Shift |
+|--------------|--------------|
+| **LambdaAllAtOnce** | 100% immediately |
+| **LambdaCanary10Percent5Minutes** | 10% for 5 min -> 100% |
+| **LambdaCanary10Percent10Minutes** | 10% for 10 min -> 100% |
+| **LambdaLinear10PercentEvery1Minute** | +10% every 1 min |
+| **LambdaLinear10PercentEvery10Minutes** | +10% every 10 min |
+
+### Canary vs. Linear
+
+```
+CANARY (10% for 10 minutes, then 100%):
+Time 0:   ####...... 10% new version
+Time 10m: ########## 100% (if healthy)
+
+LINEAR (10% every 2 minutes):
+Time 0:   #......... 10%
+Time 2m:  ##........ 20%
+Time 4m:  ###....... 30%
+...
+Time 18m: ########## 100%
+
+Canary: Quick validation then full shift
+Linear: Gradual, steady increase (more conservative)
+```
+
+---
+
+## Automated Testing in CI/CD
+
+### Testing Pyramid
+
+```
+     +--------+
+     | E2E/UI |  <- Fewest; slowest; most expensive
+    +----------+
+    |Integration|  <- Moderate; test service interactions
+   +------------+
+   | Unit Tests  |  <- Most; fastest; cheapest
+   +-------------+
+```
+
+### Testing Stages in Pipeline
+
+| Stage | Test Type | Tool |
+|-------|-----------|------|
+| **Pre-commit** | Linting, static analysis | Pre-commit hooks |
+| **Build** | Unit tests, coverage | CodeBuild (build phase) |
+| **Integration** | API tests, contract tests | CodeBuild (test stage) |
+| **Staging** | E2E tests, smoke tests | CodeBuild + staging env |
+| **Pre-production** | Load tests, chaos tests | CodeBuild + pre-prod |
+| **Production** | Canary tests, synthetics | CloudWatch Synthetics |
+| **Post-deploy** | Smoke tests, validation | CodeDeploy hooks (Lambda) |
+
+### Security Testing in CI/CD
+
+| Test Type | What It Checks | Tools |
+|-----------|---------------|-------|
+| **SAST** | Source code vulnerabilities | CodeGuru Reviewer, SonarQube |
+| **SCA** | Dependency vulnerabilities | Snyk, npm audit |
+| **DAST** | Running application vulnerabilities | OWASP ZAP |
+| **Container scanning** | Image vulnerabilities | ECR scanning (Inspector), Trivy |
+| **IaC scanning** | CloudFormation misconfigurations | cfn-lint, cfn-nag, Checkov |
+| **Secrets scanning** | Hardcoded credentials | git-secrets, TruffleHog |
+
+---
+
+## Advanced Pipeline Patterns
+
+### Feature Flags (AppConfig)
+
+```
+FEATURE FLAG PATTERN:
+
+if (featureFlags.isEnabled(""new-checkout-flow"")):
+    return new_checkout()
+else:
+    return old_checkout()
+
+AWS Implementation:
+- AppConfig (feature flags + safe deployment)
+- Parameter Store (simple on/off flags)
+- DynamoDB (complex rules; user targeting)
+
+Benefits:
+- Deploy code without activating features
+- Gradual rollout (% of users)
+- Instant rollback (disable flag)
+- Decouple deployment from release
+```
+
+### Rollback Strategies
+
+| Strategy | Implementation | Speed |
+|----------|---------------|-------|
+| **Redeploy previous version** | CodeDeploy rollback; re-run pipeline | Minutes |
+| **Blue/Green switch back** | Route traffic to Blue (original) | Seconds |
+| **Lambda alias repoint** | Update alias to previous version | Seconds |
+| **Feature flags** | Disable feature without redeploying | Seconds |
+| **Infrastructure rollback** | CloudFormation rollback | Minutes |
+
+### Multi-Account Pipeline
+
+| Account | Purpose | What Runs Here |
+|---------|---------|---------------|
+| **Tooling** | CI/CD infrastructure | CodePipeline, CodeBuild, artifacts |
+| **Development** | Developer testing | Dev deployments |
+| **Staging** | Integration testing | Automated tests |
+| **Production** | Live workloads | Production deployments |
+
+---
+
+## Key Exam Patterns for DOP-C02 Domain 1
+
+**Pipeline Design:**
+- **""Orchestrate multi-stage CI/CD with approval""** -> CodePipeline with Manual Approval
+- **""Deploy to multiple accounts""** -> Cross-account CodePipeline (assume role via STS)
+- **""Only trigger when specific files change""** -> CodePipeline V2 file path filters
+- **""Deploy latest, skip intermediate""** -> SUPERSEDED execution mode
+- **""Maintain deployment order""** -> QUEUED execution mode
+
+**Build:**
+- **""Speed up Docker builds""** -> Docker layer caching (local cache)
+- **""CodeBuild needs private RDS access""** -> Configure CodeBuild VPC access
+- **""Cache dependencies between builds""** -> S3 cache in buildspec
+- **""Inject DB credentials into build""** -> Secrets Manager in buildspec env
+- **""Fast builds with minimal startup""** -> CodeBuild Lambda compute
+
+**Artifacts:**
+- **""Docker images with vulnerability scanning""** -> ECR with Enhanced Scanning
+- **""Auto-delete old images""** -> ECR lifecycle policies
+- **""Cache npm packages from public registries""** -> CodeArtifact with upstream
+- **""Prevent image tag overwriting""** -> ECR immutable tags
+
+**Deployment:**
+- **""Zero-downtime EC2 deployment""** -> Blue/Green with CodeDeploy + ALB
+- **""Gradually shift Lambda traffic""** -> CodeDeploy Canary/Linear
+- **""Deploy ECS with automatic rollback""** -> CodeDeploy Blue/Green for ECS
+- **""Test new version before full traffic""** -> AfterAllowTestTraffic hook
+- **""Auto rollback on high error rate""** -> CodeDeploy + CloudWatch alarm rollback
+- **""Instant rollback without redeployment""** -> Feature flags (AppConfig)
+
+**Testing:**
+- **""Ensure coverage doesn't drop""** -> CodeBuild reports + quality gate
+- **""Scan containers before deploy""** -> ECR scanning; fail if CRITICAL
+- **""Validate CloudFormation templates""** -> cfn-lint + cfn-nag in CodeBuild
+
+---
+
+## Quick Exam Tips for Domain 1
+
+- **CodePipeline V2** is current standard. Know triggers, execution modes, file path filters.
+- **Cross-account pipelines** require: KMS key shared, S3 bucket policy, IAM roles in target accounts.
+- **CodeDeploy types by compute:** EC2=In-Place+Blue/Green. ECS=Blue/Green only. Lambda=Canary/Linear/AllAtOnce.
+- **AppSpec.yml differs by platform.** EC2: files+hooks (shell). ECS: Resources+hooks (Lambda). Lambda: Resources+hooks (Lambda).
+- **CodeDeploy rollback** triggers can be CloudWatch alarms. Auto-rollback on error rate spike.
+- **ECR lifecycle policies** manage image retention. Keep N latest; delete untagged after N days.
+- **CodeArtifact upstream repos** proxy public registries. Builds work even if npmjs.com is down.
+- **buildspec phases:** install -> pre_build -> build -> post_build.
+- **CodeBuild VPC access** needed for private resources. Without it, no private resource access.
+- **Canary** = quick test then full shift. **Linear** = gradual steady increase.
+- **Feature flags (AppConfig)** decouple deployment from release. Instant rollback = disable flag.
+- **Manual Approval** blocks pipeline until approved. Sends SNS notification.
+- **Immutable tags** in ECR ensure same tag = same image always.
+- **DORA metrics:** Deployment Frequency, Lead Time, Change Failure Rate, MTTR.
+
+---
+
+## Summary
+
+This covers all objectives in DOP-C02 Domain 1:
+
+- **CI/CD Pipelines** - CodePipeline V2, triggers, execution modes, cross-account
+- **Build** - CodeBuild, buildspec, caching, VPC access, secrets
+- **Artifacts** - ECR, CodeArtifact, lifecycle policies, immutable tags
+- **Deployment Strategies** - Blue/Green, Canary, Linear, In-Place, Rolling
+- **CodeDeploy** - EC2/ECS/Lambda, AppSpec, lifecycle hooks, rollback
+- **Automated Testing** - Testing pyramid, security testing, quality gates
+- **Advanced Patterns** - Feature flags, monorepo, multi-account, rollback strategies"

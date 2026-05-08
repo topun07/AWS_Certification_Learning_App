@@ -1,0 +1,48 @@
+{
+  "family": "knowledgeforge-api",
+  "networkMode": "awsvpc",
+  "requiresCompatibilities": ["FARGATE"],
+  "cpu": "256",
+  "memory": "512",
+  "executionRoleArn": "arn:aws:iam::ACCOUNT_ID:role/knowledgeforge-ecs-execution",
+  "taskRoleArn": "arn:aws:iam::ACCOUNT_ID:role/knowledgeforge-ecs-task",
+  "containerDefinitions": [
+    {
+      "name": "knowledgeforge-api",
+      "image": "ACCOUNT_ID.dkr.ecr.us-east-1.amazonaws.com/knowledgeforge-api:latest",
+      "portMappings": [
+        {
+          "containerPort": 8080,
+          "protocol": "tcp"
+        }
+      ],
+      "environment": [
+        { "name": "SPRING_PROFILES_ACTIVE", "value": "prod" },
+        { "name": "DATABASE_URL", "value": "jdbc:postgresql://RDS_ENDPOINT:5432/knowledgeforge" },
+        { "name": "DATABASE_USERNAME", "value": "kfadmin" },
+        { "name": "DATABASE_PASSWORD", "value": "YOUR_RDS_PASSWORD" },
+        { "name": "CORS_ORIGIN", "value": "https://knowledgeforgeacademy.com" }
+      ],
+      "secrets": [
+        { "name": "JWT_SECRET", "valueFrom": "arn:aws:secretsmanager:us-east-1:ACCOUNT_ID:secret:knowledgeforge/jwt-secret" },
+        { "name": "STRIPE_API_KEY", "valueFrom": "arn:aws:secretsmanager:us-east-1:ACCOUNT_ID:secret:knowledgeforge/stripe-api-key" },
+        { "name": "STRIPE_WEBHOOK_SECRET", "valueFrom": "arn:aws:secretsmanager:us-east-1:ACCOUNT_ID:secret:knowledgeforge/stripe-webhook-secret" }
+      ],
+      "logConfiguration": {
+        "logDriver": "awslogs",
+        "options": {
+          "awslogs-group": "/ecs/knowledgeforge-api",
+          "awslogs-region": "us-east-1",
+          "awslogs-stream-prefix": "ecs"
+        }
+      },
+      "healthCheck": {
+        "command": ["CMD-SHELL", "curl -f http://localhost:8080/actuator/health || exit 1"],
+        "interval": 30,
+        "timeout": 5,
+        "retries": 3,
+        "startPeriod": 60
+      }
+    }
+  ]
+}

@@ -1,0 +1,288 @@
+certCode,domain,title,content
+"SOA-C02","Domain 5: Networking & Content Delivery","Networking & Content Delivery","## SOA-C02 Domain 5: Networking & Content Delivery
+
+**Weight:** ~18% of scored exam content
+**Exam Level:** Associate
+
+This domain covers VPC configuration, connectivity options, DNS, content delivery, and network troubleshooting.
+
+---
+
+## VPC Architecture
+
+### VPC Components
+
+| Component | Purpose | Key Points |
+|-----------|---------|-----------|
+| **VPC** | Isolated virtual network | CIDR block (/16 to /28) |
+| **Subnet** | Segment within AZ | Public (IGW route) or Private |
+| **Route Table** | Traffic routing rules | Main (default) or Custom |
+| **Internet Gateway (IGW)** | Internet access for VPC | One per VPC, horizontally scaled |
+| **NAT Gateway** | Internet for private subnets | Managed, per-AZ, costs money |
+| **NAT Instance** | Self-managed NAT | Cheaper, less HA, more work |
+
+### Subnet Design
+
+```
+VPC: 10.0.0.0/16 (65,536 IPs)
+|
++-- Public Subnet A: 10.0.1.0/24 (251 usable IPs)
+|   Route: 0.0.0.0/0 -> IGW
+|   Resources: ALB, NAT Gateway, Bastion
+|
++-- Private Subnet A: 10.0.2.0/24
+|   Route: 0.0.0.0/0 -> NAT Gateway
+|   Resources: EC2, ECS, Lambda
+|
++-- Data Subnet A: 10.0.3.0/24
+|   Route: No internet route
+|   Resources: RDS, ElastiCache
+```
+
+**Reserved IPs per subnet (5):**
+- .0 = Network address
+- .1 = VPC router
+- .2 = DNS server
+- .3 = Reserved for future
+- .255 = Broadcast (not supported but reserved)
+
+### Security Groups vs. NACLs
+
+| Feature | Security Groups | NACLs |
+|---------|----------------|-------|
+| **Level** | Instance (ENI) | Subnet |
+| **State** | Stateful | Stateless |
+| **Rules** | Allow only | Allow + Deny |
+| **Evaluation** | All rules | Numbered order (lowest first) |
+| **Default** | Deny all in, allow all out | Allow all (default NACL) |
+| **Association** | Multiple SGs per instance | One NACL per subnet |
+
+---
+
+## VPC Connectivity
+
+### VPC Peering
+
+- Direct connection between two VPCs
+- No transitive routing (A-B, B-C does NOT mean A-C)
+- Cross-account and cross-region supported
+- Cannot overlap CIDR blocks
+- Must update route tables in both VPCs
+
+### Transit Gateway
+
+- Hub-and-spoke model for VPC connectivity
+- Supports: VPC, VPN, Direct Connect, peering
+- Route tables for traffic segmentation
+- Scales to thousands of VPCs
+- Cross-region peering supported
+- Replaces complex VPC peering meshes
+
+### VPN Connections
+
+| Type | Description | Bandwidth |
+|------|-------------|-----------|
+| **Site-to-Site VPN** | IPsec tunnel over internet | Up to 1.25 Gbps per tunnel |
+| **Client VPN** | Remote user access | Varies |
+| **CloudHub** | Multiple sites via VPN hub | Per tunnel limit |
+
+**Site-to-Site VPN Components:**
+- Virtual Private Gateway (VGW): AWS side
+- Customer Gateway (CGW): On-premises side
+- Two tunnels for redundancy (different AZs)
+
+### Direct Connect
+
+| Feature | Description |
+|---------|-------------|
+| **Dedicated Connection** | 1, 10, or 100 Gbps physical port |
+| **Hosted Connection** | 50 Mbps to 10 Gbps via partner |
+| **Private VIF** | Access VPC (private IPs) |
+| **Public VIF** | Access AWS public services |
+| **Transit VIF** | Access multiple VPCs via Transit Gateway |
+| **Encryption** | Not encrypted by default (add VPN over DX) |
+| **Redundancy** | Two connections at different locations |
+
+### VPC Endpoints
+
+| Type | Services | Cost | How |
+|------|----------|------|-----|
+| **Gateway** | S3, DynamoDB | Free | Route table entry |
+| **Interface** | All other services | Per hour + data | ENI with private IP (PrivateLink) |
+
+**Gateway Endpoint:**
+- Add to route table (prefix list)
+- Control access with endpoint policy
+- Cannot be accessed from on-premises (VPN/DX)
+
+**Interface Endpoint (PrivateLink):**
+- Creates ENI in your subnet
+- Private DNS resolves service to private IP
+- Can be accessed from on-premises
+- Security group controls access
+
+---
+
+## Route 53
+
+### Record Types
+
+| Type | Purpose | Example |
+|------|---------|---------|
+| **A** | IPv4 address | 1.2.3.4 |
+| **AAAA** | IPv6 address | 2001:db8::1 |
+| **CNAME** | Alias to another domain | NOT for zone apex |
+| **Alias** | AWS resource (free, zone apex OK) | ALB, CloudFront, S3 |
+| **MX** | Mail server | mail.example.com |
+| **TXT** | Text (verification, SPF) | ""v=spf1..."" |
+| **NS** | Name servers | Delegation |
+
+### Routing Policies
+
+| Policy | Use Case | Health Check |
+|--------|----------|-------------|
+| **Simple** | Single resource | No |
+| **Weighted** | Traffic distribution (A/B testing) | Optional |
+| **Latency** | Route to lowest-latency region | Optional |
+| **Failover** | Active-passive DR | Required (primary) |
+| **Geolocation** | Route by user country/continent | Optional |
+| **Geoproximity** | Route by distance (with bias) | Optional |
+| **Multi-value** | Multiple healthy endpoints | Required |
+
+### Health Checks
+
+- HTTP, HTTPS, TCP protocols
+- Interval: 30s (standard) or 10s (fast, extra cost)
+- Threshold: Number of consecutive checks to change status
+- String matching: Check response body for specific text
+- Calculated: Combine multiple health checks (AND/OR)
+- CloudWatch Alarm: Health check based on CloudWatch metric
+
+---
+
+## CloudFront
+
+### Key Concepts
+
+| Feature | Description |
+|---------|-------------|
+| **Distribution** | Configuration for content delivery |
+| **Origin** | Source of content (S3, ALB, EC2, custom) |
+| **Behavior** | Path pattern + cache settings |
+| **Edge Location** | Cache location (400+ worldwide) |
+| **Regional Edge Cache** | Larger cache between edge and origin |
+| **OAC** | Restrict S3 access to CloudFront only |
+
+### Cache Behavior
+
+- **TTL:** Minimum, Maximum, Default (controls cache duration)
+- **Cache Key:** What makes requests unique (headers, query strings, cookies)
+- **Cache Policy:** Reusable cache configuration
+- **Origin Request Policy:** What to forward to origin
+- **Invalidation:** Force cache refresh (costs per path)
+
+### CloudFront Functions vs. Lambda@Edge
+
+| Feature | CloudFront Functions | Lambda@Edge |
+|---------|---------------------|-------------|
+| **Runtime** | JavaScript only | Node.js, Python |
+| **Execution** | Viewer request/response only | All 4 events |
+| **Duration** | < 1 ms | Up to 30s (origin) |
+| **Memory** | 2 MB | 128-10,240 MB |
+| **Use Case** | Header manipulation, URL rewrite | Complex logic, origin selection |
+| **Cost** | Very cheap | More expensive |
+
+---
+
+## Network Troubleshooting
+
+### Common Issues & Solutions
+
+| Symptom | Likely Cause | Fix |
+|---------|-------------|-----|
+| **Cannot reach internet from private subnet** | No NAT Gateway or route | Add NAT GW + route 0.0.0.0/0 -> NAT |
+| **Cannot reach instance from internet** | No public IP or IGW route | Assign public IP + route to IGW |
+| **Security group allows but still blocked** | NACL denying | Check NACL rules (both directions) |
+| **VPC peering not working** | Route tables not updated | Add routes in both VPCs |
+| **Cannot resolve DNS** | enableDnsHostnames/Support disabled | Enable VPC DNS settings |
+| **Timeout to AWS service** | No endpoint or NAT | Add VPC Endpoint or NAT Gateway |
+
+### Troubleshooting Tools
+
+| Tool | Purpose |
+|------|---------|
+| **VPC Flow Logs** | Capture IP traffic metadata (ACCEPT/REJECT) |
+| **Reachability Analyzer** | Path analysis without sending traffic |
+| **Traffic Mirroring** | Copy actual packets for inspection |
+| **Network Manager** | Global network monitoring |
+| **CloudWatch Network Metrics** | Bandwidth, packets, errors |
+
+### VPC Flow Log Format
+
+```
+version account-id interface-id srcaddr dstaddr srcport dstport protocol packets bytes start end action log-status
+
+Example (REJECTED):
+2 123456789012 eni-abc123 10.0.1.5 10.0.2.10 49152 3306 6 10 840 1620000000 1620000060 REJECT OK
+```
+
+- Action: ACCEPT or REJECT
+- Protocol 6 = TCP, 17 = UDP, 1 = ICMP
+- Does NOT capture: DNS, DHCP, metadata, license activation, mirror traffic
+
+---
+
+## Key Exam Patterns
+
+**VPC:**
+- **""Private subnet needs internet""** -> NAT Gateway in public subnet + route
+- **""Block specific IP""** -> NACL deny rule (SGs cannot deny)
+- **""Private access to S3""** -> VPC Gateway Endpoint (free)
+- **""Private access to other services""** -> Interface Endpoint (PrivateLink)
+- **""Connect 100 VPCs""** -> Transit Gateway (not peering mesh)
+- **""No transitive routing""** -> VPC Peering limitation
+
+**Connectivity:**
+- **""Dedicated, consistent bandwidth""** -> Direct Connect
+- **""Encrypted connection over internet""** -> Site-to-Site VPN
+- **""Encrypt Direct Connect""** -> VPN over Direct Connect
+- **""Multiple on-prem sites""** -> CloudHub or Transit Gateway + VPN
+- **""Access VPC from on-prem via endpoint""** -> Interface Endpoint (not Gateway)
+
+**DNS:**
+- **""Route to lowest latency""** -> Latency routing policy
+- **""Active-passive failover""** -> Failover routing + health check
+- **""A/B testing with traffic split""** -> Weighted routing
+- **""Alias vs CNAME""** -> Alias for zone apex, free, AWS resources only
+- **""Route by user country""** -> Geolocation routing
+
+**CloudFront:**
+- **""Restrict S3 to CloudFront""** -> OAC (Origin Access Control)
+- **""Custom header manipulation""** -> CloudFront Functions (cheap, fast)
+- **""Complex logic at edge""** -> Lambda@Edge
+- **""Force cache refresh""** -> Create invalidation
+- **""HTTPS for custom domain""** -> ACM certificate (us-east-1 for CloudFront)
+
+**Troubleshooting:**
+- **""See why traffic is blocked""** -> VPC Flow Logs (REJECT entries)
+- **""Test path without sending traffic""** -> Reachability Analyzer
+- **""Inspect actual packets""** -> Traffic Mirroring
+
+---
+
+## Quick Exam Tips
+
+- **NAT Gateway** is per-AZ. For HA, deploy one in each AZ with separate routes.
+- **VPC Peering** is NOT transitive. A-B and B-C does not connect A-C.
+- **Transit Gateway** replaces complex peering meshes (hub-and-spoke).
+- **Gateway Endpoints** (S3, DynamoDB) are free. Interface Endpoints cost money.
+- **Gateway Endpoints** cannot be accessed from on-premises. Interface Endpoints can.
+- **Direct Connect** is NOT encrypted by default. Layer a VPN on top for encryption.
+- **Route 53 Alias** records are free, work at zone apex, and point to AWS resources.
+- **CNAME** cannot be used at zone apex (example.com). Use Alias instead.
+- **Failover routing** requires a health check on the primary record.
+- **OAC** (Origin Access Control) replaces OAI for restricting S3 access to CloudFront.
+- **VPC Flow Logs** show ACCEPT/REJECT but NOT packet content.
+- **Reachability Analyzer** tests connectivity paths without sending actual traffic.
+- **5 IPs reserved per subnet** (.0, .1, .2, .3, .255). A /24 has 251 usable IPs.
+- **Security Groups are stateful** (return traffic auto-allowed). NACLs are stateless."

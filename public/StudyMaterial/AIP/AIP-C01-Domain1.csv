@@ -1,0 +1,300 @@
+certCode,domain,title,content
+"AIP-C01","Domain 1: GenAI Fundamentals","Foundation Model Integration, Data Management, and Compliance","## AIP-C01 Domain 1: Foundation Model Integration, Data Management, and Compliance
+
+**Weight:** ~31% of scored exam content (the largest domain)
+**Exam Level:** Professional
+**Target Audience:** Developers preparing for the AWS Certified Generative AI Developer - Professional exam
+
+This is a Professional-level certification - a significant step up from the AIF-C01 Practitioner exam. Domain 1 expects you to make real architectural decisions: selecting FMs, designing data pipelines, implementing vector stores, building RAG systems, and ensuring compliance. You're no longer just identifying concepts - you're engineering solutions.
+
+### Exam Context: AIP-C01 at a Glance
+
+- 75 questions (65 scored + 10 unscored) in 180 minutes
+- Passing score: 750 on a 100-1,000 scale
+- Price: $300 USD
+- 5 Domains: FM Integration (31%), Implementation and Integration (26%), AI Safety/Security/Governance (20%), Operational Efficiency (12%), Testing/Validation/Troubleshooting (11%)
+
+---
+
+## Objective 1.1: Design GenAI Architectures Aligned to Business and Technical Constraints
+
+### Foundation Model Selection Criteria
+
+At the Professional level, you must justify why you'd choose one FM over another. Selection factors:
+
+| Factor | What to Evaluate | Example Trade-off |
+|--------|-----------------|-------------------|
+| **Task alignment** | Does the model excel at your specific task? | Claude for complex reasoning; Stable Diffusion for images; Amazon Titan for embeddings |
+| **Context window** | Maximum tokens the model can process | 200K context for long document analysis vs. 4K for simple Q&A |
+| **Latency** | Time to first token and total generation time | Real-time chat needs <500ms TTFT; batch processing can tolerate seconds |
+| **Cost** | Input/output token pricing, provisioned vs. on-demand | Smaller models (Haiku) for high-volume simple tasks; larger models (Sonnet/Opus) for complex reasoning |
+| **Multimodal capabilities** | Text-only vs. text+image+video | Document understanding with embedded diagrams requires multimodal |
+| **Regional availability** | Which AWS regions offer the model | Data residency requirements may limit model choices |
+| **Customizability** | Fine-tuning support, continued pre-training | Not all Bedrock models support fine-tuning |
+| **Licensing and compliance** | Open-weight vs. proprietary; data usage terms | Regulated industries may require models with specific data handling guarantees |
+
+### Architecture Patterns for GenAI Applications
+
+**Pattern 1: Simple Inference (Stateless)**
+
+```
+Client -> API Gateway -> Lambda -> Bedrock InvokeModel -> Response
+```
+
+Use case: Single-turn text generation (summarization, classification).
+
+**Pattern 2: Conversational (Stateful)**
+
+```
+Client -> API Gateway -> Lambda -> DynamoDB (session history) -> Bedrock Converse API -> Response
+```
+
+Use case: Multi-turn chatbots that maintain conversation context.
+
+**Pattern 3: RAG (Knowledge-Augmented)**
+
+```
+Client -> API Gateway -> Lambda -> Bedrock Knowledge Bases (retrieve) -> Bedrock FM (generate) -> Response
+                                          |
+                               OpenSearch Serverless (vector store)
+                                          |
+                               S3 (source documents)
+```
+
+Use case: Enterprise Q&A over internal documents.
+
+**Pattern 4: Agentic (Autonomous Multi-Step)**
+
+```
+Client -> Bedrock Agents -> [Plan] -> [Tool Call: Lambda/API] -> [Observe] -> [Generate] -> Response
+```
+
+Use case: Complex workflows requiring API calls, database lookups, and multi-step reasoning.
+
+### Resilience and Regional Availability
+
+- **Multi-region deployment** - Deploy across regions for disaster recovery; not all models are available in all regions.
+- **Model fallback** - If your primary model is throttled or unavailable, route to a secondary model.
+- **Provisioned Throughput** - Reserve model capacity for predictable, high-volume workloads to avoid throttling.
+- **Cross-region inference** - Bedrock supports cross-region inference profiles for higher availability.
+
+---
+
+## Objective 1.2: Select and Configure Foundation Models
+
+### Amazon Bedrock Model Configuration
+
+Key configuration parameters you must understand at the Professional level:
+
+**Inference parameters:**
+- **temperature** - Randomness (0-1)
+- **topP** - Nucleus sampling threshold
+- **maxTokens** - Maximum output length
+- **stopSequences** - Tokens that halt generation
+- **System prompts** - Define model behavior, persona, and constraints
+
+**API Options:**
+- **Bedrock Converse API** - Unified API for multi-turn conversations across all Bedrock models (abstracts model-specific formatting)
+- **Bedrock InvokeModel API** - Direct model invocation for single-turn requests
+- **Streaming vs. non-streaming** - InvokeModelWithResponseStream for real-time token delivery
+
+### Model Provisioning Options
+
+| Option | Characteristics | Best For |
+|--------|----------------|----------|
+| **On-demand** | Pay per token; no commitment; subject to throttling | Variable/unpredictable workloads |
+| **Provisioned Throughput** | Reserved capacity; guaranteed throughput; hourly pricing | Steady high-volume production workloads |
+| **Batch inference** | Process large datasets asynchronously at lower cost | Bulk document processing, offline analysis |
+| **Cross-region inference** | Routes requests to available capacity across regions | High availability, burst handling |
+
+### Embedding Models
+
+Embedding models convert text (or images) into dense vector representations for semantic search. Key decisions:
+
+- **Amazon Titan Embeddings** - AWS-native; supports text and multimodal embeddings; integrates natively with Bedrock Knowledge Bases.
+- **Cohere Embed** - Available on Bedrock; strong multilingual support.
+- **Embedding dimensions** - Higher dimensions capture more nuance but cost more storage and compute.
+- **Normalization** - Normalized embeddings enable cosine similarity comparisons.
+
+*Real-world example:* A legal firm chooses Amazon Titan Embeddings V2 (1024 dimensions) for their contract search system because it balances semantic accuracy with storage costs in OpenSearch Serverless.
+
+---
+
+## Objective 1.3: Build Data Validation and Processing Pipelines for Multimodal Inputs
+
+### Data Ingestion Pipeline Architecture
+
+```
+Source Documents (PDF, HTML, DOCX, images)
+         |
+[Amazon S3] - Landing zone
+         |
+[AWS Glue / Lambda] - Validation, format conversion, metadata extraction
+         |
+[Chunking] - Split documents into retrievable segments
+         |
+[Embedding Model] - Convert chunks to vectors
+         |
+[Vector Store] - Index for semantic search
+```
+
+### Chunking Strategies
+
+Chunking is how you split documents into pieces for embedding and retrieval. This is a critical exam topic - poor chunking destroys RAG quality.
+
+| Strategy | How It Works | Pros |
+|----------|-------------|------|
+| **Fixed-size** | Split every N tokens/characters | Simple, predictable |
+| **Sentence-based** | Split on sentence boundaries | Preserves grammatical units |
+| **Paragraph-based** | Split on paragraph breaks | Preserves topical coherence |
+| **Semantic chunking** | Split when topic/meaning shifts (using embeddings) | Best retrieval quality |
+| **Hierarchical** | Parent chunks (large) + child chunks (small); retrieve child, return parent for context | Balances precision and context |
+| **Overlapping** | Chunks overlap by N tokens | Prevents information loss at boundaries |
+
+*Real-world example:* A compliance team finds their RAG system misses critical exception clauses because fixed-size chunking splits rules from their qualifications. They switch to semantic chunking with overlap, and retrieval accuracy improves by 40%.
+
+### Bedrock Knowledge Bases Chunking Options
+
+Amazon Bedrock Knowledge Bases supports:
+
+- **Default chunking** - Automatic, fixed-size (300 tokens with overlap)
+- **Fixed-size chunking** - Configurable token count and overlap percentage
+- **Hierarchical chunking** - Parent/child chunk structure
+- **Semantic chunking** - Splits based on meaning shifts
+- **No chunking** - Treat each document as a single chunk (for short documents)
+
+### Data Validation for AI Pipelines
+
+- **Input validation** - Check file formats, encoding, size limits before processing.
+- **Content filtering** - Remove PII, toxic content, or irrelevant data before embedding.
+- **Deduplication** - Prevent the same content from being indexed multiple times.
+- **Metadata enrichment** - Add source, date, author, category tags for filtered retrieval.
+- **Quality checks** - Verify OCR accuracy for scanned documents; validate image resolution for multimodal inputs.
+
+### Multimodal Data Handling
+
+- **Text** - Direct chunking and embedding.
+- **PDFs** - Extract text via Amazon Textract; handle tables and images separately.
+- **Images** - Use multimodal embedding models (Titan Multimodal Embeddings) or describe images with a vision model before embedding the description.
+- **Audio/Video** - Transcribe with Amazon Transcribe, then process as text.
+- **Structured data (CSV/JSON)** - Convert rows to natural language statements or embed column descriptions.
+
+---
+
+## Objective 1.4: Implement Vector Stores and Retrieval Mechanisms for RAG
+
+### Vector Store Options on AWS
+
+| Service | Type | Key Characteristics |
+|---------|------|-------------------|
+| **Amazon OpenSearch Serverless** | Managed vector DB | Native Bedrock KB integration; serverless; supports hybrid search (vector + keyword) |
+| **Amazon Aurora PostgreSQL (pgvector)** | Relational + vector | Good if you already use Aurora; combines structured queries with vector search |
+| **Amazon Neptune Analytics** | Graph + vector | Combines knowledge graphs with vector search for relationship-aware retrieval |
+| **Amazon DocumentDB** | Document DB + vector | MongoDB-compatible with vector search capabilities |
+| **Pinecone (3rd party)** | Purpose-built vector DB | Supported by Bedrock Knowledge Bases; high performance at scale |
+| **Redis Enterprise** | In-memory vector search | Ultra-low latency; good for real-time applications |
+
+### Retrieval Strategies
+
+- **Semantic search (vector similarity)** - Find chunks whose embeddings are closest to the query embedding. Uses cosine similarity, dot product, or L2 distance.
+- **Keyword search (lexical)** - Traditional BM25/TF-IDF matching on exact terms.
+- **Hybrid search** - Combine semantic + keyword results for best coverage. OpenSearch Serverless supports this natively.
+- **Metadata filtering** - Pre-filter by document source, date, category before vector search. Example: ""Only search HR policy documents from 2025.""
+- **Re-ranking** - After initial retrieval, use a cross-encoder or Bedrock re-ranking model to reorder results by relevance.
+- **Maximum Marginal Relevance (MMR)** - Diversify results to avoid returning near-duplicate chunks.
+
+### RAG Pipeline - End-to-End on AWS
+
+```
+1. INGEST (one-time or scheduled)
+   S3 (documents) -> Bedrock Knowledge Bases -> Chunking -> Titan Embeddings -> OpenSearch Serverless
+
+2. QUERY (real-time)
+   User question -> Titan Embeddings (embed query) -> OpenSearch (vector search) -> Top-K chunks retrieved
+        |
+   Retrieved chunks + user question -> FM prompt -> Bedrock (generate answer)
+        |
+   Response with source citations -> User
+```
+
+### Advanced RAG Patterns
+
+- **Query transformation** - Rewrite the user's question for better retrieval (e.g., expand abbreviations, decompose multi-part questions).
+- **Multi-query RAG** - Generate multiple query variations, retrieve for each, merge results.
+- **Contextual compression** - After retrieval, compress chunks to only the relevant sentences before passing to the FM.
+- **Agentic RAG** - An agent decides when to retrieve, what to search, and whether the results are sufficient before generating.
+- **Graph RAG** - Combine vector retrieval with knowledge graph traversal for relationship-aware answers.
+
+---
+
+## Compliance and Data Management
+
+### Data Residency and Sovereignty
+
+- **Regional deployment** - Keep data within specific AWS regions to comply with local regulations (GDPR requires EU data stays in EU).
+- **Bedrock data handling** - Your prompts and completions are not stored by AWS or shared with model providers. Fine-tuning data stays in your account.
+- **S3 bucket location constraints** - Enforce that training data and vector stores reside in compliant regions.
+- **Cross-region inference considerations** - If using cross-region inference profiles, understand that data may transit through other regions.
+
+### Data Lifecycle Management
+
+- **Retention policies** - Define how long inference logs, training data, and embeddings are retained.
+- **Right to erasure (GDPR)** - If a user requests deletion, you must remove their data from training sets, vector stores, and logs.
+- **PII in embeddings** - Vector embeddings derived from PII-containing text may constitute personal data under GDPR. Sanitize before embedding or implement access controls on the vector store.
+- **Data lineage** - Track which documents were used to train or fine-tune models, and which chunks contributed to specific responses (source attribution).
+
+### Compliance Services for AI Data Pipelines
+
+| Service | Role in Compliance |
+|---------|-------------------|
+| **Amazon Macie** | Discover PII in S3 before ingestion |
+| **AWS Glue Data Catalog** | Classify and catalog data assets |
+| **AWS Lake Formation** | Fine-grained access control on data lakes |
+| **AWS CloudTrail** | Audit trail for all API calls |
+| **AWS Config** | Verify resource configurations meet compliance rules |
+| **S3 Object Lock** | Immutable storage for regulatory retention |
+| **KMS** | Encryption key management for data at rest |
+
+---
+
+## Key Exam Patterns for AIP-C01 Domain 1
+
+- **""Choose the best FM for this use case""** - Evaluate task alignment, context window, latency, cost, and regional availability
+- **""RAG system returns irrelevant results""** - Check chunking strategy; consider semantic chunking, overlap, or hierarchical chunking
+- **""Need low-latency vector search""** - Amazon OpenSearch Serverless or Redis
+- **""Combine keyword and semantic search""** - Hybrid search on OpenSearch Serverless
+- **""Ensure data stays in EU""** - Regional S3 buckets + region-specific Bedrock deployment + avoid cross-region inference
+- **""PII found in training data""** - Amazon Macie to detect; sanitize before embedding
+- **""Guaranteed throughput for production""** - Bedrock Provisioned Throughput
+- **""Process PDFs with tables and images""** - Amazon Textract for extraction then chunk then embed
+- **""Model unavailable in required region""** - Cross-region inference profile OR model fallback architecture
+- **""Improve retrieval quality without retraining""** - Re-ranking, query transformation, hybrid search, better chunking
+- **""Track which documents contributed to an answer""** - Source attribution in Bedrock Knowledge Bases
+- **""Reduce vector storage costs""** - Lower embedding dimensions; remove stale/duplicate documents
+- **""Multi-turn conversation with context""** - Bedrock Converse API + session management (DynamoDB)
+
+---
+
+## Quick Exam Tips for Domain 1
+
+- This is a Professional exam - expect multi-layered scenarios with 3-4 constraints you must satisfy simultaneously (e.g., ""low latency + EU data residency + multimodal + cost-optimized"").
+- **Chunking strategy** questions are common. Know the trade-offs between fixed-size, semantic, and hierarchical chunking - and when overlap helps.
+- **Vector store selection** depends on existing infrastructure, query patterns (hybrid vs. pure vector), and latency requirements.
+- **Bedrock Knowledge Bases** is the managed RAG solution - know what it handles automatically (chunking, embedding, indexing, retrieval) vs. what you configure.
+- Don't confuse **InvokeModel** (single-turn) with **Converse** (multi-turn) APIs.
+- Compliance questions often hinge on **data residency**. Remember: embeddings derived from PII are still potentially PII.
+- The exam tests **architectural judgment**, not just service identification. You'll need to explain why a design choice is better, not just what service to use.
+
+---
+
+## Summary
+
+This covers all objectives in AIP-C01 Domain 1:
+
+- **GenAI architecture design** - patterns, resilience, regional considerations
+- **FM selection and configuration** - model criteria, provisioning, embedding models
+- **Data pipelines** - chunking strategies, multimodal handling, validation
+- **Vector stores and retrieval** - OpenSearch, hybrid search, advanced RAG patterns
+- **Compliance** - data residency, PII in embeddings, lifecycle management
+
+The jump from AIF (Practitioner) to AIP (Professional) is significant. Where AIF asks ""what is RAG?"", AIP asks ""your RAG system returns irrelevant results for multi-clause legal questions - which chunking strategy and retrieval mechanism would you redesign, and why?"""

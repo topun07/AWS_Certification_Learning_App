@@ -1,0 +1,224 @@
+certCode,domain,title,content
+"AIF-C01","Domain 3: Applications of Foundation Models","Applications of Foundation Models","## AIF-C01 Domain 3: Applications of Foundation Models
+
+**Weight:** ~28% of scored exam content
+**Target Audience:** Junior programmers preparing for the AWS Certified AI Practitioner exam
+
+This domain tests whether you can design GenAI applications, apply prompt engineering techniques effectively, understand model customization options, and evaluate FM performance.
+
+---
+
+## Task Statement 3.1: Design Considerations for FM Applications
+
+### Choosing the Right Foundation Model
+
+Not all FMs are created equal. The exam expects you to know how to select a model based on:
+
+- **Task alignment** - Match the model to your use case. Text generation? Use an LLM like Claude or Amazon Titan Text. Image generation? Use Stable Diffusion. Code? Use Code Llama or Amazon Titan Code.
+- **Model size vs. cost** - Larger models (more parameters) are generally more capable but cost more per inference call. For simple classification tasks, a smaller model may suffice.
+- **Latency requirements** - Real-time chatbots need fast inference; batch document processing can tolerate slower responses.
+- **Context window** - If your application processes long documents, you need a model with a large context window.
+- **Multimodal needs** - If your app handles both text and images, choose a multimodal FM.
+
+*Real-world example:* A startup building a customer support chatbot chooses Claude on Bedrock for its strong conversational abilities and large context window, while a design agency picks Stable Diffusion for generating marketing visuals.
+
+### Key Architecture Decisions
+
+- **Serverless vs. provisioned** - Amazon Bedrock is serverless (pay-per-token). For predictable high-volume workloads, Provisioned Throughput guarantees capacity.
+- **Single model vs. model routing** - Some applications route different query types to different models (e.g., simple FAQs to a small model, complex analysis to a large model) to optimize cost.
+- **Synchronous vs. asynchronous** - Real-time chat = synchronous API calls. Batch summarization of 10,000 documents = asynchronous processing.
+- **Caching** - Store frequent prompt-response pairs to reduce redundant API calls and lower costs.
+
+### Cost Optimization Strategies
+
+- Use smaller models for simpler tasks.
+- Implement prompt caching for repeated queries.
+- Choose on-demand pricing for variable workloads; Provisioned Throughput for steady, high-volume usage.
+- Reduce token usage through concise prompts and shorter output limits.
+
+---
+
+## Task Statement 3.2: Effective Prompt Engineering Techniques
+
+Prompt engineering is the most cost-effective way to improve FM outputs - no training required. The exam heavily tests this topic.
+
+### Core Techniques
+
+| Technique | Description | When to Use |
+|-----------|-------------|-------------|
+| **Zero-shot** | No examples provided; just the instruction | Simple, well-defined tasks the model already handles well |
+| **Few-shot** | Include 2-5 examples in the prompt | When you need a specific output format or style |
+| **Chain-of-thought (CoT)** | Ask the model to ""think step by step"" | Math problems, logic puzzles, multi-step reasoning |
+| **System prompts** | Set persona, rules, and constraints at the start | Every production application (defines behavior boundaries) |
+| **Role prompting** | Assign the model a role (""You are a senior tax accountant..."") | Domain-specific tasks requiring expertise |
+
+### Advanced Prompt Strategies
+
+- **Structured output formatting** - Ask the model to respond in JSON, XML, or markdown to make outputs machine-parseable.
+  - Example: ""Return your answer as a JSON object with keys: summary, sentiment, confidence_score.""
+
+- **Negative prompting** - Tell the model what NOT to do (""Do not include personal opinions. Do not hallucinate facts."").
+
+- **Prompt chaining** - Break complex tasks into sequential prompts where the output of one becomes the input of the next.
+  - Example: Prompt 1 extracts key facts -> Prompt 2 drafts a summary -> Prompt 3 formats it as an email.
+
+- **Retrieval-augmented prompts** - Inject retrieved context into the prompt (the ""augmentation"" step in RAG).
+
+### Inference Parameters to Control Output
+
+- **Temperature** - Controls randomness (0 = deterministic, 1 = creative). Use low for factual tasks, higher for brainstorming.
+- **Top-p** - Limits token selection to a probability threshold. Lower = more focused.
+- **Top-k** - Limits selection to the top K most probable tokens.
+- **Max tokens** - Caps the response length.
+- **Stop sequences** - Tokens that signal the model to stop generating.
+
+*Real-world example:* A medical documentation app sets temperature to 0 and uses a system prompt enforcing clinical language, ensuring consistent, factual outputs.
+
+---
+
+## Task Statement 3.3: Training and Fine-Tuning FMs
+
+### The Customization Spectrum
+
+The exam tests your understanding of when each approach is appropriate, from least to most effort:
+
+### 1. Prompt Engineering (No Training)
+
+- **Cost:** Lowest
+- **Effort:** Minutes
+- **Best for:** Quick improvements, format control, persona setting
+- **Limitation:** Doesn't change the model's underlying knowledge
+
+### 2. Retrieval-Augmented Generation (RAG)
+
+- **Cost:** Low to Medium (storage + embedding costs)
+- **Effort:** Hours to days
+- **Best for:** Grounding responses in current/private data without retraining
+- **AWS service:** Amazon Bedrock Knowledge Bases
+- **Limitation:** Adds latency; limited by retrieval quality
+
+### 3. Fine-Tuning
+
+- **Cost:** Medium to High (compute for training)
+- **Effort:** Days to weeks
+- **Best for:** Teaching the model a specific style, tone, domain vocabulary, or task format
+- **AWS service:** Amazon Bedrock fine-tuning (upload labeled data to S3, Bedrock manages the training)
+- **Data needed:** Hundreds to thousands of labeled examples (prompt-completion pairs)
+- **Limitation:** Requires quality training data; risk of catastrophic forgetting (model loses general abilities)
+
+### 4. Continued Pre-Training
+
+- **Cost:** High
+- **Effort:** Weeks
+- **Best for:** Injecting large volumes of domain-specific unlabeled text (e.g., all internal legal documents)
+- **AWS service:** Amazon Bedrock continued pre-training
+- **Data needed:** Large corpus of unlabeled domain text
+- **Limitation:** Most expensive; requires significant data volume
+
+### Reinforcement Learning from Human Feedback (RLHF)
+
+RLHF is the technique used to align FMs with human preferences and values. The process:
+
+1. Generate multiple responses to the same prompt.
+2. Human evaluators rank the responses from best to worst.
+3. A reward model is trained on these rankings.
+4. The FM is fine-tuned using reinforcement learning to maximize the reward model's score.
+
+**Why it matters:** RLHF is how models like Claude learn to be responsible, faithful and helpful. The exam may ask you to identify RLHF as the technique for aligning model behavior with human values.
+
+### Fine-Tuning on AWS - The Workflow
+
+```
+1. Prepare labeled data (prompt-completion pairs)
+        |
+2. Upload to Amazon S3
+        |
+3. Create fine-tuning job in Amazon Bedrock
+        |
+4. Bedrock manages compute, trains the model
+        |
+5. Custom model available for inference via Bedrock API
+```
+
+*Real-world example:* A healthcare company fine-tunes Amazon Titan on 5,000 doctor-patient conversation summaries so the model outputs match their specific clinical documentation format.
+
+---
+
+## Task Statement 3.4: Evaluating FM Performance
+
+### Automated Metrics
+
+| Metric | What It Measures | Use Case |
+|--------|-----------------|----------|
+| **ROUGE** | Overlap between generated text and reference text (recall-focused) | Summarization tasks |
+| **BLEU** | Overlap between generated text and reference text (precision-focused) | Translation tasks |
+| **Perplexity** | How ""surprised"" the model is by the text (lower = better) | General language model quality |
+| **BERTScore** | Semantic similarity using embeddings (captures meaning, not just word overlap) | Any text generation task |
+| **Accuracy / F1** | Classification correctness | When FM is used for classification |
+
+### Human Evaluation
+
+Automated metrics don't capture everything. Human evaluation assesses:
+
+- **Helpfulness** - Did the response actually answer the question?
+- **Harmlessness** - Is the response safe and appropriate?
+- **Honesty** - Does the response acknowledge uncertainty rather than hallucinate?
+- **Coherence** - Is the response logically structured and readable?
+- **Relevance** - Does the response stay on topic?
+
+### Amazon Bedrock Model Evaluation
+
+Amazon Bedrock Evaluations is a managed feature that lets you evaluate FMs using:
+
+- **Automatic evaluation** - Run built-in metrics (accuracy, robustness, toxicity) against your test dataset.
+- **Human evaluation** - Set up human review workflows within Bedrock.
+- **Custom metrics** - Define your own evaluation criteria specific to your use case.
+
+*Real-world example:* Before deploying a legal summarization model, a law firm runs Bedrock Evaluations with 500 test cases, measuring ROUGE scores against attorney-written summaries and having paralegals rate helpfulness.
+
+### Model Comparison
+
+The exam may ask how to choose between models. The process:
+
+1. Define your evaluation criteria (accuracy, latency, cost, safety).
+2. Prepare a representative test dataset.
+3. Run the same prompts through multiple models on Bedrock.
+4. Compare results using automated metrics + human judgment.
+5. Select the model with the best balance of performance and cost.
+
+---
+
+## How It All Connects - Decision Framework
+
+```
+""I need better FM outputs""
+          |
+     Try prompt engineering first (free, instant)
+          |
+     Still not good enough?
+          |
+     Need current/private data? -> RAG (Bedrock Knowledge Bases)
+     Need specific style/format? -> Fine-tuning (Bedrock)
+     Need deep domain knowledge? -> Continued pre-training
+          |
+     Evaluate with Bedrock Evaluations
+          |
+     Deploy and monitor
+```
+
+---
+
+## Key Exam Patterns for Domain 3
+
+- **""Most cost-effective way to improve outputs""** - Prompt engineering
+- **""Model needs company-specific data but shouldn't be retrained""** - RAG
+- **""Model needs to match a specific writing style""** - Fine-tuning
+- **""Align model with human values/preferences""** - RLHF
+- **""Evaluate summarization quality""** - ROUGE score
+- **""Evaluate translation quality""** - BLEU score
+- **""Compare multiple FMs before deploying""** - Amazon Bedrock Evaluations
+- **""Reduce hallucinations in responses""** - RAG + lower temperature
+- **""Control output creativity""** - Temperature and Top-p parameters
+- **""Break a complex task into manageable steps""** - Prompt chaining
+- **""Ensure consistent output format""** - Few-shot prompting + structured output instructions
+- **""Upload training data and let AWS handle the rest""** - Amazon Bedrock fine-tuning with data in S3"

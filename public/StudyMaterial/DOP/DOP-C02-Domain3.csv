@@ -1,0 +1,414 @@
+certCode,domain,title,content
+"DOP-C02","Domain 3: Resilient Architectures","Resilient Cloud Solutions","## DOP-C02 Domain 3: Resilient Cloud Solutions
+
+**Weight:** ~15% of scored exam content
+**Exam Level:** Professional
+
+This domain covers highly available architectures, disaster recovery strategies, and automated self-healing. Everything must be automated - manual recovery is a wrong answer.
+
+---
+
+## Auto Scaling (Deep Dive)
+
+### Scaling Policies
+
+| Policy Type | How It Works | Use Case |
+|-------------|-------------|----------|
+| **Target Tracking** | Maintain metric at target value | Keep CPU at 50%; requests/target at 1000 |
+| **Step Scaling** | Scale by different amounts based on severity | +1 at 60% CPU; +3 at 80%; +5 at 95% |
+| **Scheduled Scaling** | Scale at specific times | Known traffic patterns; business hours |
+| **Predictive Scaling** | ML-based; predicts future demand | Recurring patterns; proactive |
+
+### ASG Health Checks
+
+| Type | What It Checks | Default |
+|------|---------------|---------|
+| **EC2** | Instance status checks (hardware) | Always on |
+| **ELB** | Load balancer health check (HTTP) | Must enable |
+
+**Health Check Grace Period:** Time after launch before checks begin. Set based on app startup time. Too short = launch loop.
+
+### Lifecycle Hooks
+
+```
+LAUNCH: Pending -> Pending:Wait -> [HOOK] -> Pending:Proceed -> InService
+TERMINATE: InService -> Terminating:Wait -> [HOOK] -> Terminating:Proceed -> Terminated
+
+Scale-Out Hook: Install software, pull config, validate, warm caches
+Scale-In Hook: Drain connections, deregister, push logs, complete requests
+```
+
+### Instance Refresh
+
+| Feature | Description |
+|---------|-------------|
+| **What it does** | Rolling replacement of all instances (new launch template) |
+| **MinHealthyPercentage** | Minimum % healthy during refresh |
+| **Checkpoints** | Pause at specific percentages for validation |
+| **Auto-rollback** | Rollback if CloudWatch alarm triggers |
+| **Skip matching** | Don't replace instances already matching config |
+
+### Warm Pools
+
+```
+WITHOUT WARM POOL: Scale-out -> Launch -> Boot (2 min) -> Configure (5 min) = ~7 min
+WITH WARM POOL (Stopped): Scale-out -> Start pre-initialized instance = ~1-2 min
+WITH WARM POOL (Running): Scale-out -> Attach to target group = ~30 sec
+```
+
+### Mixed Instances Policy
+
+- **OnDemandBaseCapacity:** First N instances are On-Demand
+- **OnDemandPercentageAboveBaseCapacity:** % On-Demand above base
+- **SpotAllocationStrategy:** capacity-optimized (best for fewer interruptions)
+- **Overrides:** Multiple instance types for flexibility
+
+---
+
+## Load Balancing
+
+### ALB vs. NLB
+
+| Feature | ALB | NLB |
+|---------|-----|-----|
+| **Layer** | 7 (HTTP/HTTPS) | 4 (TCP/UDP/TLS) |
+| **Routing** | Path, host, header, query string | Port-based |
+| **Static IP** | No | Yes (one per AZ) |
+| **Cross-zone** | Enabled by default (free) | Disabled by default (charges) |
+| **Use case** | Web apps, microservices | Extreme performance, static IP |
+
+### ALB Weighted Target Groups (Canary)
+
+```
+Target Group A (v1): Weight = 90 (90% traffic)
+Target Group B (v2): Weight = 10 (10% traffic)
+
+Progression: 90/10 -> 70/30 -> 50/50 -> 0/100
+Rollback: 100/0 (instant)
+```
+
+### Deregistration Delay
+
+- Default: 300 seconds
+- ELB stops NEW requests; existing requests complete
+- Set to 0 for stateless/short requests
+- Set higher for long-running connections (uploads, WebSocket)
+
+---
+
+## Multi-AZ Architectures
+
+| Service | Multi-AZ Implementation | Failover |
+|---------|------------------------|----------|
+| **RDS Multi-AZ** | Synchronous standby | Automatic (1-2 min) |
+| **Aurora** | 6 copies/3 AZs; up to 15 replicas | < 30 sec with replicas |
+| **ElastiCache Redis** | Multi-AZ with failover | Automatic |
+| **ECS/EKS** | Tasks/pods across AZs | Scheduler replaces |
+| **S3, DynamoDB, Lambda** | Automatic multi-AZ | No failover needed |
+
+### Aurora High Availability
+
+```
+Writer Instance (AZ-a) + Reader Replicas (AZ-b, AZ-c)
+         |
+Shared Storage (6 copies across 3 AZs)
+- Survives loss of 2 copies (reads)
+- Survives loss of 1 copy (writes)
+- Failover: < 30 seconds (with replicas)
+- Priority tiers: 0-15 (lower = higher priority)
+```
+
+---
+
+## Disaster Recovery Strategies
+
+| Strategy | RTO | RPO | Cost |
+|----------|-----|-----|------|
+| **Backup & Restore** | Hours | Hours | Lowest |
+| **Pilot Light** | 10-30 min | Minutes | Low |
+| **Warm Standby** | Minutes | Seconds | Medium |
+| **Active-Active** | Near-zero | Near-zero | Highest |
+
+### Cross-Region Data Replication
+
+| Service | Method | RPO |
+|---------|--------|-----|
+| **S3** | Cross-Region Replication (CRR) | Minutes |
+| **Aurora** | Global Database | < 1 second |
+| **DynamoDB** | Global Tables | Seconds |
+| **ElastiCache** | Global Datastore | < 1 second |
+| **EBS** | Snapshot copy | Hours |
+| **Secrets Manager** | Multi-region secrets | Near-instant |
+
+### Aurora Global Database
+
+- Primary cluster (writer) + secondary clusters (readers) in other regions
+- < 1 second replication lag
+- Managed planned failover: < 1 minute (no data loss)
+- Write forwarding: secondary can forward writes to primary
+
+### DynamoDB Global Tables
+
+- Multi-region, multi-active (read/write in any region)
+- Automatic async replication (< 1 second)
+- Last-writer-wins conflict resolution
+- No failover needed (all regions active)
+
+---
+
+## Route 53 for Failover
+
+### Routing Policies for DR
+
+| Policy | DR Use Case |
+|--------|-------------|
+| **Failover** | Active-passive (primary/secondary with health checks) |
+| **Latency** | Active-active (route to nearest healthy region) |
+| **Weighted** | Canary; gradual migration |
+| **Geolocation** | Regional compliance |
+
+### Route 53 ARC (Application Recovery Controller)
+
+| Feature | Description |
+|---------|-------------|
+| **Readiness checks** | Verify DR resources match production |
+| **Routing controls** | Manual/automated traffic shifting |
+| **Safety rules** | Prevent routing to zero healthy regions |
+| **Use case** | Controlled, safe multi-region failover |
+
+### Global Accelerator vs. Route 53
+
+| Feature | Route 53 | Global Accelerator |
+|---------|----------|-------------------|
+| **Failover speed** | DNS TTL dependent (60-300 sec) | Instant (< 30 sec) |
+| **Static IP** | No | Yes (2 anycast IPs) |
+| **Protocol** | HTTP/HTTPS (health checks) | TCP, UDP, HTTP |
+| **Cost** | Lower | Higher |
+| **Best for** | Standard DR | Fast failover; static IP; gaming/IoT |
+
+---
+
+## Self-Healing Architectures
+
+### Automated Recovery Patterns
+
+| Pattern | Implementation | Trigger |
+|---------|---------------|---------|
+| **Instance replacement** | ASG health check -> terminate -> launch | Failed health check |
+| **EC2 Auto Recovery** | CloudWatch alarm -> ec2:recover | System status check failure |
+| **ECS Circuit Breaker** | Auto-rollback failed deployments | Tasks repeatedly fail |
+| **EventBridge + Lambda** | Detect event -> remediate | Any CloudWatch/EventBridge event |
+| **Step Functions Retry** | Retry with exponential backoff | Task failure |
+| **Dead Letter Queue** | Capture failed messages | Processing failure |
+
+### EC2 Auto Recovery vs. ASG
+
+| Feature | EC2 Auto Recovery | ASG |
+|---------|------------------|-----|
+| **What happens** | Same instance on new hardware | New instance launched |
+| **Instance ID** | Same | Different |
+| **IP address** | Same | Different (unless EIP) |
+| **EBS volumes** | Same | Fresh |
+| **Use case** | Stateful instances | Stateless instances |
+
+### ECS Deployment Circuit Breaker
+
+- Automatically rolls back failed ECS deployments
+- If new tasks keep failing to reach RUNNING state -> rollback
+- No manual intervention needed
+- Enable: DeploymentCircuitBreaker.Enable = true, Rollback = true
+
+---
+
+## Multi-Region Architectures
+
+### Active-Active Architecture
+
+```
+Route 53 (Latency-based) or Global Accelerator
+         |
+    +----+----+
+    |         |
+US-EAST-1   EU-WEST-1
+  ALB         ALB
+  ECS         ECS
+  Aurora(W)   Aurora(R)  <- Global Database
+  DynamoDB    DynamoDB   <- Global Tables
+  S3          S3         <- CRR
+```
+
+### AWS Backup
+
+| Feature | Description |
+|---------|-------------|
+| **Backup plans** | Schedule, retention, lifecycle |
+| **Vault lock** | WORM protection (compliance) |
+| **Cross-account** | Copy backups to isolated account |
+| **Cross-region** | Copy to DR region |
+| **Restore testing** | Automated restore validation |
+| **Services** | EC2, EBS, RDS, Aurora, DynamoDB, EFS, FSx, S3 |
+
+---
+
+## Chaos Engineering
+
+### AWS Fault Injection Service (FIS)
+
+| Feature | Description |
+|---------|-------------|
+| **What it does** | Controlled chaos experiments |
+| **Actions** | CPU stress, network latency, instance stop, AZ failure |
+| **Targets** | EC2, ECS, EKS, RDS, network |
+| **Stop conditions** | CloudWatch alarms halt experiment |
+
+| Experiment | Tests | Expected Outcome |
+|-----------|-------|-----------------|
+| Stop 50% of instances | ASG self-healing | Replacements launched; no user impact |
+| Inject network latency | Timeout handling | App handles gracefully; retries work |
+| Simulate AZ failure | Multi-AZ resilience | Traffic shifts; no downtime |
+| CPU stress | Auto scaling | ASG scales out; performance maintained |
+
+---
+
+## Key Exam Patterns for Domain 3
+
+**Auto Scaling:**
+- **""Custom metric scaling""** -> Target Tracking with custom CloudWatch metric
+- **""Instances take 10 min to configure""** -> Warm Pools
+- **""Drain connections before terminating""** -> Lifecycle Hook + deregistration delay
+- **""Replace all instances with new AMI""** -> Instance Refresh
+- **""On-Demand base + Spot""** -> Mixed Instances Policy
+- **""Instances failing health checks immediately""** -> Increase Health Check Grace Period
+
+**DR:**
+- **""RPO < 1 sec, RTO < 1 min for database""** -> Aurora Global Database
+- **""Active-active database across regions""** -> DynamoDB Global Tables
+- **""Lowest cost DR""** -> Backup & Restore
+- **""Instant failover without DNS TTL""** -> Global Accelerator
+- **""Safe, controlled failover""** -> Route 53 ARC
+
+**Self-Healing:**
+- **""Same instance, same IP after hardware failure""** -> EC2 Auto Recovery
+- **""ECS deployment keeps failing""** -> Deployment Circuit Breaker
+- **""Automated response to event""** -> EventBridge + Lambda
+- **""Workflow step fails""** -> Step Functions Retry with BackoffRate
+
+---
+
+## Quick Exam Tips for Domain 3
+
+- **Health Check Grace Period** prevents launch loops. Set >= app startup time.
+- **Warm Pools** solve slow scaling. Stopped = EBS cost only. Running = instant.
+- **Instance Refresh** rolls out new AMIs. Checkpoints pause for validation. Auto-rollback on alarm.
+- **Mixed Instances Policy:** OnDemandBaseCapacity ensures reliable baseline.
+- **Lifecycle Hooks** pause launch/terminate for custom actions. Always signal CONTINUE when done.
+- **Aurora Global Database** = cross-region DB DR with < 1 sec RPO, < 1 min RTO.
+- **DynamoDB Global Tables** = active-active (multi-region writes). No failover needed.
+- **Route 53 ARC** = safe failover with readiness checks and safety rules.
+- **Global Accelerator** = instant failover (no DNS TTL). Static IPs. TCP/UDP.
+- **ECS Circuit Breaker** auto-rolls back failed deployments. No manual intervention.
+- **Step Functions Retry** with BackoffRate = resilient workflows.
+- **FIS** = chaos engineering. Always define stop conditions (CloudWatch alarms).
+- **S3 Replication Time Control** guarantees 99.99% replicated within 15 min.
+- **AWS Backup Vault Lock** = WORM. No one can delete before retention expires.
+- **Deregistration Delay** = time for in-flight requests. 0 for stateless; higher for long connections.
+- **EC2 Auto Recovery** = same instance/IP on new hardware. ASG = new instance.
+
+---
+
+## Summary
+
+This covers all objectives in DOP-C02 Domain 3:
+
+- **Auto Scaling** - Policies, health checks, lifecycle hooks, instance refresh, warm pools, mixed instances
+- **Load Balancing** - ALB/NLB, weighted target groups, deregistration delay, slow start
+- **Multi-AZ** - RDS, Aurora, ElastiCache, ECS/EKS patterns
+- **Disaster Recovery** - Backup/Restore, Pilot Light, Warm Standby, Active-Active
+- **Traffic Management** - Route 53, Global Accelerator, ARC
+- **Self-Healing** - ASG, EC2 Auto Recovery, ECS Circuit Breaker, EventBridge+Lambda
+- **Multi-Region** - Aurora Global, DynamoDB GT, S3 CRR, AWS Backup
+- **Chaos Engineering** - AWS FIS, experiments, stop conditions
+
+---
+
+## Domain 3 Concept Map
+
+```
+RESILIENT CLOUD SOLUTIONS
+|
++-- AUTO SCALING
+|   +-- Scaling Policies: Target Tracking, Step, Scheduled, Predictive
+|   +-- Health Checks: EC2, ELB, Custom; Grace Period
+|   +-- Lifecycle Hooks: Launch/Terminate; custom actions
+|   +-- Instance Refresh: Rolling AMI updates; checkpoints; auto-rollback
+|   +-- Warm Pools: Pre-initialized instances (Stopped/Running/Hibernated)
+|   +-- Mixed Instances: On-Demand base + Spot; multiple instance types
+|   +-- Cooldown: Prevent rapid scale in/out oscillation
+|
++-- LOAD BALANCING
+|   +-- ALB: Layer 7; path/host routing; weighted target groups
+|   +-- NLB: Layer 4; static IP; ultra-low latency
+|   +-- GLB: Layer 3; network appliance insertion
+|   +-- Features: Slow start, deregistration delay, cross-zone, sticky
+|   +-- Health Checks: HTTP/TCP; interval, threshold, grace period
+|
++-- MULTI-AZ
+|   +-- RDS Multi-AZ: Synchronous standby; automatic failover (1-2 min)
+|   +-- Aurora: 6 copies/3 AZs; < 30 sec failover; up to 15 replicas
+|   +-- ElastiCache: Multi-AZ with automatic failover
+|   +-- ECS/EKS: Spread tasks/pods across AZs
+|   +-- Managed services: S3, DynamoDB, Lambda (automatic multi-AZ)
+|
++-- DISASTER RECOVERY
+|   +-- Strategies: Backup/Restore, Pilot Light, Warm Standby, Active-Active
+|   +-- RPO/RTO: Define requirements -> choose strategy
+|   +-- Data Replication: S3 CRR, Aurora Global, DynamoDB GT, EFS Replication
+|   +-- AWS Backup: Plans, vaults, cross-region, cross-account, vault lock
+|   +-- Testing: Regular DR drills; FIS; GameDays
+|
++-- TRAFFIC MANAGEMENT
+|   +-- Route 53: Failover, Latency, Weighted, Geolocation routing
+|   +-- Health Checks: Endpoint, Calculated, CloudWatch Alarm
+|   +-- Route 53 ARC: Readiness checks, routing controls, safety rules
+|   +-- Global Accelerator: Static IPs, instant failover, traffic dials
+|   +-- CloudFront: Edge caching; origin failover groups
+|
++-- SELF-HEALING
+|   +-- ASG: Replace unhealthy instances automatically
+|   +-- EC2 Auto Recovery: Same instance on new hardware
+|   +-- ECS Circuit Breaker: Auto-rollback failed deployments
+|   +-- EventBridge + Lambda: Automated remediation
+|   +-- Step Functions: Retry + Catch + compensating transactions
+|   +-- Dead Letter Queues: Capture failed messages for retry
+|
++-- RESILIENT ARCHITECTURE PATTERNS
+|   +-- Loose coupling: SQS, SNS, EventBridge between components
+|   +-- Circuit breaker: Stop calling failing service; return fallback
+|   +-- Bulkhead: Isolate failures (separate ASGs, accounts, regions)
+|   +-- Retry with backoff: Exponential backoff + jitter
+|   +-- Idempotency: Safe to retry without side effects
+|   +-- Throttling: Rate limit to protect downstream services
+|   +-- Graceful degradation: Serve partial/cached content on failure
+|
++-- CHAOS ENGINEERING
+    +-- AWS FIS: Controlled fault injection experiments
+    +-- Experiments: AZ failure, instance stop, network latency, CPU stress
+    +-- Stop conditions: CloudWatch alarms to halt experiment
+    +-- Process: Steady state -> Hypothesize -> Experiment -> Observe -> Improve
+    +-- Blast radius: Start small (single instance) -> expand (AZ -> region)
+    +-- GameDays: Team exercises simulating real failures
+```
+
+---
+
+## Summary Table
+
+| Topic | Key Services | Critical Concepts |
+|-------|-------------|------------------|
+| **Auto Scaling** | ASG, Launch Templates | Target Tracking, Lifecycle Hooks, Warm Pools, Instance Refresh, Mixed Instances |
+| **Load Balancing** | ALB, NLB, GLB | Weighted targets, deregistration delay, slow start, cross-zone |
+| **Multi-AZ** | RDS, Aurora, ElastiCache, ECS | Synchronous replication, automatic failover, AZ-aware placement |
+| **Disaster Recovery** | AWS Backup, S3 CRR, Aurora Global, DynamoDB GT | RPO/RTO, 4 DR strategies, cross-region replication |
+| **Traffic Management** | Route 53, Global Accelerator, ARC | Failover routing, health checks, routing controls, safety rules |
+| **Self-Healing** | ASG, EC2 Recovery, ECS Circuit Breaker, Step Functions | Auto-replace, auto-rollback, retry with backoff, DLQ |
+| **Chaos Engineering** | AWS FIS | Fault injection, stop conditions, blast radius, GameDays |"

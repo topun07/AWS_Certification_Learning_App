@@ -1,0 +1,519 @@
+certCode,domain,title,content
+"DEA-C01","Domain 3: Data Operations & Support","Data Operations and Support","## DEA-C01 Domain 3: Data Operations and Support
+
+**Weight:** ~22% of scored exam content
+**Exam Level:** Associate
+
+This domain tests your ability to monitor data pipelines, troubleshoot failures, automate operations, maintain data quality in production, and optimize pipeline performance. It's the ""Day 2 operations"" domain.
+
+---
+
+## Monitoring Data Pipelines
+
+### Amazon CloudWatch - Core Monitoring
+
+| Component | What It Does | Data Engineering Use |
+|-----------|-------------|-------------------|
+| **Metrics** | Numerical time-series data | Track Glue job duration, Kinesis iterator age |
+| **Logs** | Text-based log streams | Glue job output, Lambda execution logs |
+| **Alarms** | Alert when metric crosses threshold | Notify on job failure, high latency |
+| **Dashboards** | Visual display of metrics | Pipeline health overview |
+| **Log Insights** | Query and analyze logs | Search for errors; aggregate patterns |
+| **Anomaly Detection** | ML-based threshold detection | Alert on unusual patterns |
+| **Composite Alarms** | Combine multiple alarms (AND/OR) | Alert only when multiple conditions true |
+
+### Key Metrics by Service
+
+**AWS Glue:**
+
+| Metric | What It Indicates | Alert When |
+|--------|------------------|-----------|
+| glue.driver.aggregate.bytesRead | Data volume processed | Unexpected spike/drop |
+| glue.driver.aggregate.elapsedTime | Job duration | Exceeds SLA threshold |
+| glue.driver.aggregate.numFailedTasks | Failed Spark tasks | > 0 (data issues) |
+| glue.driver.jvm.heap.usage | Memory utilization | > 90% (OOM risk) |
+| Job run status (EventBridge) | Success/failure | Any FAILED state |
+
+**Amazon Kinesis Data Streams:**
+
+| Metric | What It Indicates | Alert When |
+|--------|------------------|-----------|
+| IncomingRecords | Write throughput | Unexpected drop |
+| GetRecords.IteratorAgeMilliseconds | Consumer lag | > threshold (falling behind) |
+| ReadProvisionedThroughputExceeded | Read throttling | > 0 (need more shards) |
+| WriteProvisionedThroughputExceeded | Write throttling | > 0 (need more shards) |
+
+**Amazon Redshift:**
+
+| Metric | What It Indicates | Alert When |
+|--------|------------------|-----------|
+| CPUUtilization | Cluster compute usage | Sustained > 80% |
+| PercentageDiskSpaceUsed | Storage consumption | > 75% |
+| WLMQueueWaitTime | Query wait time | > threshold |
+| ConcurrencyScalingSeconds | Burst capacity used | Unexpected spikes |
+
+**Amazon DynamoDB:**
+
+| Metric | What It Indicates | Alert When |
+|--------|------------------|-----------|
+| ConsumedReadCapacityUnits | Actual read usage | Approaching limit |
+| ThrottledRequests | Requests rejected | > 0 (hot partition) |
+| SuccessfulRequestLatency | Response time | > baseline |
+
+**AWS Lambda:**
+
+| Metric | What It Indicates | Alert When |
+|--------|------------------|-----------|
+| Errors | Execution failures | > 0 |
+| Duration | Execution time | Approaching timeout |
+| Throttles | Invocations rejected | > 0 |
+| IteratorAge (stream) | How far behind | Growing |
+
+### EventBridge for Pipeline Events
+
+```
+Event Sources:                    Event Targets:
+- Glue Job State Change --------> SNS (alert team)
+- Step Functions Execution ------> Lambda (auto-fix)
+- EMR Step Status ---------------> SQS (queue retry)
+- S3 Object Created ------------> Glue Job (trigger)
+- Scheduled (cron) -------------> Step Functions
+```
+
+**Glue Job Failure Event Rule:**
+
+```json
+{
+  ""source"": [""aws.glue""],
+  ""detail-type"": [""Glue Job State Change""],
+  ""detail"": {
+    ""state"": [""FAILED"", ""TIMEOUT""]
+  }
+}
+```
+
+---
+
+## Logging and Auditing
+
+### Logging Architecture
+
+```
+APPLICATION LOGS:
++-- Glue Job Logs -> CloudWatch (/aws-glue/jobs/)
++-- EMR Step Logs -> S3 + CloudWatch
++-- Lambda Logs -> CloudWatch (/aws/lambda/fn-name)
++-- MWAA Logs -> CloudWatch (scheduler, worker, webserver)
++-- Redshift Logs -> S3 (audit, connection, user activity)
+
+API AUDIT LOGS:
++-- CloudTrail -> S3 (all API calls)
+
+DATA ACCESS LOGS:
++-- S3 Access Logs -> S3 bucket
++-- Lake Formation -> CloudTrail (data access events)
+
+CENTRALIZED ANALYSIS:
++-- All logs -> S3 -> Athena (query) / OpenSearch (search)
+```
+
+### CloudWatch Log Insights Queries
+
+```sql
+-- Find all Glue job failures in last 24 hours
+fields @timestamp, @message
+| filter @message like /ERROR|Exception|FAILED/
+| sort @timestamp desc
+| limit 50
+
+-- Aggregate errors by type
+fields @message
+| filter @message like /Exception/
+| parse @message ""*.Exception: *"" as exceptionType, errorMsg
+| stats count() by exceptionType
+| sort count() desc
+```
+
+---
+
+## Troubleshooting Data Pipelines
+
+### Common Glue Job Failures
+
+| Error | Root Cause | Resolution |
+|-------|-----------|-----------|
+| **OutOfMemoryError** | Data too large for DPUs; data skew | Increase DPUs; use G.2X; repartition; filter early |
+| **Connection timeout** | JDBC unreachable; VPC/SG issue | Check VPC endpoints; security groups; NAT |
+| **S3 Access Denied** | IAM role missing permissions | Update Glue role; check bucket policy; Lake Formation |
+| **Schema mismatch** | Source schema changed | Re-run crawler; use ResolveChoice |
+| **Job timeout** | Processing too long | Increase timeout; optimize; partition input |
+| **Throttling (S3)** | Too many requests to prefix | Distribute across prefixes; retry with backoff |
+| **Bookmark issues** | Reprocesses or skips data | Reset bookmark; verify key column |
+
+### Common Kinesis Issues
+
+| Issue | Symptom | Resolution |
+|-------|---------|-----------|
+| **Throughput exceeded** | Write throttling | Add shards; improve partition key |
+| **High IteratorAge** | Consumer falling behind | More consumers; enhanced fan-out; optimize |
+| **Hot shard** | One shard overwhelmed | Better partition key; split hot shard |
+| **Duplicate records** | Same record processed twice | Implement idempotency; dedup logic |
+| **Data loss** | Records expire before processing | Increase retention; fix consumer lag |
+
+### Common Redshift Issues
+
+| Issue | Symptom | Resolution |
+|-------|---------|-----------|
+| **Disk space full** | Queries/COPY fail | VACUUM; DELETE old data; UNLOAD to S3; resize |
+| **Long-running queries** | Timeouts; queue buildup | EXPLAIN; optimize distribution/sort; Concurrency Scaling |
+| **Lock contention** | Queries waiting | Identify blocking (STV_LOCKS); schedule DDL off-peak |
+| **COPY failures** | Load errors | Check STL_LOAD_ERRORS; fix format; use MAXERROR |
+| **Skewed distribution** | Uneven node utilization | Change distribution key; check NULL keys |
+| **Stale statistics** | Suboptimal plans | Run ANALYZE after large loads |
+
+### Troubleshooting Decision Tree
+
+```
+PIPELINE FAILED - WHERE TO LOOK:
+|
++-- Glue Job Failed?
+|   +-- CloudWatch Logs (/aws-glue/jobs/error/)
+|   +-- Glue Console -> Job Run details
+|   +-- Common: OOM, timeout, connection, permissions
+|
++-- Kinesis Consumer Behind?
+|   +-- IteratorAgeMilliseconds metric
+|   +-- ReadProvisionedThroughputExceeded
+|   +-- Common: Insufficient shards, slow processing
+|
++-- Redshift Query Slow?
+|   +-- SVL_QUERY_SUMMARY (execution plan)
+|   +-- STL_ALERT_EVENT_LOG (optimizer alerts)
+|   +-- Common: Missing VACUUM, bad distribution, stale stats
+|
++-- Step Functions Failed?
+|   +-- Execution history (which state failed)
+|   +-- Error output in failed state
+|   +-- Common: Timeout, permissions, downstream error
+|
++-- Lambda Failed?
+    +-- CloudWatch Logs (/aws/lambda/function-name)
+    +-- Dead Letter Queue (DLQ)
+    +-- Common: Timeout, memory, permissions
+```
+
+---
+
+## Pipeline Automation and Self-Healing
+
+### Auto-Retry Strategies
+
+| Service | Built-in Retry | Configuration |
+|---------|---------------|--------------|
+| **Glue Jobs** | Configurable (0-10) | MaxRetries parameter |
+| **Step Functions** | Per-state retry with backoff | Retry field in state definition |
+| **Lambda** | Async: 2 retries; Stream: until expiry | Configure DLQ for failures |
+| **Kinesis** | Consumer retries (KCL checkpointing) | Bisect on error; max retry |
+| **SQS** | Visibility timeout re-processing | maxReceiveCount -> DLQ |
+| **EventBridge** | 24-hour retry with backoff | DLQ for exhausted retries |
+
+### Step Functions Error Handling
+
+```json
+{
+  ""TransformData"": {
+    ""Type"": ""Task"",
+    ""Resource"": ""arn:aws:states:::glue:startJobRun.sync"",
+    ""Retry"": [
+      {
+        ""ErrorEquals"": [""Glue.ConcurrentRunsExceededException""],
+        ""IntervalSeconds"": 60,
+        ""MaxAttempts"": 3,
+        ""BackoffRate"": 2.0
+      },
+      {
+        ""ErrorEquals"": [""States.ALL""],
+        ""IntervalSeconds"": 30,
+        ""MaxAttempts"": 2
+      }
+    ],
+    ""Catch"": [{
+      ""ErrorEquals"": [""States.ALL""],
+      ""Next"": ""HandleFailure""
+    }],
+    ""Next"": ""LoadData""
+  }
+}
+```
+
+### Self-Healing Patterns
+
+| Pattern | Implementation | Use Case |
+|---------|---------------|----------|
+| **Auto-retry with backoff** | Step Functions Retry; Glue MaxRetries | Transient failures |
+| **Dead Letter Queue** | SQS DLQ; Lambda DLQ; EventBridge DLQ | Capture failed events |
+| **Circuit breaker** | Step Functions Choice state | Stop cascading failures |
+| **Auto-scaling** | Kinesis shards; DynamoDB; EMR | Handle traffic spikes |
+| **Fallback processing** | Step Functions Catch -> alternative | Use backup source |
+| **Auto-remediation** | EventBridge -> Lambda (fix and retry) | Auto-restart failed jobs |
+| **Idempotent processing** | Dedup keys; conditional writes | Safe to retry |
+
+### Idempotency Patterns
+
+```python
+# Pattern 1: Deduplication key in DynamoDB
+def process_record(record):
+    dedup_key = record['event_id']
+    try:
+        table.put_item(
+            Item={'dedup_key': dedup_key, 'processed_at': now()},
+            ConditionExpression='attribute_not_exists(dedup_key)'
+        )
+        do_processing(record)  # Only if not duplicate
+    except ConditionalCheckFailedException:
+        pass  # Already processed
+
+# Pattern 2: Deterministic output path (overwrite = idempotent)
+output_path = f""s3://output/date={date}/batch={batch_id}/result.parquet""
+
+# Pattern 3: Redshift MERGE (upsert - safe to re-run)
+# MERGE INTO target USING staging ON target.id = staging.id
+# WHEN MATCHED THEN UPDATE ...
+# WHEN NOT MATCHED THEN INSERT ...
+```
+
+---
+
+## Data Quality in Production
+
+### Data Quality Monitoring Framework
+
+```
+INGESTION QUALITY:
++-- Record count validation (expected vs. actual)
++-- Schema validation (columns, types)
++-- Freshness check (data arrived on time?)
++-- Completeness (null percentage within threshold?)
+
+TRANSFORMATION QUALITY:
++-- Row count reconciliation (input vs. output)
++-- Aggregate validation (sum, avg within bounds?)
++-- Referential integrity (foreign keys valid?)
++-- Business rule validation (domain-specific)
+
+CONSUMPTION QUALITY:
++-- Dashboard data freshness
++-- Query result validation
++-- SLA compliance (data available by deadline?)
+
+ALERTING:
++-- CloudWatch Alarms -> SNS -> PagerDuty/Slack/Email
+```
+
+### Glue Data Quality in Production
+
+```python
+quality_rules = """"""
+Rules = [
+    RowCount between 10000 and 1000000,
+    IsComplete ""order_id"",
+    IsUnique ""order_id"",
+    ColumnValues ""amount"" > 0,
+    ColumnValues ""status"" in [""PENDING"", ""SHIPPED"", ""DELIVERED""],
+    Completeness ""email"" >= 0.95,
+    ColumnValues ""order_date"" >= (now() - 7 days)
+]
+""""""
+
+# Actions on failure:
+# 1. FAIL - Stop pipeline; alert team
+# 2. QUARANTINE - Route bad records to error bucket
+# 3. WARN - Log warning; continue processing
+```
+
+### Freshness Monitoring
+
+| Check | Implementation | Alert Condition |
+|-------|---------------|----------------|
+| **File arrival** | EventBridge rule on S3 PutObject | No file by expected time |
+| **Partition freshness** | Query latest partition in Catalog | Latest partition > X hours old |
+| **Redshift table** | Query SVV_TABLE_INFO | Table not updated by SLA |
+| **Stream lag** | Kinesis IteratorAgeMilliseconds | Lag > threshold |
+| **DMS replication lag** | CDCLatencySource metric | Lag > threshold |
+
+---
+
+## Cost Optimization for Data Operations
+
+### AWS Glue Cost Optimization
+
+| Strategy | How It Saves | Implementation |
+|----------|-------------|---------------|
+| **Right-size DPUs** | Don't over-provision | Start small; monitor; auto-scale |
+| **Auto-scaling** | Scale workers to workload | --enable-auto-scaling |
+| **Bookmarks** | Process only new data | Enable for incremental ETL |
+| **Python Shell** | 1/16 DPU vs. 2 DPU minimum | Use for simple scripts |
+| **Flex execution** | Cheaper pre-emptible workers | Non-urgent jobs |
+| **Optimize duration** | Shorter = cheaper | Pushdown predicates; partition pruning |
+
+### Amazon Redshift Cost Optimization
+
+| Strategy | How It Saves | Implementation |
+|----------|-------------|---------------|
+| **Reserved Nodes** | Up to 75% vs. on-demand | Commit 1-3 years |
+| **Pause/Resume** | No charges when paused | Pause dev/test off-hours |
+| **Concurrency Scaling** | Pay only for burst | Better than over-provisioning |
+| **Serverless** | Pay per RPU-hour | Variable workloads |
+| **UNLOAD cold data** | Reduce cluster storage | Move to S3; query via Spectrum |
+| **Compression** | Less storage needed | ENCODE on all columns |
+
+### Amazon Kinesis Cost Optimization
+
+| Strategy | How It Saves | Implementation |
+|----------|-------------|---------------|
+| **Right-size shards** | Don't over-provision | Monitor IncomingBytes; merge underutilized |
+| **Use Firehose** | No shard management | When just delivering to S3/Redshift |
+| **On-Demand mode** | Auto-scales | Unpredictable traffic |
+| **Reduce retention** | Lower storage costs | 24 hours if replay not needed |
+
+### Amazon Athena Cost Optimization
+
+| Strategy | How It Saves | Implementation |
+|----------|-------------|---------------|
+| **Columnar formats** | Scan less data | Convert to Parquet/ORC |
+| **Partitioning** | Scan only relevant data | Hive-style partitions |
+| **Compression** | Smaller files | Snappy for Parquet |
+| **Workgroup limits** | Cap per-query scan | BytesScannedCutoffPerQuery |
+| **CTAS** | Materialize repeated queries | Create optimized tables |
+
+---
+
+## Performance Optimization
+
+### Glue Job Performance Tuning
+
+| Technique | When to Use | How |
+|-----------|-------------|-----|
+| **Pushdown predicates** | Filter at source (JDBC) | push_down_predicate option |
+| **Partition pruning** | Read only needed partitions | Filter on partition columns early |
+| **Worker type** | Match to workload | G.1X (standard), G.2X (memory) |
+| **Auto-scaling** | Variable workload sizes | --enable-auto-scaling |
+| **Grouping small files** | Reduce S3 LIST overhead | groupFiles and groupSize |
+| **Broadcast joins** | Small table + large table | broadcast() hint |
+| **Caching** | Reuse intermediate results | .cache() or .persist() |
+| **Coalesce output** | Control output file count | coalesce(n) before write |
+
+### Redshift Performance Tuning
+
+| Technique | What It Improves | Implementation |
+|-----------|-----------------|---------------|
+| **VACUUM** | Reclaims space; re-sorts | Schedule after DELETE/UPDATE |
+| **ANALYZE** | Updates statistics | Run after large COPY |
+| **Distribution key** | Join performance | Most common join column |
+| **Sort key** | Filter/range performance | Most common WHERE column |
+| **Compression** | I/O reduction | ENCODE on all columns |
+| **WLM** | Query prioritization | Separate ETL vs. BI queues |
+| **Result caching** | Repeated queries | Enabled by default (24hr) |
+| **Materialized Views** | Expensive aggregations | Pre-compute common patterns |
+
+---
+
+## Disaster Recovery and Data Protection
+
+### Backup Strategies by Service
+
+| Service | Backup Method | RPO |
+|---------|-------------|-----|
+| **S3** | Versioning + Cross-Region Replication | Minutes |
+| **Redshift** | Automated snapshots + cross-region copy | 8 hours (auto) |
+| **DynamoDB** | PITR (continuous) + on-demand backups | Seconds (PITR) |
+| **RDS/Aurora** | Automated backups + cross-region replicas | 5 minutes |
+| **Glue Catalog** | Export; CloudFormation templates | N/A (metadata) |
+
+### S3 Data Protection
+
+| Feature | What It Does | Use Case |
+|---------|-------------|----------|
+| **Versioning** | Keep all versions | Recover from accidental deletes |
+| **MFA Delete** | Require MFA to delete | Prevent malicious deletion |
+| **Object Lock** | WORM protection | Regulatory retention |
+| **Cross-Region Replication** | Async copy to another region | DR; compliance |
+| **Same-Region Replication** | Copy within region | Log aggregation |
+
+### Pipeline DR Patterns
+
+```
+ACTIVE-PASSIVE (most common):
+  PRIMARY REGION          DR REGION
+  S3 (source) --CRR--->  S3 (replica)
+  Redshift --snapshot-->  Redshift
+  Glue Jobs --IaC------>  Glue Jobs (standby)
+
+  Failover: Activate DR region; point consumers to DR
+
+PILOT LIGHT:
+  Infrastructure deployed but not running
+  Data replicated continuously
+  Start compute on failover (minutes-hours)
+
+WARM STANDBY:
+  Reduced-capacity pipeline running in DR
+  Scale up on failover
+  Lower RTO but higher cost
+```
+
+---
+
+## Key Exam Patterns for DEA-C01 Domain 3
+
+- **""Monitor Glue failures and alert""** -> EventBridge rule (FAILED state) -> SNS
+- **""Kinesis consumer falling behind""** -> Check IteratorAgeMilliseconds; add shards/enhanced fan-out
+- **""Glue job out of memory""** -> Increase DPUs; G.2X workers; repartition; filter early
+- **""Auto-retry failed steps""** -> Step Functions Retry with exponential backoff
+- **""Capture failed events""** -> Dead Letter Queue (SQS/Lambda DLQ)
+- **""Track who accessed data lake""** -> CloudTrail + Lake Formation audit logs
+- **""Reduce Glue costs""** -> Auto-scaling; bookmarks; Flex; Python Shell; right-size
+- **""Ensure data arrives by SLA""** -> Freshness monitoring (EventBridge + Lambda + Alarm)
+- **""Validate record counts""** -> Reconciliation check (source vs. destination count)
+- **""Redshift getting slower""** -> VACUUM and ANALYZE; check distribution key skew
+- **""Handle transient failures""** -> Retry + backoff + DLQ + idempotent processing
+- **""Centralized pipeline health""** -> CloudWatch Dashboard with all service metrics
+- **""Protect from accidental deletion""** -> S3 Versioning + MFA Delete + Object Lock
+- **""DR for data pipeline""** -> S3 CRR + Redshift snapshots + IaC (CloudFormation)
+- **""Troubleshoot Glue errors""** -> CloudWatch Logs (/aws-glue/jobs/error/); Spark UI
+- **""Optimize Kinesis costs""** -> Right-size shards; on-demand; reduce retention
+- **""Schedule daily ETL""** -> EventBridge Scheduler -> Step Functions or MWAA
+- **""Prevent duplicate processing""** -> Idempotency (dedup key; conditional writes)
+
+---
+
+## Quick Exam Tips for Domain 3
+
+- **CloudWatch** is the universal monitoring answer. Every service emits metrics.
+- **EventBridge** is the glue for event-driven operations. ""React to failure"" = EventBridge rule.
+- **IteratorAgeMilliseconds** is the #1 Kinesis metric. Growing = consumer can't keep up.
+- **Step Functions Retry + Catch** is the standard error handling pattern.
+- **Dead Letter Queues** capture messages that failed all retries. Essential for debugging.
+- **Glue Flex execution** is cheaper but pre-emptible. Use for non-urgent jobs.
+- **VACUUM and ANALYZE** are Redshift maintenance essentials. Run after large data changes.
+- **Idempotency** is critical for reliable pipelines. Safe to re-run = resilient.
+- **Cost allocation tags** track per-pipeline costs. Tag everything.
+- **CloudWatch Log Insights** is the go-to for searching logs.
+- **S3 CRR** is the foundation of data lake DR.
+- **Auto-scaling** exists for Glue, EMR, DynamoDB, Kinesis, MWAA. Use it.
+- **Freshness monitoring** pattern: check arrival by deadline -> alert if missing.
+
+---
+
+## Summary
+
+This covers all objectives in DEA-C01 Domain 3:
+
+- **Monitoring** - CloudWatch metrics/logs/alarms, EventBridge, key metrics per service
+- **Logging and auditing** - CloudTrail, Glue logs, Redshift audit, Lake Formation
+- **Troubleshooting** - Common failures for Glue, Kinesis, Redshift, DynamoDB, Lambda
+- **Automation** - Retry, DLQ, circuit breaker, idempotency, auto-remediation
+- **Data quality** - DQDL, freshness monitoring, reconciliation, alerting
+- **Cost optimization** - Per-service strategies, tagging, budgets
+- **Performance** - Glue tuning, Redshift maintenance, Kinesis scaling
+- **Disaster recovery** - Backup strategies, CRR, snapshots, DR patterns"

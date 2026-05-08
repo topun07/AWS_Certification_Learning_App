@@ -1,0 +1,185 @@
+certCode,domain,title,content
+"AIF-C01","Domain 2: Fundamentals of Generative AI","Fundamentals of Generative AI","## AIF-C01 Domain 2: Fundamentals of Generative AI
+
+**Weight:** ~24% of scored exam content
+**Target Audience:** Junior programmers preparing for the AWS Certified AI Practitioner exam
+
+This domain tests whether you understand what generative AI is, how foundation models work under the hood, their capabilities and limitations, and which AWS infrastructure supports GenAI applications.
+
+---
+
+## Task Statement 2.1: Basic Concepts of Generative AI
+
+### What Is Generative AI?
+
+**Generative AI (GenAI)** is a category of artificial intelligence that creates *new* content - text, images, code, audio, or video - by learning patterns from existing data. Unlike traditional ML that classifies or predicts, GenAI produces original outputs.
+
+- *Real-world example:* A chatbot that writes a personalized marketing email based on a one-sentence prompt.
+
+### Foundation Models (FMs)
+
+A **foundation model** is a large-scale, pre-trained model trained on massive, diverse datasets. It serves as a general-purpose base that can be adapted to many downstream tasks without training from scratch.
+
+- Think of an FM like a highly educated generalist - it knows a lot about many topics and can specialize with a little extra guidance.
+- Examples: Amazon Titan, Anthropic Claude, Meta Llama, Stability AI models.
+
+### The Transformer Architecture
+
+Nearly all modern FMs are built on the **transformer** architecture. Key concepts to know:
+
+- **Self-attention mechanism** - Allows the model to weigh the importance of different words in a sentence relative to each other (e.g., understanding that ""bank"" means a financial institution vs. a riverbank based on surrounding words).
+- **Tokens** - The basic units a model processes. Text is broken into tokens (roughly words or word fragments) before being fed into the model.
+- **Parameters** - The learned weights inside the model. More parameters generally means more capability (but also more compute cost).
+- **Context window** - The maximum number of tokens a model can process in a single request (input + output combined).
+
+*Real-world example:* When you ask an LLM to summarize a 10-page document, the entire document must fit within the model's context window.
+
+### How GenAI Models Generate Output
+
+- **Next-token prediction** - For text models, the model predicts the most probable next token, one at a time, until the response is complete.
+- **Temperature** - A parameter that controls randomness. Low temperature = more deterministic/focused; high temperature = more creative/varied.
+- **Top-p (nucleus sampling)** - Controls the diversity of token selection by limiting choices to the smallest set of tokens whose cumulative probability exceeds a threshold.
+
+### Types of Generative Models
+
+- **Large Language Models (LLMs)** - Generate and understand text (e.g., Claude, Amazon Titan Text).
+- **Diffusion models** - Generate images by learning to remove noise from random data (e.g., Stability AI's Stable Diffusion).
+- **Multimodal models** - Process and generate across multiple modalities (text + images, text + code, etc.).
+
+---
+
+## Task Statement 2.2: Capabilities and Limitations of GenAI
+
+### What GenAI Can Do
+
+- **Text generation** - Drafting emails, reports, code, summaries.
+- **Text summarization** - Condensing long documents into key points.
+- **Question answering** - Responding to natural language questions with relevant answers.
+- **Code generation** - Writing, debugging, and explaining code.
+- **Image/video generation** - Creating visuals from text descriptions.
+- **Translation and transformation** - Converting between languages or formats.
+- **Conversational AI** - Powering chatbots and virtual assistants.
+
+*Real-world example:* A customer service team uses GenAI to auto-draft responses to support tickets, which agents review before sending.
+
+### What GenAI Cannot Do (Limitations)
+
+- **Hallucinations** - Models can generate confident-sounding but factually incorrect information. This is the most heavily tested limitation on the exam.
+- **Knowledge cutoff** - FMs only know what was in their training data. They don't have access to real-time information unless augmented.
+- **No true reasoning** - Models simulate reasoning through pattern matching, not genuine logical deduction.
+- **Context window limits** - Very long documents may exceed the model's capacity.
+- **Non-deterministic outputs** - The same prompt can produce different responses across runs.
+- **Bias** - Models can reflect and amplify biases present in training data.
+
+### Mitigating Limitations
+
+- **Retrieval-Augmented Generation (RAG)** - Grounds model responses in external, up-to-date knowledge (more on this below).
+- **Guardrails** - Content filters and safety policies applied to model inputs/outputs.
+- **Human-in-the-loop** - Having humans review AI-generated content before it reaches end users.
+
+---
+
+## Task Statement 2.3: AWS Infrastructure and Technologies for GenAI
+
+### Amazon Bedrock - The Core GenAI Service
+
+**Amazon Bedrock** is a fully managed, serverless service that gives you access to foundation models from multiple providers through a single API. This is the #1 service to know for Domain 2.
+
+**Key capabilities:**
+
+- **Model choice** - Access FMs from Amazon (Titan), Anthropic (Claude), Meta (Llama), Cohere, Stability AI, and others - all through one unified API.
+- **No infrastructure management** - Serverless; you don't provision or manage GPUs.
+- **Customization** - Fine-tune models on your own data without exposing that data to the model provider.
+- **Bedrock Knowledge Bases** - A managed RAG workflow that connects FMs to your private data.
+- **Bedrock Guardrails** - Set content filters, PII redaction, and topic restrictions across all models.
+- **Bedrock Agents** - Build autonomous agents that can plan, execute multi-step tasks, and call APIs.
+
+*Real-world example:* A legal firm uses Bedrock with Claude to summarize contracts, with Knowledge Bases pulling from their internal document repository in S3 for accurate, company-specific answers.
+
+### Retrieval-Augmented Generation (RAG)
+
+**RAG** is an architectural pattern that solves the hallucination and knowledge-cutoff problems by retrieving relevant information from an external data source before generating a response.
+
+**How RAG works on AWS:**
+
+1. **Ingest** - Your documents (PDFs, web pages, etc.) are stored in **Amazon S3**.
+2. **Chunk and embed** - **Bedrock Knowledge Bases** splits documents into chunks and converts them into vector embeddings.
+3. **Store** - Embeddings are indexed in a vector database (e.g., Amazon OpenSearch Serverless, Pinecone, or Amazon Aurora with pgvector).
+4. **Retrieve** - When a user asks a question, the system finds the most relevant chunks via semantic search.
+5. **Generate** - The retrieved chunks are injected into the FM's prompt as context, and the model generates a grounded answer.
+
+*Real-world example:* An HR chatbot answers employee questions about benefits by retrieving the latest policy documents from S3 via Bedrock Knowledge Bases - eliminating hallucinated policy details.
+
+### Prompt Engineering
+
+**Prompt engineering** is the practice of crafting effective inputs to get the best outputs from an FM. Key techniques:
+
+- **Zero-shot prompting** - Asking the model to perform a task with no examples (""Translate this sentence to French"").
+- **Few-shot prompting** - Providing a few examples in the prompt so the model understands the desired format.
+- **Chain-of-thought prompting** - Asking the model to ""think step by step"" to improve reasoning on complex tasks.
+- **System prompts** - Instructions that set the model's persona, tone, and constraints.
+
+### Model Customization Approaches
+
+The exam tests your understanding of when to use each approach:
+
+| Approach | What It Does | When to Use |
+|----------|-------------|-------------|
+| **Prompt engineering** | Crafts better inputs | First attempt; no training needed |
+| **RAG** | Adds external knowledge at inference time | Need current/private data without retraining |
+| **Fine-tuning** | Further trains the FM on your domain data | Need the model to adopt a specific style or domain vocabulary |
+| **Continued pre-training** | Extends the model's base knowledge | Large corpus of domain-specific unlabeled data |
+
+### Supporting AWS Services
+
+- **Amazon S3** - Stores training data, documents for RAG, and model artifacts.
+- **Amazon SageMaker JumpStart** - Provides pre-trained FMs you can deploy and fine-tune within SageMaker (alternative to Bedrock for teams wanting more control).
+- **Amazon OpenSearch Serverless** - Vector database for storing embeddings in RAG architectures.
+- **AWS Lambda** - Serverless compute for building event-driven GenAI workflows.
+- **Amazon CloudWatch** - Monitors Bedrock API usage, latency, and errors.
+
+---
+
+## How It All Connects - The GenAI Application Stack
+
+```
+User Query
+    |
+[Amazon Bedrock Agents] - orchestrates the workflow
+    |
+[Bedrock Knowledge Bases] - retrieves relevant context (RAG)
+    |
+[Amazon S3 / OpenSearch] - stores documents and vector embeddings
+    |
+[Foundation Model via Bedrock] - generates the response
+    |
+[Bedrock Guardrails] - filters harmful/off-topic content
+    |
+Response to User
+```
+
+---
+
+## Key Exam Concepts to Memorize
+
+- **Hallucination** - Mitigate with **RAG** (Bedrock Knowledge Bases)
+- **Access foundation models without managing infrastructure** - **Amazon Bedrock**
+- **Ground responses in private/current data** - **RAG with Bedrock Knowledge Bases**
+- **Control harmful or off-topic outputs** - **Bedrock Guardrails**
+- **Build multi-step autonomous AI workflows** - **Bedrock Agents**
+- **Fine-tune an FM on your data** - **Bedrock model customization** or **SageMaker JumpStart**
+- **Store documents for RAG** - **Amazon S3**
+- **Vector search for embeddings** - **Amazon OpenSearch Serverless**
+- **Transformer architecture** - The foundation of all modern LLMs
+- **Temperature / Top-p** - Control output randomness and creativity
+
+---
+
+## Quick Exam Tips for Domain 2
+
+- If the question mentions **""reduce hallucinations""** or **""use company-specific data""** - think **RAG / Bedrock Knowledge Bases**.
+- If the question asks about **accessing multiple FMs through one service** - think **Amazon Bedrock**.
+- If the question asks about **content safety or filtering** - think **Bedrock Guardrails**.
+- If the question describes **an agent that calls APIs and takes actions** - think **Bedrock Agents**.
+- If the question asks about **controlling creativity vs. accuracy** - think **temperature and top-p parameters**.
+- If the question asks **""what is the cheapest/fastest way to improve outputs?""** - think **prompt engineering** (no training required)."

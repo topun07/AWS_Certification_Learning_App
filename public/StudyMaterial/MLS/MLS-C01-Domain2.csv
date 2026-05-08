@@ -1,0 +1,551 @@
+certCode,domain,title,content
+"MLS-C01","Domain 2: Exploratory Data Analysis","Exploratory Data Analysis","## MLS-C01 Domain 2: Exploratory Data Analysis
+
+**Weight:** ~24% of scored exam content
+**Exam Level:** Specialty
+
+This domain covers statistics, visualization, feature engineering, dimensionality reduction, and data preparation for ML.
+
+---
+
+## Data Types and Distributions
+
+### Data Types
+
+| Type | Subtypes | Examples |
+|------|----------|---------|
+| **Numerical** | Continuous (temperature, price), Discrete (count, age) | Revenue, orders |
+| **Categorical** | Nominal (no order), Ordinal (has order), Binary | Color, rating, yes/no |
+| **Text** | Free text, documents | Reviews, emails |
+| **Time Series** | Ordered observations over time | Stock prices, IoT |
+| **Image** | Pixel arrays (H x W x C) | Photos, medical scans |
+
+### Key Distributions
+
+| Distribution | Shape | Use Case |
+|-------------|-------|----------|
+| **Normal** | Bell-shaped, symmetric | Many ML algorithms assume this |
+| **Binomial** | Discrete, symmetric | Click/no-click predictions |
+| **Poisson** | Discrete, right-skewed | Event counts (visits, defects) |
+| **Log-Normal** | Right-skewed, positive | Income, stock prices |
+
+### Skewness
+
+- **Right-skewed (positive):** Mean > Median > Mode. Fix: Log transform, sqrt, Box-Cox
+- **Left-skewed (negative):** Mean < Median < Mode
+- **Impact:** Affects algorithms assuming normality
+
+### Descriptive Statistics
+
+| Measure | Robust to Outliers | Use When |
+|---------|-------------------|----------|
+| **Mean** | No | Symmetric data |
+| **Median** | Yes | Skewed data |
+| **Std Dev** | No | Normal data |
+| **IQR** | Yes | Skewed/outliers |
+
+### Correlation
+
+| Method | Measures | Use When |
+|--------|----------|----------|
+| **Pearson** | Linear relationship | Normal, linear |
+| **Spearman** | Monotonic relationship | Non-linear, ordinal |
+| **Kendall** | Concordance | Small samples, ties |
+
+---
+
+## Data Visualization
+
+### Visualization Selection
+
+| Purpose | Chart Type | Reveals |
+|---------|-----------|---------|
+| **Distribution** | Histogram, Box Plot, QQ Plot | Shape, skewness, outliers |
+| **Relationship** | Scatter, Heatmap, Pair Plot | Correlation, clusters |
+| **Comparison** | Bar Chart, Grouped Bar | Rankings, differences |
+| **ML-Specific** | ROC, PR Curve, Confusion Matrix, Learning Curve | Model performance |
+
+### ML-Specific Visualizations
+
+- **Learning Curve:** Training vs. validation error (diagnose over/underfitting)
+- **ROC Curve:** TPR vs. FPR (threshold-independent performance)
+- **PR Curve:** Better than ROC for imbalanced data
+- **Residual Plot:** Predicted vs. residuals (check regression assumptions)
+- **Elbow Plot:** Optimal K for K-Means
+
+### AWS Visualization
+
+| Service | Use Case |
+|---------|----------|
+| **QuickSight** | Business dashboards, ML Insights (anomaly, forecast) |
+| **SageMaker Studio** | Jupyter notebooks (matplotlib, seaborn) |
+| **Data Wrangler** | Automated EDA, target leakage detection |
+| **Athena** | SQL-based exploration on S3 |
+
+---
+
+## Feature Engineering
+
+### Numerical Features
+
+**Scaling:**
+
+| Method | Formula | Use When |
+|--------|---------|----------|
+| **Min-Max** | (x-min)/(max-min) -> [0,1] | Neural networks, KNN |
+| **Standardization** | (x-mean)/std -> mean=0, std=1 | SVM, Linear Regression, PCA |
+| **Robust** | (x-median)/IQR | Data with outliers |
+| **NOT needed** | N/A | Tree-based models (XGBoost, RF) |
+
+**Transformations:**
+- Log transform: Reduce right skewness (requires x > 0)
+- Box-Cox: Optimal power transform (requires x > 0)
+- Polynomial features: Capture non-linear relationships in linear models
+
+### Categorical Features
+
+| Method | Use When | Pros/Cons |
+|--------|----------|-----------|
+| **One-Hot** | Nominal, < 20 categories | No ordinal assumption; high dimensionality |
+| **Label Encoding** | Ordinal, tree-based models | Single column; implies order |
+| **Target Encoding** | High cardinality (100+) | Captures target relationship; risk of overfitting |
+| **Embedding** | Very high cardinality (1000+) | Captures semantics; needs deep learning |
+| **Hashing** | Streaming, unseen categories | Fixed size; collisions possible |
+
+### Text Features
+
+```
+Pipeline: Lowercase -> Remove punctuation -> Tokenize -> Stop words -> Stem/Lemmatize -> Vectorize
+
+Vectorization:
+- Bag of Words: Word counts (sparse, loses order)
+- TF-IDF: Importance weighting (better than BoW)
+- Word2Vec: Dense embeddings (captures meaning)
+- N-grams: Word sequences (captures local context)
+- BlazingText (AWS): Word2Vec + text classification
+```
+
+### Time Series Features
+
+- Lag features: y(t-1), y(t-2), ...
+- Rolling statistics: Moving average, rolling std
+- Date features: Day of week, month, quarter, holiday
+- Differencing: Remove trend (stationarity)
+
+---
+
+## Handling Missing Data
+
+### Types of Missingness
+
+| Type | Description | Strategy |
+|------|-------------|----------|
+| **MCAR** | Completely random | Safe to drop |
+| **MAR** | Related to observed variables | Impute using related vars |
+| **MNAR** | Related to missing value itself | Model the missingness |
+
+### Imputation Strategies
+
+| Strategy | Use When |
+|----------|----------|
+| **Mean** | Numerical, symmetric |
+| **Median** | Numerical, skewed/outliers |
+| **Mode** | Categorical |
+| **KNN Imputation** | Complex patterns |
+| **MICE** | Multiple variables missing |
+| **Forward Fill** | Time series |
+| **Missing Indicator** | Always consider adding |
+| **XGBoost native** | Let algorithm handle |
+
+### Decision Framework
+
+- < 5% missing + MCAR -> Drop rows
+- Numerical + skewed -> Median
+- Categorical -> Mode
+- Time series -> Forward fill
+- Tree-based model -> Let algorithm handle (XGBoost)
+- Always consider: Add missing indicator column
+
+---
+
+## Handling Outliers
+
+### Detection
+
+| Method | Description | Use When |
+|--------|-------------|----------|
+| **Z-Score** | > 3 standard deviations | Normal distribution |
+| **IQR** | < Q1-1.5xIQR or > Q3+1.5xIQR | Robust, any distribution |
+| **Isolation Forest** | ML-based (fewer splits = outlier) | Complex data |
+| **Random Cut Forest** | AWS-native (streaming) | Kinesis Analytics, SageMaker |
+
+### Treatment
+
+| Strategy | Use When |
+|----------|----------|
+| **Remove** | Clearly erroneous (data entry errors) |
+| **Cap/Floor (Winsorize)** | Reduce impact without removing |
+| **Log Transform** | Right-skewed with natural outliers |
+| **Keep** | Outliers ARE the signal (fraud, anomaly detection) |
+
+**Critical:** For fraud/anomaly detection, NEVER remove outliers - they're what you're detecting!
+
+---
+
+## Dimensionality Reduction
+
+### Feature Selection (Keep Original)
+
+| Method | Type | Description |
+|--------|------|-------------|
+| **Correlation** | Filter | Remove features correlated > 0.9 |
+| **Variance Threshold** | Filter | Remove low-variance features |
+| **L1 (Lasso)** | Embedded | Drives coefficients to zero (auto-selects) |
+| **L2 (Ridge)** | Embedded | Shrinks coefficients (doesn't eliminate) |
+| **RFE** | Wrapper | Iterative removal based on importance |
+| **Tree Importance** | Embedded | Gini/permutation importance |
+
+### Feature Extraction (Create New)
+
+| Method | Type | Use Case |
+|--------|------|----------|
+| **PCA** | Linear, unsupervised | Reduce features, preserve variance |
+| **t-SNE** | Non-linear, unsupervised | Visualization only (2D/3D) |
+| **UMAP** | Non-linear, unsupervised | Faster t-SNE, preserves global structure |
+| **LDA** | Linear, supervised | Maximize class separation |
+| **Autoencoders** | Non-linear, unsupervised | Complex relationships |
+
+### PCA vs. t-SNE vs. LDA
+
+| Feature | PCA | t-SNE | LDA |
+|---------|-----|-------|-----|
+| **Type** | Linear | Non-linear | Linear |
+| **Supervised** | No | No | Yes |
+| **Use** | Feature reduction | Visualization | Classification |
+| **Scalable** | Yes | No (slow) | Yes |
+| **Requires** | Standardized data | N/A | Labels |
+
+**PCA:** Requires standardized data. Choose K components explaining 95% variance.
+
+---
+
+## Handling Imbalanced Data
+
+### Techniques
+
+| Technique | Description | Risk |
+|-----------|-------------|------|
+| **SMOTE** | Synthetic minority samples (interpolation) | Most common exam answer |
+| **Random Oversampling** | Duplicate minority | Overfitting |
+| **Random Undersampling** | Remove majority | Lose information |
+| **Class Weights** | Penalize minority misclassification | XGBoost: scale_pos_weight |
+| **Threshold Tuning** | Lower decision threshold | More sensitive to minority |
+
+### Rules
+
+- Apply SMOTE to TRAINING data only (never test/validation)
+- Split BEFORE resampling
+- DON'T use accuracy for evaluation (misleading)
+- USE: Precision, Recall, F1, AUC-ROC, AUC-PR
+
+---
+
+## Time Series Analysis
+
+### Components
+
+- **Trend:** Long-term direction
+- **Seasonality:** Regular periodic patterns
+- **Cyclical:** Irregular long-term fluctuations
+- **Residual:** Random noise
+
+### Stationarity
+
+- **Definition:** Statistical properties constant over time
+- **Test:** Augmented Dickey-Fuller (p < 0.05 = stationary)
+- **Make stationary:** Differencing, log transform, detrending
+- **Why it matters:** ARIMA and many models assume stationarity
+
+### ACF/PACF
+
+- **ACF cuts off at lag q** -> MA(q) model
+- **PACF cuts off at lag p** -> AR(p) model
+- **Both decay gradually** -> ARMA model
+
+### AWS Time Series
+
+| Service | Use Case |
+|---------|----------|
+| **Amazon Forecast** | Managed forecasting (AutoML, DeepAR+, Prophet, ARIMA) |
+| **SageMaker DeepAR** | RNN-based, multiple related series, probabilistic |
+| **Kinesis Analytics** | Real-time anomaly detection |
+
+---
+
+## Data Labeling
+
+### SageMaker Ground Truth
+
+- **Workforce:** Mechanical Turk (public), Private, Third-party
+- **Active Learning:** Auto-label confident predictions (reduces cost 70%)
+- **Annotation Consolidation:** Multiple workers, resolve disagreements
+- **Output:** Augmented manifest file (JSON Lines)
+
+### Labeling Strategies
+
+- Semi-supervised: Label small subset, propagate
+- Weak supervision: Programmatic labeling functions
+- Transfer learning: Pre-trained model, fine-tune with few labels
+
+---
+
+## Bias Detection
+
+### SageMaker Clarify
+
+- **Pre-training:** Class Imbalance, Difference in Proportions, KL Divergence
+- **Post-training:** Disparate Impact, Accuracy Difference, Treatment Equality
+- **Explainability:** SHAP values, feature importance
+- **Integration:** SageMaker Pipelines, Model Monitor
+
+---
+
+## Key Exam Patterns
+
+**Statistics:**
+- **""Right-skewed data""** -> Log transform; use median not mean
+- **""Scale for neural network""** -> Min-Max normalization [0,1]
+- **""Scale for SVM/LR""** -> Standardization (Z-score)
+- **""Tree-based model scaling""** -> Not needed
+
+**Missing Data:**
+- **""XGBoost with missing""** -> Handles natively
+- **""Numerical + skewed""** -> Median imputation
+- **""Time series gaps""** -> Forward fill or interpolation
+
+**Outliers:**
+- **""Fraud detection - remove outliers?""** -> NO (they're the signal)
+- **""Streaming anomaly detection""** -> Random Cut Forest
+- **""Reduce impact without removing""** -> Winsorize or log transform
+
+**Features:**
+- **""High cardinality categorical""** -> Target encoding or embedding
+- **""Nominal, few categories""** -> One-Hot
+- **""Text classification""** -> TF-IDF or BlazingText
+
+**Dimensionality:**
+- **""Reduce features, preserve variance""** -> PCA
+- **""Visualize in 2D""** -> t-SNE
+- **""Automatic feature selection""** -> L1 (Lasso)
+- **""Highly correlated features""** -> Remove one or PCA
+
+**Imbalanced:**
+- **""Handle imbalanced classes""** -> SMOTE (training only)
+- **""Don't use accuracy""** -> Use F1, AUC-ROC, AUC-PR
+- **""XGBoost imbalanced""** -> scale_pos_weight parameter
+
+**Time Series:**
+- **""Check stationarity""** -> ADF test
+- **""Make stationary""** -> Differencing
+- **""Forecast multiple related series""** -> DeepAR (SageMaker)
+- **""Managed forecasting""** -> Amazon Forecast
+
+---
+
+## Quick Exam Tips
+
+- **Parquet** for analytics. **RecordIO** for SageMaker Pipe mode.
+- **Standardize before PCA** (required - PCA is variance-based).
+- **t-SNE is for visualization ONLY** - not for feature extraction.
+- **SMOTE on training data only** - never on test/validation.
+- **Accuracy is misleading** for imbalanced data. Use F1, AUC-PR.
+- **Random Cut Forest** = AWS anomaly detection (streaming + batch).
+- **L1 (Lasso)** = automatic feature selection (zeros out coefficients).
+- **L2 (Ridge)** = handles multicollinearity (shrinks, doesn't eliminate).
+- **XGBoost handles missing values natively** (learns best split direction).
+- **Log transform** requires positive values. Use log(x+1) for zeros.
+- **One-Hot encoding trap:** Drop one column (N-1) to avoid multicollinearity.
+- **Time series: NEVER random split.** Always temporal ordering.
+- **Ground Truth Active Learning** reduces labeling cost by up to 70%.
+- **SageMaker Clarify** = bias detection + explainability (SHAP values).
+- **Correlation != Causation.** Always remember this.
+
+---
+
+## Summary
+
+This covers all objectives in MLS-C01 Domain 2:
+
+- **Statistics** - Distributions, central tendency, dispersion, correlation
+- **Visualization** - Chart selection, ML-specific plots, AWS tools
+- **Feature Engineering** - Scaling, encoding, text, time series
+- **Missing Data** - Types, imputation strategies, algorithm-specific handling
+- **Outliers** - Detection (IQR, Z-score, RCF), treatment strategies
+- **Dimensionality Reduction** - PCA, t-SNE, LDA, feature selection, regularization
+- **Imbalanced Data** - SMOTE, class weights, evaluation metrics
+- **Time Series** - Components, stationarity, ACF/PACF, DeepAR, Forecast
+- **Data Labeling** - Ground Truth, active learning, annotation
+- **Bias Detection** - SageMaker Clarify, pre/post-training metrics
+
+---
+
+## Additional Exam Patterns (Continued)
+
+**Dimensionality Reduction (continued):**
+- **""Features highly correlated""** -> Remove one (> 0.9) or PCA to decorrelate
+- **""VIF > 10""** -> Multicollinearity; remove feature, combine, or use Ridge (L2)
+- **""Feature selection during training""** -> Embedded methods (Lasso, tree importance)
+- **""PCA requires what preprocessing?""** -> Standardization (mean=0, std=1)
+- **""t-SNE for model input?""** -> NO - visualization only (stochastic, not invertible)
+
+**Imbalanced Data (continued):**
+- **""99% class A, 1% class B""** -> SMOTE + class weights + F1/AUC-PR (not accuracy)
+- **""Create synthetic minority samples""** -> SMOTE (interpolates between K nearest)
+- **""When to apply SMOTE?""** -> After split, on training data ONLY
+- **""Evaluation for imbalanced""** -> AUC-PR (severe) or F1 (moderate) - NEVER accuracy
+- **""XGBoost imbalanced""** -> scale_pos_weight parameter
+- **""Extreme imbalance (0.01%)""** -> Anomaly detection (Isolation Forest, One-Class SVM)
+
+**Data Labeling (continued):**
+- **""Label images cost-effectively""** -> Ground Truth + Active Learning (70% cost reduction)
+- **""Sensitive data labeling""** -> Private workforce (not Mechanical Turk)
+- **""Annotators disagree""** -> Annotation consolidation function
+- **""Few labeled examples""** -> Semi-supervised or transfer learning
+
+**Bias Detection (continued):**
+- **""Detect bias before training""** -> Clarify pre-training metrics (CI, DPL, KL)
+- **""Detect bias after training""** -> Clarify post-training metrics (Disparate Impact)
+- **""Explain individual predictions""** -> SHAP values (Clarify)
+- **""Continuous bias monitoring""** -> Model Monitor + Clarify
+- **""Document model bias""** -> SageMaker Model Cards
+
+**Time Series (continued):**
+- **""Check stationarity""** -> ADF test (p < 0.05 = stationary)
+- **""Make stationary""** -> Differencing (subtract previous value)
+- **""ARIMA parameters""** -> PACF for p, ACF for q, d = differences needed
+- **""Forecast multiple related series""** -> DeepAR (trains on all simultaneously)
+- **""Managed forecasting""** -> Amazon Forecast (AutoML)
+- **""Time series split""** -> Never random; temporal ordering
+
+**Visualization (continued):**
+- **""Distribution of single variable""** -> Histogram or Box Plot
+- **""Check normality""** -> QQ Plot
+- **""Correlation between all features""** -> Heatmap
+- **""Visualize clusters""** -> t-SNE (2D projection)
+- **""Diagnose overfitting""** -> Learning Curve
+- **""Evaluate threshold""** -> ROC (balanced) or PR Curve (imbalanced)
+- **""Serverless BI""** -> QuickSight
+
+---
+
+## Additional Quick Tips
+
+- **PCA requires standardization.** Tested repeatedly. Without it, largest-scale feature dominates.
+- **SMOTE only on training data.** Split first, then SMOTE. Test must reflect real distribution.
+- **Trees don't need scaling.** XGBoost, RF use splits (thresholds), not distances.
+- **Random Cut Forest** = AWS anomaly detection. Kinesis Analytics (streaming) + SageMaker (batch).
+- **t-SNE = visualization only.** Stochastic, not invertible, doesn't preserve global structure.
+- **L1 (Lasso) = feature selection.** Drives coefficients to zero. L2 (Ridge) shrinks but doesn't eliminate.
+- **Correlation != Causation.** High correlation = multicollinearity (remove one).
+- **Box-Cox requires positive values.** Use Yeo-Johnson for zeros/negatives.
+- **ADF test:** p < 0.05 = stationary (counterintuitive - low p = good).
+- **Ground Truth Active Learning** = 70% cost reduction for labeling.
+- **Clarify** = bias detection + explainability (SHAP). Pre-training + post-training.
+- **Median** is robust to outliers; mean is not. Use median for skewed data.
+- **One-Hot trap:** N-1 columns to avoid multicollinearity in linear models.
+- **DeepAR** trains on multiple series simultaneously. Probabilistic forecasts (quantiles).
+
+---
+
+## Domain 2 Concept Map
+
+```
+EXPLORATORY DATA ANALYSIS
+|
++-- STATISTICS & DISTRIBUTIONS
+|   +-- Central Tendency: Mean (symmetric), Median (skewed), Mode (categorical)
+|   +-- Dispersion: Std Dev (normal), IQR (outliers), Variance
+|   +-- Distributions: Normal, Poisson, Binomial, Log-Normal
+|   +-- Correlation: Pearson (linear), Spearman (monotonic)
+|   +-- Skewness: Right (log transform), Left (rare)
+|   +-- Tests: Shapiro-Wilk (normality), ADF (stationarity)
+|
++-- VISUALIZATION
+|   +-- Distribution: Histogram, Box Plot, QQ Plot, Violin
+|   +-- Relationship: Scatter, Heatmap, Pair Plot
+|   +-- ML-Specific: ROC, PR Curve, Learning Curve, Confusion Matrix
+|   +-- Time Series: Line plot, ACF/PACF plots
+|   +-- AWS: QuickSight (BI), Studio Notebooks, Data Wrangler
+|
++-- FEATURE ENGINEERING
+|   +-- Numerical: Scaling (Z-score, Min-Max), Transforms (log, Box-Cox), Binning
+|   +-- Categorical: One-Hot, Label, Target, Frequency, Embedding, Hashing
+|   +-- Text: Tokenize, TF-IDF, Word2Vec/BlazingText, N-grams
+|   +-- Time Series: Lag, rolling stats, date features, differencing
+|   +-- Interactions: Polynomial features, ratios, aggregations
+|
++-- MISSING DATA
+|   +-- Types: MCAR, MAR, MNAR
+|   +-- Simple: Mean/Median/Mode, constant, drop
+|   +-- Advanced: KNN, MICE, regression imputation
+|   +-- Time Series: Forward fill, interpolation
+|   +-- Special: XGBoost handles natively, missing indicator column
+|
++-- OUTLIERS
+|   +-- Detection: Z-score, IQR, Isolation Forest, RCF
+|   +-- Treatment: Remove, Winsorize, Transform, Keep
+|   +-- Visual: Box plot, scatter plot
+|   +-- Key Rule: Don't remove if outliers ARE the signal (fraud)
+|
++-- DIMENSIONALITY REDUCTION
+|   +-- Feature Selection: Filter (correlation), Wrapper (RFE), Embedded (Lasso)
+|   +-- Feature Extraction: PCA (linear), t-SNE (visualization), LDA (supervised)
+|   +-- Regularization: L1 (selection), L2 (shrinkage), Elastic Net (both)
+|   +-- Curse of Dimensionality: More features -> need more data
+|
++-- IMBALANCED DATA
+|   +-- Oversampling: SMOTE (synthetic), Random (duplicate)
+|   +-- Undersampling: Random, Tomek Links
+|   +-- Algorithmic: Class weights, scale_pos_weight, threshold tuning
+|   +-- Evaluation: F1, AUC-PR, AUC-ROC (NOT accuracy)
+|   +-- Rule: SMOTE on training only, split BEFORE resampling
+|
++-- TIME SERIES
+|   +-- Components: Trend, Seasonality, Cyclical, Residual
+|   +-- Stationarity: ADF test, differencing, log transform
+|   +-- Autocorrelation: ACF (MA order), PACF (AR order)
+|   +-- Features: Lag, rolling, date, Fourier
+|   +-- AWS: Amazon Forecast (managed), DeepAR (multi-series)
+|
++-- DATA LABELING
+|   +-- Ground Truth: Managed labeling, Active Learning (70% cost reduction)
+|   +-- Workforce: Mechanical Turk (public), Private (sensitive), Vendor
+|   +-- Active Learning: Auto-label confident, human for uncertain
+|   +-- Quality: Inter-annotator agreement, consolidation
+|
++-- BIAS DETECTION
+    +-- SageMaker Clarify: Pre-training + Post-training metrics
+    +-- Pre-Training: Class Imbalance, DPL, KL Divergence
+    +-- Post-Training: Disparate Impact, Accuracy Difference
+    +-- Explainability: SHAP values, feature importance
+    +-- Monitoring: Model Monitor + Clarify (continuous)
+```
+
+---
+
+## Summary Table
+
+| Topic | Key Services | Critical Concepts |
+|-------|-------------|------------------|
+| **Statistics** | Studio, Athena | Mean vs. Median, Pearson vs. Spearman, skewness |
+| **Visualization** | QuickSight, Studio, Data Wrangler | Histogram, Heatmap, QQ Plot, Learning Curve |
+| **Numerical Features** | Processing, Glue | Standardization (linear), Normalization (NN), NOT needed for trees |
+| **Categorical Features** | Glue, Data Wrangler | One-Hot (low card), Label (ordinal), Target (high card) |
+| **Text Features** | Comprehend, BlazingText | TF-IDF, Word2Vec, tokenization pipeline |
+| **Missing Data** | Data Wrangler, DataBrew | Median (skewed), Mode (categorical), XGBoost (native) |
+| **Outliers** | Kinesis Analytics (RCF) | IQR, RCF (streaming), Winsorize, keep for fraud |
+| **Dimensionality** | SageMaker PCA, Clarify | PCA (standardize!), t-SNE (viz only), L1 (selection) |
+| **Imbalanced** | SageMaker, XGBoost | SMOTE (train only), scale_pos_weight, F1/AUC-PR |
+| **Time Series** | Forecast, DeepAR | ADF test, differencing, ACF/PACF, temporal split |
+| **Labeling** | Ground Truth | Active Learning (70% savings), private workforce |
+| **Bias** | Clarify | Pre/post-training metrics, SHAP values |"

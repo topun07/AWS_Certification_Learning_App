@@ -1,0 +1,613 @@
+certCode,domain,title,content
+"DOP-C02","Domain 5: Incident & Event Response","Incident and Event Response","## DOP-C02 Domain 5: Incident and Event Response
+
+**Weight:** ~18% of scored exam content
+**Exam Level:** Professional
+
+This domain covers event-driven response, automated remediation, troubleshooting system failures, and cross-account incident management. Everything must be automated.
+
+---
+
+## Event-Driven Architecture
+
+### Event Sources and Processing
+
+```
+EVENT SOURCES:
+  CloudWatch Alarms | CloudTrail Events | Config Rules
+  GuardDuty Findings | Health Events | EC2 State Changes
+  Auto Scaling Events | ECS Task Changes | CodePipeline Events
+  Security Hub Findings | Inspector Findings | Custom Apps
+         |
+         v
+ROUTING (EventBridge, SNS, SQS, Kinesis)
+         |
+         v
+RESPONSE ACTIONS:
+  Lambda | SSM Automation | Step Functions | SSM Run Command
+  EC2 Actions | Auto Scaling | SNS | Incident Manager
+```
+
+### EventBridge Event Patterns
+
+```json
+// EC2 instance stopped/terminated
+{""source"": [""aws.ec2""], ""detail"": {""state"": [""stopped"", ""terminated""]}}
+
+// Config non-compliant
+{""source"": [""aws.config""], ""detail"": {""newEvaluationResult"": {""complianceType"": [""NON_COMPLIANT""]}}}
+
+// GuardDuty high severity
+{""source"": [""aws.guardduty""], ""detail"": {""severity"": [{""numeric"": ["">="", 7]}]}}
+
+// AWS Health scheduled change
+{""source"": [""aws.health""], ""detail"": {""eventTypeCategory"": [""scheduledChange""]}}
+
+// ASG launch failed
+{""source"": [""aws.autoscaling""], ""detail"": {""StatusCode"": [""Failed""]}}
+```
+
+### SNS for Notifications
+
+- **Fan-out:** One message -> multiple subscribers (email, SMS, Lambda, SQS, HTTPS)
+- **Message filtering:** Subscribers receive only matching messages
+- **Cross-account/region:** Subscribe from different accounts/regions
+- **FIFO topics:** Ordered, deduplicated delivery
+- **DLQ:** Capture failed deliveries
+
+### SQS for Event Buffering
+
+```
+EventBridge -> SQS Queue -> Lambda (batch processing)
+
+WHY SQS?
+- Buffer spikes (Lambda concurrency limits)
+- Retry failed processing (visibility timeout)
+- Dead letter queue (capture persistent failures)
+- FIFO queue (ordered processing)
+- Batch processing (up to 10 messages per invoke)
+
+DLQ Pattern:
+Source Queue -> Lambda fails N times -> DLQ -> CloudWatch Alarm -> Notify
+```
+
+---
+
+## Automated Remediation Patterns
+
+### Pattern 1: EventBridge -> Lambda (Simple)
+
+```
+EventBridge (EC2 RunInstances) -> Lambda (check tags, stop if missing) -> SNS (notify)
+```
+
+### Pattern 2: Config Rule -> SSM Automation (Compliance)
+
+```
+Config Rule (s3-bucket-public-read-prohibited)
+  -> NON_COMPLIANT
+  -> Auto Remediation -> SSM Document (AWS-DisableS3BucketPublicReadWrite)
+```
+
+Config has built-in auto-remediation - no EventBridge needed.
+
+### Pattern 3: GuardDuty -> Step Functions (Complex)
+
+```
+GuardDuty Finding (severity >= 7)
+  -> EventBridge
+  -> Step Functions:
+     1. Snapshot EBS volumes (forensics)
+     2. Tag instance (COMPROMISED)
+     3. Isolate (replace SG with no-traffic SG)
+     4. Disable IAM keys
+     5. Notify security team
+     6. Create Jira ticket
+```
+
+### Pattern 4: CloudWatch Alarm -> SSM Automation (Self-Healing)
+
+```
+Alarm (UnHealthyHostCount > 0)
+  -> EventBridge
+  -> SSM Automation:
+     1. Run Command: restart application
+     2. Wait 60 seconds
+     3. Check health endpoint
+     4. If healthy -> Success
+     5. If unhealthy -> Escalate to ops
+```
+
+### Pattern 5: Security Hub -> Automated Response
+
+```
+Security Hub (aggregates GuardDuty, Inspector, Macie, Config)
+  -> EventBridge:
+     CRITICAL -> Step Functions (full isolation workflow)
+     HIGH -> Lambda (targeted remediation: block IP, revoke creds)
+     MEDIUM -> SNS (notification only)
+```
+
+### Pattern 6: Health Events -> Proactive Response
+
+```
+AWS Health (EC2 retirement scheduled)
+  -> EventBridge
+  -> Lambda:
+     If in ASG: terminate instance (ASG replaces)
+     If standalone: launch replacement, migrate, terminate old
+```
+
+---
+
+## SSM Automation and Run Command
+
+### SSM Automation
+
+| Feature | Description |
+|---------|-------------|
+| **What it does** | Multi-step runbooks on AWS resources |
+| **Documents** | YAML/JSON definitions |
+| **Pre-built** | 100+ AWS-managed documents |
+| **Approval** | Require manual approval before critical steps |
+| **Rate control** | Limit concurrent executions |
+| **Cross-account** | Execute via Organizations |
+| **Triggers** | EventBridge, Config, CloudWatch, manual |
+
+**Key Actions:** aws:executeScript, aws:runCommand, aws:executeAwsApi, aws:waitForAwsResourceProperty, aws:approve, aws:sleep, aws:branch
+
+### SSM Run Command
+
+- **Targeting:** Instance IDs, tags, resource groups
+- **Rate control:** MaxConcurrency + MaxErrors (stop if too many fail)
+- **Output:** S3 bucket or CloudWatch Logs
+- **Common docs:** AWS-RunShellScript, AWS-RunPowerShellScript, AWS-RunPatchBaseline
+
+### Maintenance Windows
+
+- Schedule automated tasks during defined windows
+- Tasks: Run Command, Automation, Lambda, Step Functions
+- Duration: 1-24 hours; Cutoff: stop scheduling N hours before end
+
+---
+
+## Troubleshooting System Failures
+
+### EC2 Instance Not Reachable
+
+```
+CHECK 1: Instance Status Checks
+  System check FAILED -> Stop/Start (migrates hardware) or Auto Recovery
+  Instance check FAILED -> Check system logs, screenshot
+
+CHECK 2: Network
+  Security Group, NACL, Route Table, Public IP, VPC Flow Logs
+
+CHECK 3: Application
+  SSM Session Manager, Run Command, CloudWatch Agent, app logs
+
+CHECK 4: IAM
+  Instance profile, role policies, STS
+```
+
+### ECS Task Failing to Start
+
+```
+CHECK 1: Task Definition
+  Image pull (ECR permissions, image exists, VPC endpoint/NAT)
+  Resource limits (CPU/memory), port conflicts, entrypoint
+
+CHECK 2: IAM
+  Task execution role (pull image, write logs)
+  Task role (app permissions: S3, DynamoDB)
+
+CHECK 3: Networking (Fargate/awsvpc)
+  Subnet routes, security groups, available IPs, VPC endpoints
+
+CHECK 4: Health Checks
+  Container health check, ALB health check, grace period
+
+CHECK 5: Logs
+  CloudWatch Logs (stdout/stderr), ECS service events, stopped task reason
+```
+
+### Lambda Issues
+
+| Issue | Cause | Fix |
+|-------|-------|-----|
+| **Timeout** | Slow downstream; large payload | Increase timeout; optimize; async |
+| **Out of Memory** | Large data processing | Increase memory (also increases CPU) |
+| **Throttling** | Concurrency limit exceeded | Reserved concurrency; SQS buffer |
+| **Permission Denied** | Role lacks permissions; VPC no NAT | Update role; add NAT/endpoints |
+| **Cold Start** | First invoke after idle | Provisioned concurrency; SnapStart |
+| **VPC no internet** | No NAT Gateway | Add NAT or VPC endpoints |
+
+### ASG Issues
+
+| Issue | Cause | Fix |
+|-------|-------|-----|
+| **Launch/terminate loop** | Grace period too short; health check failing | Increase grace period; fix app startup |
+| **Not scaling out** | At MaxSize; no alarm triggered; cooldown | Increase max; check alarms; check activity |
+| **Not scaling in** | Scale-in protection; at minimum | Check protections; check termination policies |
+| **Launch failures** | AMI not found; instance type unavailable; subnet full | Check Activity History for error details |
+
+### RDS/Aurora Issues
+
+| Issue | Diagnostic | Fix |
+|-------|-----------|-----|
+| **Connection failures** | SG rules, subnet, public access, max connections | Fix SG; check DatabaseConnections metric |
+| **Performance** | CPU, memory, IOPS, slow queries | Scale up; read replicas; Performance Insights |
+| **Unexpected failover** | RDS Events | Use endpoint (not IP); handle reconnection |
+| **Replication lag** | ReplicaLag metric | Scale replica; reduce writes; use Aurora |
+
+### Deployment Failures
+
+**CodeDeploy:** Check hook script logs, agent running, IAM role, AppSpec syntax, deployment events
+**CodePipeline:** Check source connection, build logs, deploy events, approval timeout, pipeline role
+**CloudFormation:** Check Events tab, UPDATE_ROLLBACK_FAILED (ContinueUpdateRollback), DELETE_FAILED (empty bucket, remove deps)
+
+---
+
+## CloudWatch Alarm Actions
+
+| Action Type | What It Does | Use Case |
+|-------------|-------------|----------|
+| **SNS** | Send notification | Alert ops team |
+| **Auto Scaling** | Trigger scale policy | Respond to load |
+| **EC2: Stop** | Stop instance | Cost savings (idle) |
+| **EC2: Terminate** | Terminate instance | Remove failed instance |
+| **EC2: Recover** | Recover on new hardware | Hardware failure |
+| **SSM OpsItem** | Create operational item | Track issues |
+| **Lambda** | Invoke function | Custom remediation |
+
+---
+
+## AWS Health and Trusted Advisor Events
+
+### Health Events
+
+- **Account-specific:** Scheduled maintenance, operational issues, notifications
+- **Public:** Service-wide issues, announcements
+- **Categories:** issue, accountNotification, scheduledChange
+- **Automation:** Health Event -> EventBridge -> Lambda (migrate, failover, notify)
+- **Organization Health:** Aggregate across all accounts
+
+### Trusted Advisor + EventBridge
+
+| Category | Automated Response |
+|----------|-------------------|
+| **Cost** | Lambda -> stop/delete idle resources |
+| **Performance** | Lambda -> resize or scale |
+| **Security** | Lambda -> restrict SG, notify |
+| **Fault Tolerance** | Lambda -> enable Multi-AZ |
+| **Service Limits** | Lambda -> request increase |
+
+---
+
+## Cross-Account and Cross-Region Events
+
+### Cross-Account Event Routing
+
+```
+Workload Accounts (A, B, C)
+  EventBridge Rules -> Forward to central bus
+         |
+         v
+Central Operations Account
+  EventBridge (Central Bus)
+  Rules:
+    Security events -> Security team (SNS)
+    Compliance events -> Remediation (Lambda/SSM)
+    Operational events -> Dashboard (CloudWatch)
+    All events -> Archive (replay/audit)
+
+Config: Source accounts forward; central bus policy allows PutEvents
+```
+
+### Cross-Region
+
+- EventBridge rules can target event buses in other regions
+- Use for DR automation (detect failure in primary -> activate DR)
+
+---
+
+## Event Replay and Dead Letter Queues
+
+### EventBridge Archive and Replay
+
+| Feature | Description |
+|---------|-------------|
+| **Archive** | Store events for later replay |
+| **Retention** | Indefinite or specified days |
+| **Filter** | Archive only matching events |
+| **Replay** | Re-send archived events to bus |
+| **Use case** | Debug; reprocess; test new rules |
+
+### Dead Letter Queue Patterns
+
+| Service | DLQ Behavior |
+|---------|-------------|
+| **SQS** | After maxReceiveCount failures -> DLQ. Redrive back to source. |
+| **Lambda (async)** | After 2 retries -> DLQ (SQS or SNS) |
+| **EventBridge** | After retry policy exhausted -> DLQ (SQS) |
+| **SNS** | Subscription delivery fails -> DLQ (SQS) |
+| **Step Functions** | Express workflow fails -> DLQ (SQS) |
+
+**Monitor all DLQs:** CloudWatch Alarm on ApproximateNumberOfMessagesVisible > 0
+
+---
+
+## Key Exam Patterns for Domain 5
+
+**Event Sources & Routing:**
+- **""Respond to EC2 state changes""** -> EventBridge rule -> Lambda/SSM
+- **""Notify teams with different filtering""** -> SNS with message filtering
+- **""Buffer high-volume events""** -> SQS between EventBridge and Lambda
+- **""Forward events to central ops account""** -> Cross-account EventBridge
+- **""Replay events for debugging""** -> EventBridge Archive + Replay
+- **""Route to external webhook""** -> EventBridge API Destinations
+
+**Automated Remediation:**
+- **""Auto-remediate non-compliant resources""** -> Config Rule + Auto Remediation (SSM)
+- **""Isolate compromised instance""** -> GuardDuty -> EventBridge -> Step Functions
+- **""Restart app on health check failure""** -> Alarm -> EventBridge -> SSM Run Command
+- **""Respond to EC2 retirement""** -> Health Event -> EventBridge -> Lambda
+- **""Block malicious IP""** -> GuardDuty -> EventBridge -> Lambda -> WAF
+- **""Rollback on error spike""** -> Alarm -> EventBridge -> Lambda -> CodeDeploy rollback
+- **""Multi-step with approval""** -> SSM Automation with aws:approve
+
+**Troubleshooting:**
+- **""EC2 not reachable""** -> Status checks, SG, NACL, routes, Flow Logs
+- **""ECS task won't start""** -> Image pull, IAM, networking, health checks, logs
+- **""Lambda timeout""** -> X-Ray trace; increase timeout; optimize; async
+- **""ASG launch/terminate loop""** -> Health check grace period too short
+- **""CloudFormation UPDATE_ROLLBACK_FAILED""** -> ContinueUpdateRollback (skip resources)
+- **""CodeDeploy hook failed""** -> Check hook script logs on instance
+
+**DLQ & Retry:**
+- **""Messages failing repeatedly""** -> SQS DLQ (maxReceiveCount)
+- **""Lambda async failures""** -> DLQ or Destinations
+- **""EventBridge target failures""** -> Retry policy + DLQ
+- **""Reprocess failed messages""** -> SQS Redrive (DLQ back to source)
+
+---
+
+## Quick Exam Tips for Domain 5
+
+- **EventBridge** is the central routing service. Know event patterns for EC2, Config, GuardDuty, Health, ASG, CodePipeline.
+- **Config Auto-Remediation** doesn't need EventBridge - it has built-in remediation via SSM Automation.
+- **Step Functions** for complex multi-step remediation (isolate, snapshot, notify, ticket).
+- **SSM Automation** for runbooks. Know key actions: executeScript, runCommand, executeAwsApi, approve, branch.
+- **SNS message filtering** lets subscribers receive only relevant messages. Reduces Lambda invocations.
+- **SQS DLQ** captures messages that fail maxReceiveCount times. Monitor with CloudWatch Alarm. Redrive to reprocess.
+- **EventBridge Archive + Replay** = debug by replaying historical events through new rules.
+- **Cross-account EventBridge** requires event bus policy allowing PutEvents from source accounts.
+- **Health Events** enable proactive response (migrate before retirement; failover before outage).
+- **ASG launch/terminate loop** = #1 ASG troubleshooting scenario. Fix: increase health check grace period.
+- **ECS task failures:** Check image pull (ECR permissions + VPC endpoint), task execution role, stopped task reason.
+- **Lambda throttling:** Reserved concurrency guarantees capacity. SQS buffer absorbs spikes.
+- **CloudFormation UPDATE_ROLLBACK_FAILED:** Use ContinueUpdateRollback to skip problematic resources.
+- **EC2 Auto Recovery** = same instance on new hardware (CloudWatch alarm action). Different from ASG replacement.
+- **Trusted Advisor + EventBridge** enables automated response to best-practice violations.
+- **Incident Manager** = structured response with escalation, runbooks, and post-incident analysis.
+
+---
+
+## Domain 5 Concept Map
+
+```
+INCIDENT AND EVENT RESPONSE
+|
++-- EVENT SOURCES & ROUTING
+|   +-- EventBridge: Pattern matching; 200+ AWS sources; cross-account
+|   +-- SNS: Fan-out notifications; message filtering; DLQ
+|   +-- SQS: Event buffering; retry; DLQ; redrive
+|   +-- CloudWatch Alarms: Threshold -> action (SNS, Scale, EC2, Lambda)
+|   +-- Health Events: Proactive response to AWS issues
+|   +-- Trusted Advisor: Best-practice violation response
+|
++-- AUTOMATED REMEDIATION
+|   +-- Config + SSM Automation: Compliance auto-fix
+|   +-- EventBridge + Lambda: Simple event-driven remediation
+|   +-- EventBridge + Step Functions: Complex multi-step workflows
+|   +-- CloudWatch Alarm + SSM: Self-healing (restart, scale)
+|   +-- Security Hub + Lambda/Step Functions: Security response
+|   +-- Health + Lambda: Proactive migration/failover
+|
++-- SSM AUTOMATION & RUN COMMAND
+|   +-- Automation: Multi-step runbooks; approval; cross-account
+|   +-- Run Command: Ad-hoc execution; targeting; rate control
+|   +-- Maintenance Windows: Scheduled tasks (patching, backups)
+|   +-- Documents: Pre-built (100+) and custom
+|
++-- TROUBLESHOOTING
+|   +-- EC2: Status checks, networking, IAM, application
+|   +-- ECS: Image pull, IAM roles, networking, health checks
+|   +-- Lambda: Timeout, memory, throttling, VPC, cold starts
+|   +-- ASG: Launch loops, scaling issues, capacity
+|   +-- RDS: Connections, performance, failover, replication
+|   +-- Deployments: CodeDeploy hooks, pipeline stages, CloudFormation
+|
++-- DEAD LETTER QUEUES & RETRY
+|   +-- SQS DLQ: maxReceiveCount; redrive; alarm
+|   +-- Lambda DLQ: Async failures; Destinations alternative
+|   +-- EventBridge DLQ: Target failures after retry exhausted
+|   +-- SNS DLQ: Subscription delivery failures
+|   +-- Monitor: Alarm on all DLQs (messages > 0)
+|
++-- CROSS-ACCOUNT & CROSS-REGION
+|   +-- EventBridge: Forward events to central bus
+|   +-- SSM Automation: Cross-account via Organizations
+|   +-- CloudWatch: Cross-Account Observability (OAM)
+|   +-- Incident Manager: Cross-account incidents
+|
++-- EVENT REPLAY & ARCHIVE
+|   +-- EventBridge Archive: Store events continuously
+|   +-- Replay: Re-send historical events for debugging/reprocessing
+|   +-- Retention: Indefinite or time-based
+|
++-- INCIDENT MANAGEMENT
+    +-- Incident Manager: Response plans, escalation, runbooks
+    +-- Runbooks: SSM Automation documents for remediation
+    +-- Post-Incident: Structured review; action items; MTTR tracking
+    +-- Dashboard: Alarm status, error rates, queues, recent events
+```
+
+---
+
+## Summary
+
+This covers all objectives in DOP-C02 Domain 5:
+
+- **Event-driven architecture** - EventBridge, SNS, SQS, event patterns, routing
+- **Automated remediation** - Config+SSM, Lambda, Step Functions, Security Hub
+- **SSM Automation** - Runbooks, Run Command, maintenance windows
+- **Troubleshooting** - EC2, ECS, Lambda, ASG, RDS, deployments
+- **Alarm actions** - SNS, Auto Scaling, EC2 actions, Lambda
+- **Health & Trusted Advisor** - Proactive response to AWS events
+- **Cross-account/region** - Event forwarding, central operations
+- **DLQ & retry** - SQS, Lambda, EventBridge, SNS dead letter patterns
+- **Event replay** - Archive, replay, debugging historical events
+- **Incident management** - Response plans, escalation, post-incident
+
+---
+
+## Additional Exam Tips (Continued)
+
+**Automated Remediation (continued):**
+- **""Execute commands without SSH""** -> SSM Run Command (requires Agent + IAM role)
+- **""Schedule patching during maintenance""** -> SSM Maintenance Windows + AWS-RunPatchBaseline
+- **""Remediate across fleet with error threshold""** -> SSM Run Command with MaxConcurrency + MaxErrors
+
+**Troubleshooting (continued):**
+- **""EC2 unreachable but running""** -> SG -> NACL -> Route Table -> Flow Logs -> System Log
+- **""ECS task stops immediately""** -> Image pull (ECR perms/endpoint) -> execution role -> exit code -> logs
+- **""Lambda timing out""** -> X-Ray trace -> downstream dependency -> VPC NAT -> increase timeout
+- **""Lambda throttled (429)""** -> Concurrency limit -> reserved concurrency -> SQS buffer
+- **""ASG launch/terminate loop""** -> Health check grace period -> ELB check -> user data -> instance profile
+- **""CloudFormation UPDATE_ROLLBACK_FAILED""** -> ContinueUpdateRollback (skip manually deleted resources)
+- **""CodeDeploy failing""** -> AppSpec hooks -> Agent running -> IAM role -> deployment logs
+- **""RDS connection after failover""** -> Using endpoint (not IP) -> DNS TTL < 30s -> reconnect logic
+- **""Pipeline failing at source""** -> Connection/token -> repo exists -> branch exists -> IAM
+
+**Dead Letter Queues (continued):**
+- **""Messages failing repeatedly""** -> SQS DLQ (maxReceiveCount); alarm on depth; redrive when fixed
+- **""Lambda async failing""** -> DLQ (SQS/SNS) or Lambda Destinations (onFailure)
+- **""EventBridge target failing""** -> Retry policy + DLQ on rule target
+- **""Failed SNS deliveries""** -> Per-subscription DLQ
+
+**Cross-Account/Region (continued):**
+- **""Centralize security events""** -> EventBridge cross-account -> central security bus
+- **""Respond in DR region""** -> EventBridge cross-region rule
+- **""Organization health monitoring""** -> Health Organization view + EventBridge in management account
+- **""Automation across accounts""** -> SSM Automation cross-account role + Organizations
+
+**Incident Management (continued):**
+- **""Structured on-call with escalation""** -> Incident Manager (response + escalation plans)
+- **""Runbook with approval gate""** -> SSM Automation with aws:approve step
+- **""Track operational issues""** -> OpsCenter (OpsItems) + auto-creation from alarms
+- **""Post-incident review""** -> Incident Manager post-incident analysis
+
+---
+
+## Additional Quick Tips
+
+- **EventBridge** replaces CloudWatch Events. Primary event router for all automation.
+- **Config Auto-Remediation** is simplest for compliance. No EventBridge needed (built-in).
+- **Step Functions** for complex multi-step remediation. Lambda for simple single-action.
+- **Run Command** = execute on instances. **Automation** = multi-step workflows on AWS resources.
+- **Rate control** (MaxConcurrency + MaxErrors) prevents cascading failures during fleet operations.
+- **Lambda Destinations** > Lambda DLQ. Destinations support success+failure routing to SQS/SNS/Lambda/EventBridge.
+- **EventBridge Archive + Replay** = debug by replaying historical events through new rules.
+- **Cross-account EventBridge** requires bus resource policy allowing PutEvents from source accounts.
+- **Health events** are proactive signals. Migrate before retirement; failover before outage.
+- **SNS message filtering** reduces Lambda invocations. Filter on attributes (string, numeric, prefix).
+- **CloudFormation UPDATE_ROLLBACK_FAILED** = resource manually deleted. Fix: ContinueUpdateRollback.
+- **ECS #1 failure** = image pull. Check: ECR permissions, VPC endpoint/NAT, image tag exists.
+- **Lambda in VPC** loses internet. Need NAT Gateway or VPC endpoints for AWS services.
+- **Maintenance Windows** schedule ops tasks. Set cutoff to prevent tasks starting too close to end.
+
+---
+
+## Domain 5 Full Concept Map
+
+```
+INCIDENT AND EVENT RESPONSE
+|
++-- EVENT SOURCES
+|   +-- CloudWatch Alarms: Metric threshold breached
+|   +-- EventBridge: 200+ AWS service events
+|   +-- CloudTrail: API activity (via EventBridge)
+|   +-- Config: Compliance state changes
+|   +-- GuardDuty: Threat detection findings
+|   +-- Security Hub: Aggregated security findings
+|   +-- AWS Health: Service/account events
+|   +-- Trusted Advisor: Check status changes
+|   +-- Inspector: Vulnerability findings
+|   +-- Custom Applications: PutEvents API
+|
++-- EVENT ROUTING
+|   +-- EventBridge: Pattern matching -> targets (primary)
+|   +-- SNS: Fan-out notifications (message filtering)
+|   +-- SQS: Buffering + decoupling (DLQ for failures)
+|   +-- Kinesis: High-volume real-time streaming
+|   +-- Cross-Account: Event bus policies + forwarding
+|   +-- Cross-Region: Global endpoints + rules
+|
++-- AUTOMATED REMEDIATION
+|   +-- Lambda: Simple, single-action responses
+|   +-- Step Functions: Multi-step workflows (complex)
+|   +-- SSM Automation: Runbooks (approval gates)
+|   +-- SSM Run Command: Execute on instances
+|   +-- Config Auto-Remediation: Direct compliance fix
+|   +-- CloudWatch Alarm Actions: EC2 stop/terminate/recover
+|   +-- EventBridge -> API Destinations: External webhooks
+|
++-- FAILURE HANDLING
+|   +-- SQS DLQ: Capture failed messages (maxReceiveCount)
+|   +-- Lambda Destinations: Route success/failure events
+|   +-- EventBridge Retry: MaxRetryAttempts + MaxEventAge
+|   +-- Step Functions Retry/Catch: Per-state error handling
+|   +-- SQS Redrive: Move DLQ messages back to source
+|   +-- EventBridge Archive + Replay: Reprocess historical
+|
++-- TROUBLESHOOTING
+|   +-- EC2: Status checks -> Network -> Security -> Logs
+|   +-- ECS: Image pull -> IAM -> Networking -> Health -> Logs
+|   +-- Lambda: Timeout -> Memory -> Throttling -> Perms -> VPC
+|   +-- ASG: Grace period -> Health checks -> Config -> Capacity
+|   +-- RDS: Connectivity -> Performance -> Failover -> Replication
+|   +-- CloudFormation: Events -> Rollback -> Drift -> Dependencies
+|   +-- CodeDeploy: AppSpec -> Agent -> Hooks -> IAM -> Logs
+|   +-- CodePipeline: Source -> Build -> Deploy -> Permissions
+|
++-- INCIDENT MANAGEMENT
+|   +-- Incident Manager: Response plans + escalation + runbooks
+|   +-- OpsCenter: OpsItems (issue tracking)
+|   +-- Post-Incident: Timeline + action items + metrics
+|   +-- Maintenance Windows: Scheduled operational tasks
+|   +-- Change Calendar: Block/allow automation during periods
+|
++-- OPERATIONAL PATTERNS
+    +-- Self-healing: Alarm -> Remediate -> Verify -> Notify/Escalate
+    +-- Security: Detect -> Isolate -> Forensics -> Notify
+    +-- Compliance: Detect -> Remediate -> Verify -> Report
+    +-- Proactive: Health event -> Migrate -> Verify -> Notify
+    +-- Deployment failure: Detect -> Rollback -> Notify -> Investigate
+    +-- Capacity: Alarm -> Scale -> Verify -> Adjust baseline
+```
+
+---
+
+## Summary Table
+
+| Topic | Key Services | Critical Concepts |
+|-------|-------------|------------------|
+| **Event Sources** | EventBridge, CloudWatch, Config, GuardDuty, Health | Event patterns, severity filtering, scope |
+| **Event Routing** | EventBridge, SNS, SQS | Pattern matching, filtering, fan-out, buffering |
+| **Remediation** | Lambda, Step Functions, SSM Automation, Run Command | Simple vs. complex, approval gates, rate control |
+| **Failure Handling** | SQS DLQ, Lambda Destinations, EventBridge Retry | maxReceiveCount, redrive, archive/replay |
+| **Troubleshooting** | CloudWatch Logs, X-Ray, Flow Logs, SSM | Service-specific diagnostic trees |
+| **Incident Mgmt** | Incident Manager, OpsCenter, Maintenance Windows | Response plans, escalation, runbooks |
+| **Cross-Account** | EventBridge, SSM, Organizations | Bus policies, cross-account automation |
+| **Proactive** | Health, Trusted Advisor, Synthetics | Maintenance response, limit monitoring |"

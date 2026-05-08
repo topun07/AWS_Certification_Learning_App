@@ -1,0 +1,322 @@
+certCode,domain,title,content
+"SAA-C03","Domain 1: Design Secure Architectures","Design Secure Architectures","## SAA-C03 Domain 1: Design Secure Architectures
+
+**Weight:** ~30% of scored exam content
+**Exam Level:** Associate
+
+This domain covers secure access to AWS resources, secure workload architectures, and data encryption strategies.
+
+---
+
+## IAM (Identity and Access Management)
+
+### Core Components
+
+| Component | Description | Key Points |
+|-----------|-------------|-----------|
+| **Users** | Individual identities | Long-term credentials (avoid for apps) |
+| **Groups** | Collection of users | Attach policies to groups, not users |
+| **Roles** | Temporary credentials | Best for services, cross-account, federation |
+| **Policies** | JSON permission documents | Effect, Action, Resource, Condition |
+
+### Policy Types (Evaluation Order)
+
+| Type | Scope | Use Case |
+|------|-------|----------|
+| **SCPs** | Organization/OU | Guardrails (restrict max permissions) |
+| **Permission Boundaries** | User/Role | Limit maximum permissions a role can have |
+| **Identity-based** | User/Group/Role | Grant permissions to principals |
+| **Resource-based** | Resource | Cross-account access (S3, SQS, Lambda) |
+| **Session Policies** | STS session | Further restrict assumed role |
+
+### Policy Evaluation Logic
+
+```
+1. Explicit Deny -> DENY (always wins)
+2. SCP allows? -> If no, DENY
+3. Resource-based policy allows? -> ALLOW (for same-account)
+4. Permission boundary allows? -> If no, DENY
+5. Identity-based policy allows? -> If yes, ALLOW
+6. Default -> DENY (implicit deny)
+```
+
+### IAM Best Practices
+
+- Never use root account for daily tasks
+- Enable MFA on root and all human users
+- Use roles instead of long-term access keys
+- Apply least privilege (start with zero permissions)
+- Use IAM Access Analyzer to identify unused permissions
+- Rotate credentials regularly
+- Use AWS Organizations with SCPs for guardrails
+
+### Cross-Account Access
+
+| Method | Use Case | How It Works |
+|--------|----------|-------------|
+| **Resource-based Policy** | S3, SQS, Lambda, KMS | Add principal from other account |
+| **AssumeRole (STS)** | Any service | Role in target account, trust policy allows source |
+| **AWS Organizations** | Multi-account | SCPs + shared resources |
+
+---
+
+## VPC Security
+
+### Network Layers
+
+| Layer | Component | Stateful? | Rules |
+|-------|-----------|-----------|-------|
+| **Instance** | Security Groups | Yes (stateful) | Allow only, no deny rules |
+| **Subnet** | NACLs | No (stateless) | Allow + Deny, numbered rules |
+| **VPC** | Route Tables | N/A | Control traffic flow |
+| **Edge** | WAF, Shield | N/A | Application-layer protection |
+
+### Security Groups vs. NACLs
+
+| Feature | Security Groups | NACLs |
+|---------|----------------|-------|
+| **Level** | Instance (ENI) | Subnet |
+| **State** | Stateful (return auto-allowed) | Stateless (must allow both directions) |
+| **Rules** | Allow only | Allow + Deny |
+| **Evaluation** | All rules evaluated | Rules evaluated in number order |
+| **Default** | Deny all inbound, allow all outbound | Allow all (default NACL) |
+
+### VPC Architecture Best Practices
+
+```
+VPC (10.0.0.0/16)
+|
++-- Public Subnet (10.0.1.0/24)
+|   +-- Internet Gateway (IGW)
+|   +-- NAT Gateway
+|   +-- ALB / Bastion Host
+|
++-- Private Subnet (10.0.2.0/24)
+|   +-- Application Servers (EC2, ECS)
+|   +-- Lambda (VPC-attached)
+|
++-- Data Subnet (10.0.3.0/24)
+    +-- RDS, ElastiCache, OpenSearch
+    +-- No internet access
+```
+
+### VPC Endpoints
+
+| Type | Services | Cost | How |
+|------|----------|------|-----|
+| **Gateway Endpoint** | S3, DynamoDB | Free | Route table entry |
+| **Interface Endpoint** | All other services | Per hour + data | ENI with private IP (PrivateLink) |
+
+### VPC Flow Logs
+
+- Capture IP traffic metadata (not packet content)
+- Levels: VPC, Subnet, or ENI
+- Destination: CloudWatch Logs, S3, Kinesis Firehose
+- Use: Troubleshooting, compliance, anomaly detection
+- Does NOT capture: DNS, DHCP, metadata (169.254.169.254)
+
+---
+
+## Encryption
+
+### Encryption at Rest
+
+| Service | Default | Options |
+|---------|---------|---------|
+| **S3** | SSE-S3 (AES-256) | SSE-KMS, SSE-C, Client-side |
+| **EBS** | Optional (account default) | AWS managed or CMK |
+| **RDS** | Optional (at creation) | KMS encryption |
+| **DynamoDB** | AWS owned key | KMS (AWS managed or CMK) |
+| **EFS** | Optional | KMS encryption |
+
+### KMS Key Types
+
+| Type | Management | Rotation | Cost |
+|------|-----------|----------|------|
+| **AWS Owned** | AWS manages | AWS handles | Free |
+| **AWS Managed** | AWS creates, you use | Annual (automatic) | Per use |
+| **Customer Managed (CMK)** | You create and manage | Optional (annual) | Monthly + per use |
+
+### S3 Encryption Options
+
+| Method | Key Management | Use Case |
+|--------|---------------|----------|
+| **SSE-S3** | AWS manages everything | Default, simplest |
+| **SSE-KMS** | KMS manages keys | Audit trail, key rotation, access control |
+| **SSE-C** | Customer provides key | Full key control, AWS never stores key |
+| **Client-side** | Encrypt before upload | Maximum control, compliance |
+
+### Encryption in Transit
+
+- **TLS/SSL** for all AWS API calls
+- **ACM (Certificate Manager)** for free public certificates
+- **ALB/CloudFront** terminate TLS
+- **VPN** for encrypted site-to-site connectivity
+- **S3 Transfer Acceleration** uses HTTPS
+
+---
+
+## AWS Organizations
+
+### Key Features
+
+| Feature | Purpose |
+|---------|---------|
+| **Consolidated Billing** | Single payment, volume discounts |
+| **SCPs** | Restrict maximum permissions per OU/account |
+| **Tag Policies** | Enforce consistent tagging |
+| **Backup Policies** | Centralized backup rules |
+| **AI Services Opt-out** | Control data usage |
+
+### SCP Patterns
+
+- SCPs do NOT grant permissions (only restrict)
+- Must have explicit Allow at every level (FullAWSAccess by default)
+- Deny always wins over Allow
+- Does not affect the management account
+- Use for: Region restriction, service restriction, require encryption
+
+---
+
+## Security Services
+
+| Service | Purpose | Key Feature |
+|---------|---------|-------------|
+| **GuardDuty** | Threat detection | ML-based, analyzes VPC Flow Logs, DNS, CloudTrail |
+| **Inspector** | Vulnerability scanning | EC2, ECR, Lambda (CVE database) |
+| **Macie** | Data classification | Discovers PII/sensitive data in S3 |
+| **Security Hub** | Central security view | Aggregates findings, compliance checks |
+| **Detective** | Investigation | Root cause analysis of security findings |
+| **WAF** | Web application firewall | SQL injection, XSS, rate limiting |
+| **Shield** | DDoS protection | Standard (free), Advanced (paid + DRT) |
+| **Firewall Manager** | Central firewall management | Manage WAF, Shield, SG across accounts |
+| **IAM Access Analyzer** | External access detection | Identifies resources shared externally |
+
+### AWS WAF
+
+- Attaches to: ALB, API Gateway, CloudFront, AppSync
+- Rules: IP match, geo match, rate-based, SQL injection, XSS
+- Managed Rule Groups: AWS, marketplace vendors
+- Web ACL: Collection of rules (allow/block/count)
+
+### AWS Shield
+
+| Tier | Cost | Features |
+|------|------|----------|
+| **Standard** | Free | Automatic DDoS protection (Layer 3/4) |
+| **Advanced** | $3000/month | Enhanced detection, DRT team, cost protection, Layer 7 |
+
+---
+
+## Secrets Management
+
+| Service | Use Case | Key Feature |
+|---------|----------|-------------|
+| **Secrets Manager** | Database credentials, API keys | Automatic rotation, cross-account |
+| **SSM Parameter Store** | Configuration values, non-rotating secrets | Free tier, hierarchy, versioning |
+| **ACM** | TLS certificates | Free public certs, auto-renewal |
+
+### Secrets Manager vs. Parameter Store
+
+| Feature | Secrets Manager | Parameter Store |
+|---------|----------------|----------------|
+| **Rotation** | Built-in automatic | Manual (Lambda) |
+| **Cost** | $0.40/secret/month | Free (Standard), $0.05 (Advanced) |
+| **Cross-account** | Yes (resource policy) | No |
+| **Size limit** | 64 KB | 4 KB (Standard), 8 KB (Advanced) |
+| **Best for** | DB credentials, API keys | Config values, feature flags |
+
+---
+
+## Key Exam Patterns
+
+**IAM:**
+- **""Cross-account S3 access""** -> Resource-based policy (bucket policy) OR AssumeRole
+- **""Limit developer permissions""** -> Permission boundary
+- **""Restrict all accounts in OU""** -> SCP (deny policy)
+- **""Temporary credentials""** -> IAM Role + STS AssumeRole
+- **""EC2 accessing S3""** -> Instance profile (IAM role attached to EC2)
+
+**Network:**
+- **""Block specific IP""** -> NACL deny rule (Security Groups can't deny)
+- **""Allow return traffic""** -> Security Group (stateful, automatic)
+- **""Private access to S3""** -> VPC Gateway Endpoint (free)
+- **""Private access to other services""** -> VPC Interface Endpoint (PrivateLink)
+- **""Bastion host alternative""** -> Systems Manager Session Manager
+
+**Encryption:**
+- **""Audit key usage""** -> SSE-KMS (CloudTrail logs every use)
+- **""Customer controls key lifecycle""** -> CMK (Customer Managed Key)
+- **""Encrypt EBS after creation""** -> Snapshot, copy with encryption, restore
+- **""Force S3 encryption""** -> Bucket policy denying unencrypted uploads
+- **""Encrypt RDS""** -> Must enable at creation (can't add later without snapshot/restore)
+
+**Security Services:**
+- **""Detect compromised EC2""** -> GuardDuty
+- **""Find PII in S3""** -> Macie
+- **""Vulnerability scan EC2""** -> Inspector
+- **""Central security dashboard""** -> Security Hub
+- **""Protect against SQL injection""** -> WAF
+
+---
+
+## Quick Exam Tips
+
+- **Security Groups are stateful.** NACLs are stateless. This is tested constantly.
+- **SCPs don't grant permissions** - they only restrict. The management account is exempt.
+- **IAM roles > access keys.** Always prefer roles for services and cross-account.
+- **VPC Gateway Endpoints** for S3 and DynamoDB are free. Interface Endpoints cost money.
+- **SSE-KMS** gives you audit trail via CloudTrail. SSE-S3 does not.
+- **You cannot encrypt an existing unencrypted EBS volume.** Snapshot -> copy encrypted -> restore.
+- **RDS encryption must be enabled at creation.** To encrypt existing: snapshot -> restore encrypted.
+- **GuardDuty** is the go-to for threat detection (compromised instances, unusual API calls).
+- **WAF** attaches to ALB, CloudFront, API Gateway - not directly to EC2.
+- **Shield Advanced** includes DDoS cost protection (won't charge you for attack traffic scaling).
+- **Permission Boundaries** limit the maximum permissions a role/user can have.
+- **Resource-based policies** allow cross-account access without AssumeRole for supported services.
+- **VPC Flow Logs** capture metadata only (source/dest IP, port, action) - not packet content.
+- **NAT Gateway** in public subnet allows private subnet instances to reach the internet.
+- **Systems Manager Session Manager** replaces bastion hosts (no SSH, no open ports needed).
+
+---
+
+## Domain 1 Concept Map
+
+```
+SECURE ARCHITECTURES
+|
++-- IAM
+|   +-- Users/Groups/Roles/Policies
+|   +-- Policy Evaluation: Explicit Deny > SCP > Boundary > Identity
+|   +-- Cross-Account: Resource policy OR AssumeRole
+|   +-- Best Practice: Least privilege, roles over keys, MFA
+|
++-- NETWORK SECURITY
+|   +-- Security Groups: Stateful, allow-only, instance-level
+|   +-- NACLs: Stateless, allow+deny, subnet-level, ordered
+|   +-- VPC Endpoints: Gateway (S3/DDB, free) vs. Interface (paid)
+|   +-- Flow Logs: Metadata capture for troubleshooting
+|   +-- Architecture: Public/Private/Data subnet tiers
+|
++-- ENCRYPTION
+|   +-- At Rest: KMS (AWS owned/managed/CMK), S3 (SSE-S3/KMS/C)
+|   +-- In Transit: TLS, ACM certificates, VPN
+|   +-- Key Management: Rotation, policies, grants
+|   +-- EBS/RDS: Must encrypt at creation (snapshot workaround)
+|
++-- ORGANIZATIONS
+|   +-- SCPs: Restrict (not grant), deny wins, management exempt
+|   +-- Consolidated Billing: Volume discounts
+|   +-- Multi-Account: Separate environments, blast radius
+|
++-- SECURITY SERVICES
+|   +-- Detection: GuardDuty (threats), Inspector (vulnerabilities)
+|   +-- Data: Macie (PII), Access Analyzer (external access)
+|   +-- Protection: WAF (Layer 7), Shield (DDoS), Firewall Manager
+|   +-- Central: Security Hub (aggregation + compliance)
+|
++-- SECRETS
+    +-- Secrets Manager: Auto-rotation, DB creds, cross-account
+    +-- Parameter Store: Config values, free tier, hierarchy
+    +-- ACM: Free TLS certs, auto-renewal, ALB/CloudFront
+```"

@@ -1,5 +1,25 @@
-<template>
+﻿<template>
+
   <div class="min-h-screen bg-gray-50 pb-12 px-4 font-sans relative">
+
+    <!-- ðŸ”” TOAST NOTIFICATION -->
+    <Transition name="toast-slide">
+      <div v-if="toastVisible" class="fixed top-6 left-1/2 -translate-x-1/2 z-[9999] animate-pulse-once">
+        <div class="flex items-center gap-3 px-6 py-4 rounded-2xl shadow-2xl border backdrop-blur-md"
+             :class="{
+               'bg-red-950/90 border-red-500/50 text-red-200': toastType === 'error',
+               'bg-amber-950/90 border-amber-500/50 text-amber-200': toastType === 'warning',
+               'bg-emerald-950/90 border-emerald-500/50 text-emerald-200': toastType === 'success',
+               'bg-indigo-950/90 border-indigo-500/50 text-indigo-200': toastType === 'info'
+             }">
+          <span class="text-xl">
+            {{ toastType === 'error' ? 'âš¡' : toastType === 'warning' ? 'âš ï¸' : toastType === 'success' ? 'âœ…' : 'ðŸ“¡' }}
+          </span>
+          <span class="text-sm font-bold tracking-wide">{{ toastMessage }}</span>
+          <button @click="toastVisible = false" class="ml-2 opacity-60 hover:opacity-100 text-lg leading-none">&times;</button>
+        </div>
+      </div>
+    </Transition>
 
     <div v-if="showAuthModal" class="fixed inset-0 bg-slate-900/80 backdrop-blur-md flex items-center justify-center z-[200] p-4">
       <div class="bg-gray-900 border border-blue-500 rounded-2xl 2xl:rounded-[2rem] p-8 2xl:p-16 w-full max-w-md 2xl:max-w-2xl text-white shadow-[0_0_30px_rgba(59,130,246,0.3)] relative">
@@ -95,10 +115,10 @@
 
         <div class="p-6 2xl:p-10 border-b border-slate-800 flex justify-between items-center bg-slate-800/50">
           <h2 class="text-xl 2xl:text-3xl font-black text-white uppercase tracking-widest flex items-center gap-3">
-            <span class="text-indigo-500">⚖️</span> End User License Agreement
+            <span class="text-indigo-500">âš–ï¸</span> End User License Agreement
           </h2>
           <button @click="showAgreementModal = false" class="text-slate-400 hover:text-white 2xl:text-3xl transition-colors">
-            ✕
+            âœ•
           </button>
         </div>
 
@@ -138,7 +158,7 @@
                 class="px-8 py-3 2xl:px-12 2xl:py-5 rounded-xl 2xl:rounded-2xl font-black text-sm 2xl:text-lg uppercase tracking-widest transition-all flex items-center gap-2"
                 :class="hasAcceptedTerms ? 'bg-indigo-600 text-white hover:bg-indigo-500 shadow-lg shadow-indigo-500/20 hover:-translate-y-0.5' : 'bg-slate-800 text-slate-500 cursor-not-allowed'"
             >
-              Proceed to Checkout <span>→</span>
+              Proceed to Checkout <span>â†’</span>
             </button>
           </div>
         </div>
@@ -162,8 +182,8 @@
             />
           </div>
 
-          <h2 class="text-2xl md:text-3xl 2xl:text-5xl font-black text-slate-900 tracking-tight leading-none mb-0 flex-shrink-0">
-            Knowledge <span class="text-indigo-600">Forge</span> <span class="text-[10px] md:text-xs 2xl:text-lg font-black uppercase tracking-widest text-slate-400 block -mt-1 2xl:-mt-2">Academy</span>
+          <h2 class="text-xl md:text-3xl 2xl:text-5xl font-black text-slate-900 tracking-tight leading-tight mb-0 flex-shrink min-w-0">
+            Knowledge <span class="text-indigo-600">Forge</span> <span class="text-[8px] md:text-xs 2xl:text-lg font-black uppercase tracking-widest text-slate-400 block mt-1 2xl:mt-0">Academy</span>
           </h2>
 
         </div>
@@ -196,18 +216,11 @@
           </button>
         </div>
 
-        <button @click="toggleMusic" class="p-2 2xl:p-4 rounded-full hover:bg-slate-100 transition-colors group" :title="isMusicPlaying ? 'Pause Focus Track' : 'Play Focus Track'">
-          <span class="text-lg 2xl:text-3xl opacity-70 group-hover:opacity-100 transition-opacity" :class="isMusicPlaying ? 'animate-pulse text-blue-500' : 'grayscale'">🎧</span>
-        </button>
-
-        <button @click="toggleSFX" class="p-2 2xl:p-4 rounded-full hover:bg-slate-100 transition-colors group" :title="isAudioEnabled ? 'Mute Sound Effects' : 'Enable Sound Effects'">
-          <span class="text-lg 2xl:text-3xl transition-all" :class="isAudioEnabled ? 'opacity-100 text-amber-500' : 'opacity-40 grayscale'">🔊</span>
-        </button>
       </div>
 
-      <div v-else class="flex items-center gap-4 2xl:gap-8 px-4">
-        <button @click="showAuthModal = true; isLoginMode = true; authError = ''" class="text-sm 2xl:text-xl font-bold text-slate-500 hover:text-blue-600 transition-colors">Log In</button>
-        <button @click="showAuthModal = true; isLoginMode = false; authError = ''" class="bg-blue-600 hover:bg-blue-700 text-white text-sm 2xl:text-xl font-black px-6 py-2.5 2xl:px-10 2xl:py-4 rounded-xl 2xl:rounded-2xl shadow-md hover:shadow-lg transition-all hover:-translate-y-0.5">Sign Up</button>
+      <div v-else class="flex items-center gap-2 md:gap-4 2xl:gap-8 px-2 md:px-4">
+        <button @click="showAuthModal = true; isLoginMode = true; authError = ''" class="text-xs md:text-sm 2xl:text-xl font-bold text-slate-500 hover:text-blue-600 transition-colors">Log In</button>
+        <button @click="showAuthModal = true; isLoginMode = false; authError = ''" class="bg-blue-600 hover:bg-blue-700 text-white text-xs md:text-sm 2xl:text-xl font-black px-4 py-2 md:px-6 md:py-2.5 2xl:px-10 2xl:py-4 rounded-lg md:rounded-xl 2xl:rounded-2xl shadow-md hover:shadow-lg transition-all hover:-translate-y-0.5">Sign Up</button>
       </div>
     </div>
 
@@ -221,7 +234,7 @@
         <button @click="selectedCert = null" class="mt-auto w-full group relative overflow-hidden flex flex-col items-center justify-center bg-white hover:bg-slate-50 p-4 2xl:p-6 rounded-2xl 2xl:rounded-3xl transition-all border-2 border-slate-100 hover:border-slate-300 shadow-sm hover:shadow-md">
 
           <div class="flex items-center gap-2 text-sm 2xl:text-xl font-black text-slate-800 uppercase tracking-widest mb-1 relative z-10">
-            <span class="group-hover:-translate-x-1.5 transition-transform text-slate-400 group-hover:text-slate-800 text-lg 2xl:text-2xl">←</span>
+            <span class="group-hover:-translate-x-1.5 transition-transform text-slate-400 group-hover:text-slate-800 text-lg 2xl:text-2xl">â†</span>
             Switch Certification
           </div>
 
@@ -238,9 +251,9 @@
 
         <button @click="initiateProtocol('standard')" class="relative overflow-hidden group flex items-center gap-4 2xl:gap-8 bg-white p-4 2xl:p-8 rounded-2xl 2xl:rounded-3xl border border-slate-200 hover:border-blue-500 hover:shadow-xl hover:-translate-y-0.5 transition-all text-left w-full">
           <div class="absolute top-0 right-0 bg-gradient-to-r from-amber-400 to-orange-500 text-white text-[10px] 2xl:text-sm font-black px-3 py-1 2xl:px-6 2xl:py-2 rounded-bl-xl 2xl:rounded-bl-2xl tracking-widest uppercase shadow-[0_0_15px_rgba(245,158,11,0.5)]">
-            ⭐ Premium
+            â­ Premium
           </div>
-          <span class="text-2xl 2xl:text-5xl bg-blue-50 text-blue-500 w-12 h-12 2xl:w-24 2xl:h-24 flex flex-shrink-0 items-center justify-center rounded-xl 2xl:rounded-2xl group-hover:scale-110 group-hover:bg-blue-500 group-hover:text-white transition-all">🏛️</span>
+          <span class="text-2xl 2xl:text-5xl bg-blue-50 text-blue-500 w-12 h-12 2xl:w-24 2xl:h-24 flex flex-shrink-0 items-center justify-center rounded-xl 2xl:rounded-2xl group-hover:scale-110 group-hover:bg-blue-500 group-hover:text-white transition-all">ðŸ›ï¸</span>
           <div class="pr-16 2xl:pr-24">
             <h5 class="text-sm 2xl:text-3xl font-bold text-slate-900 group-hover:text-blue-600 transition-colors">Simulated Exam</h5>
             <p class="text-[11px] 2xl:text-lg text-slate-500 font-medium leading-tight mt-0.5 2xl:mt-2">Standard assessment. Timed. Real exam conditions.</p>
@@ -249,9 +262,9 @@
 
         <button @click="initiateProtocol('amrap')" class="relative overflow-hidden group flex items-center gap-4 2xl:gap-8 bg-white p-4 2xl:p-8 rounded-2xl 2xl:rounded-3xl border border-slate-200 hover:border-red-500 hover:shadow-xl hover:-translate-y-0.5 transition-all text-left w-full">
           <div class="absolute top-0 right-0 bg-gradient-to-r from-amber-400 to-orange-500 text-white text-[10px] 2xl:text-sm font-black px-3 py-1 2xl:px-6 2xl:py-2 rounded-bl-xl 2xl:rounded-bl-2xl tracking-widest uppercase shadow-[0_0_15px_rgba(245,158,11,0.5)]">
-            ⭐ Premium
+            â­ Premium
           </div>
-          <span class="text-2xl 2xl:text-5xl bg-red-50 text-red-500 w-12 h-12 2xl:w-24 2xl:h-24 flex flex-shrink-0 items-center justify-center rounded-xl 2xl:rounded-2xl group-hover:scale-110 group-hover:bg-red-500 group-hover:text-white transition-all">⏱️</span>
+          <span class="text-2xl 2xl:text-5xl bg-red-50 text-red-500 w-12 h-12 2xl:w-24 2xl:h-24 flex flex-shrink-0 items-center justify-center rounded-xl 2xl:rounded-2xl group-hover:scale-110 group-hover:bg-red-500 group-hover:text-white transition-all">â±ï¸</span>
           <div class="pr-16 2xl:pr-24">
             <h5 class="text-sm 2xl:text-3xl font-bold text-slate-900 group-hover:text-red-600 transition-colors">AMRAP Attack</h5>
             <p class="text-[11px] 2xl:text-lg text-slate-500 font-medium leading-tight mt-0.5 2xl:mt-2">10 minute clock. Infinite questions. Pure speed and recall.</p>
@@ -260,9 +273,9 @@
 
         <button @click="initiateProtocol('sudden_death')" class="relative overflow-hidden group flex items-center gap-4 2xl:gap-8 bg-white p-4 2xl:p-8 rounded-2xl 2xl:rounded-3xl border-2 border-purple-100 hover:border-purple-500 hover:shadow-xl hover:shadow-purple-500/20 hover:-translate-y-0.5 transition-all text-left w-full">
           <div class="absolute top-0 right-0 bg-gradient-to-r from-emerald-400 to-green-500 text-white text-[10px] 2xl:text-sm font-black px-4 py-1 2xl:px-6 2xl:py-2 rounded-bl-xl 2xl:rounded-bl-2xl tracking-widest uppercase shadow-[0_0_15px_rgba(16,185,129,0.6)] animate-pulse">
-            ⚡ Free Play
+            âš¡ Free Play
           </div>
-          <span class="text-2xl 2xl:text-5xl bg-purple-50 text-purple-500 w-12 h-12 2xl:w-24 2xl:h-24 flex flex-shrink-0 items-center justify-center rounded-xl 2xl:rounded-2xl group-hover:scale-110 group-hover:bg-purple-500 group-hover:text-white transition-all">💀</span>
+          <span class="text-2xl 2xl:text-5xl bg-purple-50 text-purple-500 w-12 h-12 2xl:w-24 2xl:h-24 flex flex-shrink-0 items-center justify-center rounded-xl 2xl:rounded-2xl group-hover:scale-110 group-hover:bg-purple-500 group-hover:text-white transition-all">ðŸ’€</span>
           <div class="pr-20 2xl:pr-32">
             <h5 class="text-sm 2xl:text-3xl font-bold text-slate-900 group-hover:text-purple-600 transition-colors">Sudden Death</h5>
             <p class="text-[11px] 2xl:text-lg text-slate-500 font-medium leading-tight mt-0.5 2xl:mt-2">3 Lives. No timer. One mistake shatters a heart. Survive.</p>
@@ -271,9 +284,9 @@
 
         <button @click="initiateProtocol('flashcards')" class="relative overflow-hidden group flex items-center gap-4 2xl:gap-8 bg-white p-4 2xl:p-8 rounded-2xl 2xl:rounded-3xl border border-slate-200 hover:border-pink-500 hover:shadow-xl hover:-translate-y-0.5 transition-all text-left w-full">
           <div class="absolute top-0 right-0 bg-gradient-to-r from-amber-400 to-orange-500 text-white text-[10px] 2xl:text-sm font-black px-3 py-1 2xl:px-6 2xl:py-2 rounded-bl-xl 2xl:rounded-bl-2xl tracking-widest uppercase shadow-[0_0_15px_rgba(245,158,11,0.5)]">
-            ⭐ Premium
+            â­ Premium
           </div>
-          <span class="text-2xl 2xl:text-5xl bg-pink-50 text-pink-500 w-12 h-12 2xl:w-24 2xl:h-24 flex flex-shrink-0 items-center justify-center rounded-xl 2xl:rounded-2xl group-hover:scale-110 group-hover:bg-pink-500 group-hover:text-white transition-all">🎴</span>
+          <span class="text-2xl 2xl:text-5xl bg-pink-50 text-pink-500 w-12 h-12 2xl:w-24 2xl:h-24 flex flex-shrink-0 items-center justify-center rounded-xl 2xl:rounded-2xl group-hover:scale-110 group-hover:bg-pink-500 group-hover:text-white transition-all">ðŸŽ´</span>
           <div class="pr-16 2xl:pr-24">
             <h5 class="text-sm 2xl:text-3xl font-bold text-slate-900 group-hover:text-pink-600 transition-colors">Flashcard Matrix</h5>
             <p class="text-[11px] 2xl:text-lg text-slate-500 font-medium leading-tight mt-0.5 2xl:mt-2">Match terms to definitions. 6 pairs per round. Test your vocabulary.</p>
@@ -282,9 +295,9 @@
 
         <button @click="initiateProtocol('library')" class="relative overflow-hidden group flex items-center gap-4 2xl:gap-8 bg-white p-4 2xl:p-8 rounded-2xl 2xl:rounded-3xl border border-slate-200 hover:border-emerald-500 hover:shadow-xl hover:-translate-y-0.5 transition-all text-left w-full">
           <div class="absolute top-0 right-0 bg-gradient-to-r from-emerald-400 to-green-500 text-white text-[10px] 2xl:text-sm font-black px-4 py-1 2xl:px-6 2xl:py-2 rounded-bl-xl 2xl:rounded-bl-2xl tracking-widest uppercase shadow-[0_0_15px_rgba(16,185,129,0.6)] animate-pulse">
-            ⚡ Free Access
+            âš¡ Free Access
           </div>
-          <span class="text-2xl 2xl:text-5xl bg-emerald-50 text-emerald-500 w-12 h-12 2xl:w-24 2xl:h-24 flex flex-shrink-0 items-center justify-center rounded-xl 2xl:rounded-2xl group-hover:scale-110 group-hover:bg-emerald-500 group-hover:text-white transition-all">🧠</span>
+          <span class="text-2xl 2xl:text-5xl bg-emerald-50 text-emerald-500 w-12 h-12 2xl:w-24 2xl:h-24 flex flex-shrink-0 items-center justify-center rounded-xl 2xl:rounded-2xl group-hover:scale-110 group-hover:bg-emerald-500 group-hover:text-white transition-all">ðŸ§ </span>
           <div class="pr-16 2xl:pr-24">
             <h5 class="text-sm 2xl:text-3xl font-bold text-slate-900 group-hover:text-emerald-600 transition-colors">The Knowledge Forge</h5>
             <p class="text-[11px] 2xl:text-lg text-slate-500 font-medium leading-tight mt-0.5 2xl:mt-2">Access study guides, architectural diagrams, and video modules.</p>
@@ -400,7 +413,7 @@
                       <div class="text-xs 2xl:text-base text-slate-400 mt-0.5 2xl:mt-2">{{ formatDate(attempt.completedAt) }}</div>
                     </td>
                     <td class="px-6 py-4 2xl:px-8 2xl:py-6 text-center">
-                      <button @click="openReviewRoom(attempt.id)" class="text-xl 2xl:text-3xl">👁️</button>
+                      <button @click="openReviewRoom(attempt.id)" class="text-xl 2xl:text-3xl">ðŸ‘ï¸</button>
                     </td>
                     <td class="px-6 py-4 2xl:px-8 2xl:py-6 text-center">
                       <span :class="['px-3 py-1 2xl:px-5 2xl:py-2 rounded-lg 2xl:rounded-xl font-black text-sm 2xl:text-xl border', attempt.scorePercentage >= 75 ? 'bg-green-50 text-green-600 border-green-100' : 'bg-red-50 text-red-600 border-red-100']">{{ attempt.scorePercentage }}%</span>
@@ -409,7 +422,7 @@
                       <span class="bg-amber-50 text-amber-700 text-[10px] 2xl:text-sm font-black uppercase px-2 py-1 2xl:px-4 2xl:py-2 rounded-md 2xl:rounded-lg border border-amber-100">{{ attempt.weakestCategory || 'MIXED' }}</span>
                     </td>
                     <td class="px-6 py-4 2xl:px-8 2xl:py-6 text-center">
-                      <button @click="deleteAttempt(attempt.id)" class="text-slate-400 hover:text-red-600 hover:scale-125 transition-all text-lg 2xl:text-2xl" title="Delete this attempt">🗑️</button>
+                      <button @click="deleteAttempt(attempt.id)" class="text-slate-400 hover:text-red-600 hover:scale-125 transition-all text-lg 2xl:text-2xl" title="Delete this attempt">ðŸ—‘ï¸</button>
                     </td>
                   </tr>
                   </tbody>
@@ -421,7 +434,7 @@
         </div>
 
         <div class="bg-white rounded-[2rem] 2xl:rounded-[3rem] shadow-xl p-8 2xl:p-12 border border-slate-100 flex-1">
-          <h3 class="text-2xl 2xl:text-4xl font-black text-slate-900 mb-6 2xl:mb-10 flex items-center gap-2 2xl:gap-4">✨ Ascended Masters</h3>
+          <h3 class="text-2xl 2xl:text-4xl font-black text-slate-900 mb-6 2xl:mb-10 flex items-center gap-2 2xl:gap-4">âœ¨ Ascended Masters</h3>
           <div v-if="leaderboardData.length > 0" class="space-y-3 2xl:space-y-6">
             <div v-for="(master, index) in leaderboardData" :key="index" class="flex items-center justify-between p-4 2xl:p-6 bg-slate-50 border border-slate-100 rounded-xl 2xl:rounded-2xl hover:shadow-md transition-all">
               <div class="flex items-center gap-4 2xl:gap-6">
@@ -435,7 +448,7 @@
             </div>
           </div>
           <div v-else class="text-center py-10 2xl:py-20">
-            <div class="text-5xl 2xl:text-7xl mb-4 2xl:mb-8 opacity-50 animate-pulse">☁️</div>
+            <div class="text-5xl 2xl:text-7xl mb-4 2xl:mb-8 opacity-50 animate-pulse">â˜ï¸</div>
             <p class="text-slate-500 font-bold 2xl:text-2xl">No legends yet.</p>
             <p class="text-sm 2xl:text-xl text-slate-400 mt-1 2xl:mt-3">Score 100% to claim the top spot!</p>
           </div>
@@ -491,14 +504,14 @@
                 </div>
                 <div class="flex items-center gap-4 2xl:gap-8">
                   <span class="font-black text-lg 2xl:text-4xl" :class="index === 0 ? 'text-red-600' : 'text-amber-600'">{{ priority.percentage }}%</span>
-                  <span class="opacity-0 group-hover:opacity-100 transition-opacity font-bold text-xl 2xl:text-4xl" :class="index === 0 ? 'text-red-500' : 'text-amber-500'">➔</span>
+                  <span class="opacity-0 group-hover:opacity-100 transition-opacity font-bold text-xl 2xl:text-4xl" :class="index === 0 ? 'text-red-500' : 'text-amber-500'">âž”</span>
                 </div>
               </div>
             </div>
             <div v-else class="text-center p-6 2xl:p-12 text-slate-400 text-sm 2xl:text-xl font-bold">Insufficient telemetry data. Complete a simulation to generate priorities.</div>
           </div>
         </div>
-      </div> <div v-if="recentReviews.length > 0" class="w-full mt-24 mb-12 animate-fade-in">
+      </div> <div v-if="recentReviews.length > 0" class="max-w-7xl 2xl:max-w-[100rem] mx-auto px-4 md:px-8 lg:px-12 mt-24 mb-12 animate-fade-in">
       <div class="text-center mb-12">
         <h2 class="text-3xl md:text-5xl font-black text-slate-800 mb-4 tracking-tight">Forged in the Real World</h2>
         <p class="text-slate-500 font-medium text-lg md:text-xl">Join the engineers who passed the exam using our databanks.</p>
@@ -513,7 +526,7 @@
           <div class="absolute -top-6 -left-2 text-6xl text-blue-100 font-serif font-black select-none">"</div>
 
           <div class="flex gap-1 mb-4 relative z-10">
-            <span v-for="n in review.rating" :key="n" class="text-amber-400 text-xl">⭐</span>
+            <span v-for="n in review.rating" :key="n" class="text-amber-400 text-xl">â­</span>
           </div>
 
           <p class="text-slate-700 font-medium leading-relaxed mb-6 relative z-10 italic">
@@ -526,12 +539,79 @@
             </div>
             <div>
               <h4 class="font-black text-slate-900">{{ review.authorName }}</h4>
-              <span class="text-xs font-bold uppercase tracking-widest text-emerald-500">Certified Architect</span>
+              <span class="text-xs font-bold uppercase tracking-widest text-emerald-500">{{ review.jobTitle || 'Cloud Ninja' }}</span>
             </div>
           </div>
         </div>
       </div>
     </div>
+
+      <!-- ðŸ“Š PERSONAL STATS (logged-in users) -->
+      <div v-if="currentUser && userStats" class="max-w-5xl xl:max-w-7xl 2xl:max-w-[100rem] mx-auto mt-16 2xl:mt-24 bg-white rounded-3xl 2xl:rounded-[3rem] p-8 md:p-10 2xl:p-16 border border-slate-200 shadow-sm">
+        <h2 class="text-2xl 2xl:text-4xl font-black text-slate-900 mb-6 2xl:mb-10 flex items-center gap-3 2xl:gap-5">
+          <span class="text-indigo-500">ðŸ“Š</span> Your Training Metrics
+        </h2>
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-4 2xl:gap-8">
+          <div class="bg-gradient-to-br from-blue-50 to-indigo-50 p-5 2xl:p-8 rounded-2xl 2xl:rounded-3xl border border-blue-100 text-center">
+            <div class="text-3xl 2xl:text-5xl font-black text-blue-600">{{ userStats.totalSessions || 0 }}</div>
+            <div class="text-xs 2xl:text-sm font-bold text-slate-500 uppercase tracking-widest mt-1 2xl:mt-2">Games Played</div>
+          </div>
+          <div class="bg-gradient-to-br from-emerald-50 to-green-50 p-5 2xl:p-8 rounded-2xl 2xl:rounded-3xl border border-emerald-100 text-center">
+            <div class="text-3xl 2xl:text-5xl font-black text-emerald-600">{{ userStats.studyMaterialViews || 0 }}</div>
+            <div class="text-xs 2xl:text-sm font-bold text-slate-500 uppercase tracking-widest mt-1 2xl:mt-2">Study Views</div>
+          </div>
+          <div class="bg-gradient-to-br from-purple-50 to-violet-50 p-5 2xl:p-8 rounded-2xl 2xl:rounded-3xl border border-purple-100 text-center">
+            <div class="text-3xl 2xl:text-5xl font-black text-purple-600">{{ userStats.topMode || '-' }}</div>
+            <div class="text-xs 2xl:text-sm font-bold text-slate-500 uppercase tracking-widest mt-1 2xl:mt-2">Favorite Mode</div>
+          </div>
+          <div class="bg-gradient-to-br from-amber-50 to-orange-50 p-5 2xl:p-8 rounded-2xl 2xl:rounded-3xl border border-amber-100 text-center">
+            <div class="text-3xl 2xl:text-5xl font-black text-amber-600">{{ userStats.topCert || '-' }}</div>
+            <div class="text-xs 2xl:text-sm font-bold text-slate-500 uppercase tracking-widest mt-1 2xl:mt-2">Top Cert</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ðŸŒ AWS RESOURCES HUB -->
+      <div class="max-w-5xl xl:max-w-7xl 2xl:max-w-[100rem] mx-auto mt-16 2xl:mt-24 bg-white rounded-3xl 2xl:rounded-[3rem] p-8 md:p-10 2xl:p-16 border border-slate-200 shadow-sm">
+        <h2 class="text-2xl 2xl:text-4xl font-black text-slate-900 mb-2 2xl:mb-4 flex items-center gap-3 2xl:gap-5">
+          <span class="text-indigo-500">ðŸŒ</span> AWS Launch Pad
+        </h2>
+        <p class="text-sm 2xl:text-lg text-slate-500 font-medium mb-8 2xl:mb-12">Your gateway to the AWS ecosystem. Explore, learn, and certify.</p>
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-4 2xl:gap-6">
+          <a href="https://aws.amazon.com/certification/" target="_blank" class="group bg-slate-50 hover:bg-indigo-50 p-5 2xl:p-8 rounded-2xl 2xl:rounded-3xl border border-slate-200 hover:border-indigo-300 transition-all text-center hover:-translate-y-1 hover:shadow-md">
+            <span class="text-2xl 2xl:text-4xl block mb-2 2xl:mb-4 group-hover:scale-110 transition-transform">ðŸŽ“</span>
+            <span class="text-xs 2xl:text-sm font-black text-slate-700 uppercase tracking-wider">Schedule Exam</span>
+          </a>
+          <a href="https://explore.skillbuilder.aws/" target="_blank" class="group bg-slate-50 hover:bg-indigo-50 p-5 2xl:p-8 rounded-2xl 2xl:rounded-3xl border border-slate-200 hover:border-indigo-300 transition-all text-center hover:-translate-y-1 hover:shadow-md">
+            <span class="text-2xl 2xl:text-4xl block mb-2 2xl:mb-4 group-hover:scale-110 transition-transform">ðŸ“š</span>
+            <span class="text-xs 2xl:text-sm font-black text-slate-700 uppercase tracking-wider">Skill Builder</span>
+          </a>
+          <a href="https://aws.amazon.com/free/" target="_blank" class="group bg-slate-50 hover:bg-indigo-50 p-5 2xl:p-8 rounded-2xl 2xl:rounded-3xl border border-slate-200 hover:border-indigo-300 transition-all text-center hover:-translate-y-1 hover:shadow-md">
+            <span class="text-2xl 2xl:text-4xl block mb-2 2xl:mb-4 group-hover:scale-110 transition-transform">ðŸ†“</span>
+            <span class="text-xs 2xl:text-sm font-black text-slate-700 uppercase tracking-wider">Free Tier</span>
+          </a>
+          <a href="https://docs.aws.amazon.com/" target="_blank" class="group bg-slate-50 hover:bg-indigo-50 p-5 2xl:p-8 rounded-2xl 2xl:rounded-3xl border border-slate-200 hover:border-indigo-300 transition-all text-center hover:-translate-y-1 hover:shadow-md">
+            <span class="text-2xl 2xl:text-4xl block mb-2 2xl:mb-4 group-hover:scale-110 transition-transform">ðŸ“–</span>
+            <span class="text-xs 2xl:text-sm font-black text-slate-700 uppercase tracking-wider">AWS Docs</span>
+          </a>
+          <a href="https://aws.amazon.com/architecture/" target="_blank" class="group bg-slate-50 hover:bg-indigo-50 p-5 2xl:p-8 rounded-2xl 2xl:rounded-3xl border border-slate-200 hover:border-indigo-300 transition-all text-center hover:-translate-y-1 hover:shadow-md">
+            <span class="text-2xl 2xl:text-4xl block mb-2 2xl:mb-4 group-hover:scale-110 transition-transform">ðŸ—ï¸</span>
+            <span class="text-xs 2xl:text-sm font-black text-slate-700 uppercase tracking-wider">Architecture</span>
+          </a>
+          <a href="https://calculator.aws/" target="_blank" class="group bg-slate-50 hover:bg-indigo-50 p-5 2xl:p-8 rounded-2xl 2xl:rounded-3xl border border-slate-200 hover:border-indigo-300 transition-all text-center hover:-translate-y-1 hover:shadow-md">
+            <span class="text-2xl 2xl:text-4xl block mb-2 2xl:mb-4 group-hover:scale-110 transition-transform">ðŸ§®</span>
+            <span class="text-xs 2xl:text-sm font-black text-slate-700 uppercase tracking-wider">Pricing Calc</span>
+          </a>
+          <a href="https://aws.amazon.com/whitepapers/" target="_blank" class="group bg-slate-50 hover:bg-indigo-50 p-5 2xl:p-8 rounded-2xl 2xl:rounded-3xl border border-slate-200 hover:border-indigo-300 transition-all text-center hover:-translate-y-1 hover:shadow-md">
+            <span class="text-2xl 2xl:text-4xl block mb-2 2xl:mb-4 group-hover:scale-110 transition-transform">ðŸ“„</span>
+            <span class="text-xs 2xl:text-sm font-black text-slate-700 uppercase tracking-wider">Whitepapers</span>
+          </a>
+          <a href="https://www.aboutamazon.com/news/aws" target="_blank" class="group bg-slate-50 hover:bg-indigo-50 p-5 2xl:p-8 rounded-2xl 2xl:rounded-3xl border border-slate-200 hover:border-indigo-300 transition-all text-center hover:-translate-y-1 hover:shadow-md">
+            <span class="text-2xl 2xl:text-4xl block mb-2 2xl:mb-4 group-hover:scale-110 transition-transform">ðŸ“°</span>
+            <span class="text-xs 2xl:text-sm font-black text-slate-700 uppercase tracking-wider">AWS News</span>
+          </a>
+        </div>
+      </div>
 
       <footer class="mt-24 2xl:mt-32 border-t border-slate-200 bg-slate-50/50 pt-12 pb-8 2xl:pt-20 2xl:pb-12 rounded-t-[3rem] 2xl:rounded-t-[4rem]">
         <div class="max-w-4xl 2xl:max-w-6xl mx-auto px-4 md:px-8 text-center flex flex-col items-center">
@@ -546,29 +626,26 @@
 
           <h3 class="text-xl 2xl:text-4xl font-black text-slate-900 tracking-tight mb-1 2xl:mb-3">Knowledge Forge Academy</h3>
           <p class="text-sm 2xl:text-2xl font-medium text-slate-500 mb-6 2xl:mb-12 flex items-center gap-2 2xl:gap-4">
-            <span>📍</span> Allen, TX 75002
+            <span>ðŸ“</span> Allen, TX 75002
           </p>
 
           <div class="flex flex-col sm:flex-row w-full gap-4 2xl:gap-8 justify-center">
-            <a href="tel:222-222-2222" class="inline-flex justify-center items-center gap-3 2xl:gap-5 bg-white text-indigo-600 hover:text-indigo-700 hover:bg-indigo-50 px-6 py-4 2xl:px-10 2xl:py-6 rounded-2xl 2xl:rounded-3xl font-black text-sm 2xl:text-xl uppercase tracking-widest transition-all border border-slate-200 hover:border-indigo-200 shadow-sm hover:shadow-md group flex-1">
-              <span class="text-xl 2xl:text-3xl group-hover:animate-bounce">📞</span>
-              (222) 222-2222
-            </a>
 
             <a href="mailto:test@test.com" class="inline-flex justify-center items-center gap-3 2xl:gap-5 bg-white text-indigo-600 hover:text-indigo-700 hover:bg-indigo-50 px-6 py-4 2xl:px-10 2xl:py-6 rounded-2xl 2xl:rounded-3xl font-black text-sm 2xl:text-xl uppercase tracking-widest transition-all border border-slate-200 hover:border-indigo-200 shadow-sm hover:shadow-md group flex-1">
-              <span class="text-xl 2xl:text-3xl group-hover:animate-pulse">✉️</span>
+              <span class="text-xl 2xl:text-3xl group-hover:animate-pulse">âœ‰ï¸</span>
               test@test.com
             </a>
           </div>
 
           <div class="flex justify-center gap-8 mt-10 font-bold text-slate-500 text-sm 2xl:text-base">
             <button @click="showAboutModal = true" class="hover:text-indigo-600 transition-colors">About Us</button>
+            <button @click="showRatingModal = true" class="hover:text-indigo-600 transition-colors">Leave a Review</button>
             <button @click="showCancelModal = true" class="hover:text-indigo-600 transition-colors">Cancel Membership</button>
             <a href="#" class="hover:text-indigo-600 transition-colors">Terms of Service</a>
           </div>
 
           <div class="mt-8 2xl:mt-12 text-[10px] 2xl:text-sm font-black uppercase tracking-widest text-slate-400 border-t border-slate-200/60 pt-6 2xl:pt-10 w-full max-w-md 2xl:max-w-2xl">
-            © 2026 Knowledge Forge Academy. System fully operational.
+            Â© 2026 Knowledge Forge Academy. System fully operational.
           </div>
 
         </div>
@@ -577,6 +654,7 @@
     </div>
 
     <div v-else-if="currentView === 'quiz'" class="max-w-5xl xl:max-w-7xl 2xl:max-w-[100rem] mx-auto px-4 md:px-8 lg:px-12 transition-all duration-500">
+
       <div v-if="showResults && !isHistoricalView" class="bg-white rounded-[2rem] 2xl:rounded-[3rem] shadow-2xl p-10 2xl:p-20 text-center border border-gray-100">
         <div class="mb-10 2xl:mb-16 text-center flex flex-col items-center">
           <div class="mb-8 2xl:mb-12 flex justify-center w-full px-2">
@@ -606,8 +684,8 @@
           </div>
         </div>
         <div class="flex flex-col gap-3 2xl:gap-6">
-          <button @click="openReviewRoom(lastAttemptId)" class="bg-orange-500 hover:bg-amber-500 text-white py-4 2xl:py-8 rounded-2xl 2xl:rounded-3xl 2xl:text-2xl font-black shadow-lg hover:shadow-xl hover:-translate-y-1 transition-all duration-300">🔍 Review My Answers</button>
-          <button @click="handlePrint" class="bg-slate-800 hover:bg-slate-900 text-white py-4 2xl:py-8 rounded-2xl 2xl:rounded-3xl 2xl:text-2xl font-black shadow-lg hover:shadow-xl hover:-translate-y-1 transition-all duration-300">📄 Save Results as PDF</button>
+          <button @click="openReviewRoom(lastAttemptId)" class="bg-orange-500 hover:bg-amber-500 text-white py-4 2xl:py-8 rounded-2xl 2xl:rounded-3xl 2xl:text-2xl font-black shadow-lg hover:shadow-xl hover:-translate-y-1 transition-all duration-300">ðŸ” Review My Answers</button>
+          <button @click="handlePrint" class="bg-slate-800 hover:bg-slate-900 text-white py-4 2xl:py-8 rounded-2xl 2xl:rounded-3xl 2xl:text-2xl font-black shadow-lg hover:shadow-xl hover:-translate-y-1 transition-all duration-300">ðŸ“„ Save Results as PDF</button>
           <button @click="resetSession" class="bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-700 hover:to-indigo-600 text-white py-4 2xl:py-8 rounded-2xl 2xl:rounded-3xl 2xl:text-2xl font-black shadow-lg hover:shadow-xl hover:scale-[1.02] transition-all duration-300">Start New Session</button>
           <button @click="goBackToLanding" class="bg-slate-100 hover:bg-slate-200 text-slate-600 hover:text-slate-800 py-4 2xl:py-8 rounded-2xl 2xl:rounded-3xl 2xl:text-2xl font-bold transition-colors duration-300 border border-slate-200">Return to Dashboard</button>
         </div>
@@ -615,7 +693,7 @@
 
       <div v-else-if="question && !showReviewModal" class="bg-white rounded-[2rem] 2xl:rounded-[3rem] shadow-xl overflow-hidden border border-slate-200 relative">
         <div v-if="isPaused" class="absolute inset-0 bg-white/95 backdrop-blur-md z-50 flex flex-col items-center justify-center text-center p-8 2xl:p-16">
-          <div class="w-16 h-16 2xl:w-24 2xl:h-24 bg-orange-100 text-orange-600 rounded-full flex items-center justify-center text-3xl 2xl:text-5xl mb-4 2xl:mb-8">⏸️</div>
+          <div class="w-16 h-16 2xl:w-24 2xl:h-24 bg-orange-100 text-orange-600 rounded-full flex items-center justify-center text-3xl 2xl:text-5xl mb-4 2xl:mb-8">â¸ï¸</div>
           <h2 class="text-2xl 2xl:text-5xl font-black text-slate-800">Exam Paused</h2>
           <button @click="togglePause" class="mt-6 2xl:mt-10 bg-slate-800 text-white px-8 py-3 2xl:px-12 2xl:py-5 2xl:text-2xl rounded-2xl 2xl:rounded-3xl font-bold">Resume Exam</button>
         </div>
@@ -628,17 +706,17 @@
           </div>
           <div class="flex items-center gap-4 2xl:gap-8">
             <div v-if="isSuddenDeath" class="flex items-center gap-1.5 2xl:gap-3 bg-slate-900/40 px-3 py-1.5 2xl:px-6 2xl:py-3 rounded-xl 2xl:rounded-2xl shadow-inner border border-white/10">
-              <span v-for="n in 3" :key="n" class="text-xl 2xl:text-3xl transition-all duration-500 ease-[cubic-bezier(0.34,1.56,0.64,1)]" :class="n <= healthPoints ? 'text-red-500 scale-100 drop-shadow-[0_0_8px_rgba(239,68,68,0.8)]' : 'opacity-20 scale-75 grayscale'">❤️</span>
+              <span v-for="n in 3" :key="n" class="text-xl 2xl:text-3xl transition-all duration-500 ease-[cubic-bezier(0.34,1.56,0.64,1)]" :class="n <= healthPoints ? 'text-red-500 scale-100 drop-shadow-[0_0_8px_rgba(239,68,68,0.8)]' : 'opacity-20 scale-75 grayscale'">â¤ï¸</span>
             </div>
             <div v-else-if="isAmrapMode" class="flex items-center gap-2 2xl:gap-4 bg-red-600/20 px-4 py-1.5 2xl:px-8 2xl:py-3 rounded-xl 2xl:rounded-2xl border border-red-500/50 shadow-[0_0_15px_rgba(220,38,38,0.3)]">
-              <span class="text-red-500 animate-pulse 2xl:text-3xl">⏱️</span>
+              <span class="text-red-500 animate-pulse 2xl:text-3xl">â±ï¸</span>
               <span class="font-mono font-black text-red-100 tracking-widest text-lg 2xl:text-3xl">{{ formattedAmrapTime }}</span>
             </div>
             <span v-else class="font-mono font-bold 2xl:text-2xl bg-blue-500/50 px-3 py-1 2xl:px-6 2xl:py-2 rounded-lg 2xl:rounded-xl border border-blue-400/50">{{ formattedCurrentTime }}</span>
 
             <button @click="togglePause" class="bg-white text-blue-600 px-3 py-1 2xl:px-6 2xl:py-3 rounded-lg 2xl:rounded-xl text-xs 2xl:text-xl font-black uppercase tracking-widest shadow-lg">{{ isPaused ? 'Resume' : 'Pause' }}</button>
-            <button @click="showGradeConfirmModal = true" class="bg-slate-900/40 hover:bg-slate-900/60 px-3 py-1 2xl:px-6 2xl:py-3 rounded-lg 2xl:rounded-xl text-xs 2xl:text-xl font-black uppercase tracking-widest shadow-lg transition-colors border border-white/10">🏁 Grade Now</button>
-            <button @click="abortQuiz" class="bg-red-500/20 hover:bg-red-500/40 text-red-100 px-3 py-1 2xl:px-6 2xl:py-3 rounded-lg 2xl:rounded-xl text-xs 2xl:text-xl font-black uppercase tracking-widest shadow-lg transition-colors border border-red-400/30">🚪 Exit</button>
+            <button @click="showGradeConfirmModal = true" class="bg-slate-900/40 hover:bg-slate-900/60 px-3 py-1 2xl:px-6 2xl:py-3 rounded-lg 2xl:rounded-xl text-xs 2xl:text-xl font-black uppercase tracking-widest shadow-lg transition-colors border border-white/10">ðŸ Grade Now</button>
+            <button @click="abortQuiz" class="bg-red-500/20 hover:bg-red-500/40 text-red-100 px-3 py-1 2xl:px-6 2xl:py-3 rounded-lg 2xl:rounded-xl text-xs 2xl:text-xl font-black uppercase tracking-widest shadow-lg transition-colors border border-red-400/30">ðŸšª Exit</button>
           </div>
         </div>
 
@@ -648,7 +726,7 @@
           <div class="space-y-4 2xl:space-y-8">
             <button v-for="opt in question.options" :key="opt.id" @click="toggleAnswer(opt.id)" :class="['w-full text-left p-4 md:p-6 lg:p-8 2xl:p-12 rounded-2xl md:rounded-[2rem] 2xl:rounded-[3rem] border-2 transition-all flex items-center gap-4 md:gap-6 2xl:gap-10', selectedAnswers.includes(opt.id) ? 'border-blue-500 bg-blue-50' : 'border-slate-100 bg-slate-50 hover:border-blue-200 hover:shadow-md']">
               <div class="w-6 h-6 2xl:w-10 2xl:h-10 border-2 flex items-center justify-center flex-shrink-0" :class="[isMultipleAnswer(question) ? 'rounded-md 2xl:rounded-lg' : 'rounded-full', selectedAnswers.includes(opt.id) ? 'border-blue-500 bg-blue-500 text-white' : 'border-slate-300 bg-white']">
-                <span v-if="isMultipleAnswer(question) && selectedAnswers.includes(opt.id)" class="2xl:text-2xl">✓</span>
+                <span v-if="isMultipleAnswer(question) && selectedAnswers.includes(opt.id)" class="2xl:text-2xl">âœ“</span>
                 <div v-if="!isMultipleAnswer(question) && selectedAnswers.includes(opt.id)" class="w-2.5 h-2.5 2xl:w-4 2xl:h-4 bg-white rounded-full"></div>
               </div>
               <span class="text-base md:text-lg lg:text-xl 2xl:text-3xl font-bold text-slate-700">{{ opt.text || opt.optionText || opt.value }}</span>
@@ -661,11 +739,12 @@
             <div :class="['p-4 2xl:p-8 rounded-2xl 2xl:rounded-3xl text-center font-black uppercase mb-4 2xl:mb-8 2xl:text-3xl', feedbackClass]">{{ feedback }}</div>
             <p class="bg-amber-50 p-5 2xl:p-10 rounded-2xl 2xl:rounded-3xl text-sm 2xl:text-2xl italic leading-relaxed border border-amber-100 text-slate-700">{{ question.explanation }}</p>
 
-            <button @click="loadNextQuestion" class="w-full mt-4 2xl:mt-8 bg-green-600 text-white py-4 2xl:py-8 rounded-2xl 2xl:rounded-[2rem] font-black 2xl:text-3xl shadow-lg hover:shadow-xl hover:bg-green-500 transition-all">Next Question ➔</button>
-            <button @click="forceGradeExam" class="w-full mt-6 2xl:mt-8 bg-slate-100 text-slate-500 py-3 2xl:py-6 rounded-2xl 2xl:rounded-[2rem] font-bold 2xl:text-2xl border-2 border-dashed border-slate-200 hover:bg-slate-200 hover:text-slate-700 transition-all">🏁 Grade Now</button>
+            <button @click="loadNextQuestion" class="w-full mt-4 2xl:mt-8 bg-green-600 text-white py-4 2xl:py-8 rounded-2xl 2xl:rounded-[2rem] font-black 2xl:text-3xl shadow-lg hover:shadow-xl hover:bg-green-500 transition-all">Next Question âž”</button>
+            <button @click="forceGradeExam" class="w-full mt-6 2xl:mt-8 bg-slate-100 text-slate-500 py-3 2xl:py-6 rounded-2xl 2xl:rounded-[2rem] font-bold 2xl:text-2xl border-2 border-dashed border-slate-200 hover:bg-slate-200 hover:text-slate-700 transition-all">ðŸ Grade Now</button>
           </div>
         </div>
       </div>
+
     </div>
 
     <div v-else-if="currentView === 'flashcards'" class="max-w-5xl xl:max-w-7xl 2xl:max-w-[100rem] mx-auto px-4 md:px-8 py-8 animate-fade-in transition-all duration-500">
@@ -676,14 +755,14 @@
             <p class="text-[10px] 2xl:text-sm font-black uppercase tracking-widest opacity-70">{{ selectedCert?.name || 'AWS' }}</p>
             <h2 class="text-lg md:text-xl 2xl:text-3xl font-bold">Flashcard Matrix - Round {{ currentFlashcardRound + 1 }}</h2>
           </div>
-          <button @click="abortQuiz" class="bg-red-500/20 hover:bg-red-500/40 text-red-100 px-4 py-2 2xl:px-6 2xl:py-3 rounded-lg text-xs 2xl:text-base font-black uppercase tracking-widest shadow-lg transition-colors border border-red-400/30">🚪 Exit</button>
+          <button @click="abortQuiz" class="bg-red-500/20 hover:bg-red-500/40 text-red-100 px-4 py-2 2xl:px-6 2xl:py-3 rounded-lg text-xs 2xl:text-base font-black uppercase tracking-widest shadow-lg transition-colors border border-red-400/30">ðŸšª Exit</button>
         </div>
 
         <div class="p-8 md:p-12 2xl:p-20 bg-slate-50 relative min-h-[500px] 2xl:min-h-[800px]">
 
           <div v-if="isFlashcardGameComplete" class="animate-fade-in-up max-w-3xl 2xl:max-w-5xl mx-auto">
             <div class="text-center mb-8 2xl:mb-12">
-              <div class="text-6xl 2xl:text-8xl mb-4 2xl:mb-8">🏆</div>
+              <div class="text-6xl 2xl:text-8xl mb-4 2xl:mb-8">ðŸ†</div>
               <h2 class="text-3xl 2xl:text-5xl font-black text-slate-900 tracking-tight">Matrix Cleared</h2>
               <p class="text-slate-500 2xl:text-xl font-medium mt-2 2xl:mt-4">You successfully matched all {{ allFetchedFlashcards.length }} terms.</p>
             </div>
@@ -702,7 +781,7 @@
             <div v-if="Object.keys(flashcardMisses).length > 0" class="bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-sm">
               <div class="bg-slate-800 p-4 2xl:p-6">
                 <h3 class="text-white font-black text-sm 2xl:text-lg uppercase tracking-widest flex items-center gap-2">
-                  <span class="text-rose-500">⚠</span> Target Priorities (Terms Missed)
+                  <span class="text-rose-500">âš </span> Target Priorities (Terms Missed)
                 </h3>
               </div>
               <div class="divide-y divide-slate-100 max-h-96 2xl:max-h-[600px] overflow-y-auto custom-scrollbar">
@@ -756,11 +835,11 @@
           </div>
 
           <div v-if="matchedPairs.length === 6 && displayTerms.length === 6 && !isFlashcardGameComplete" class="absolute inset-0 bg-white/90 backdrop-blur-sm z-50 flex flex-col items-center justify-center animate-fade-in rounded-b-[2rem]">
-            <div class="text-6xl 2xl:text-9xl mb-4 2xl:mb-8 animate-bounce">✨</div>
+            <div class="text-6xl 2xl:text-9xl mb-4 2xl:mb-8 animate-bounce">âœ¨</div>
             <h2 class="text-3xl 2xl:text-6xl font-black text-slate-900 mb-2 2xl:mb-4">Round Cleared!</h2>
             <p class="text-emerald-600 2xl:text-2xl font-mono tracking-widest uppercase font-black mb-8 2xl:mb-12">+100 XP Awarded</p>
             <button @click="currentFlashcardRound++; loadNextFlashcardRound()" class="bg-indigo-600 hover:bg-indigo-500 text-white px-8 py-4 2xl:px-12 2xl:py-6 rounded-2xl 2xl:rounded-3xl font-black 2xl:text-2xl uppercase tracking-widest shadow-lg shadow-indigo-500/30 transition-all hover:-translate-y-1">
-              Next Round ➔
+              Next Round âž”
             </button>
           </div>
 
@@ -772,7 +851,7 @@
 
       <div class="mb-6 2xl:mb-10">
         <button @click="currentView = 'landing'" class="bg-slate-100 hover:bg-slate-200 text-slate-600 px-5 py-2.5 2xl:px-8 2xl:py-4 rounded-xl 2xl:rounded-2xl font-bold text-xs 2xl:text-lg uppercase tracking-widest transition-colors border border-slate-200 inline-flex items-center shadow-sm">
-          ← Return to Dashboard
+          â† Return to Dashboard
         </button>
       </div>
 
@@ -780,7 +859,7 @@
         <div class="absolute inset-0 bg-white/5 backdrop-blur-sm mix-blend-overlay"></div>
         <div class="flex items-center gap-4 2xl:gap-8 relative z-10">
           <div class="w-12 h-12 2xl:w-20 2xl:h-20 bg-white/20 backdrop-blur-md rounded-xl 2xl:rounded-2xl flex items-center justify-center shadow-inner border border-white/30 transform hover:scale-105 transition-transform">
-            <span class="text-2xl 2xl:text-4xl">{{ selectedCert ? selectedCert.icon : '🧠' }}</span>
+            <span class="text-2xl 2xl:text-4xl">{{ selectedCert ? selectedCert.icon : 'ðŸ§ ' }}</span>
           </div>
           <div>
             <h2 class="text-xl 2xl:text-4xl font-black tracking-tight mb-0">
@@ -795,17 +874,20 @@
       </div>
 
       <div class="flex p-2 2xl:p-3 bg-slate-200/50 rounded-3xl 2xl:rounded-[2.5rem] mb-10 2xl:mb-16 w-full max-w-2xl 2xl:max-w-4xl mx-auto shadow-inner border border-slate-200">
-        <button @click="activeForgeTab = 'domains'" :class="activeForgeTab === 'domains' ? 'bg-white text-indigo-600 shadow-sm border border-slate-200' : 'text-slate-500 hover:text-slate-700'" class="flex-1 py-3 md:py-4 2xl:py-6 rounded-2xl 2xl:rounded-3xl text-[10px] md:text-sm 2xl:text-xl font-black uppercase tracking-widest transition-all">
+        <button @click="changeForgeTab('domains')" :class="activeForgeTab === 'domains' ? 'bg-white text-indigo-600 shadow-sm border border-slate-200' : 'text-slate-500 hover:text-slate-700'" class="flex-1 py-3 md:py-4 2xl:py-6 rounded-2xl 2xl:rounded-3xl text-[10px] md:text-sm 2xl:text-xl font-black uppercase tracking-widest transition-all">
           Study Nodes
         </button>
-        <button @click="activeForgeTab = 'study_cards'" :class="activeForgeTab === 'study_cards' ? 'bg-white text-pink-600 shadow-sm border border-slate-200' : 'text-slate-500 hover:text-slate-700'" class="flex-1 py-3 md:py-4 2xl:py-6 rounded-2xl 2xl:rounded-3xl text-[10px] md:text-sm 2xl:text-xl font-black uppercase tracking-widest transition-all">
-          Flash Cards
-        </button>
-        <button @click="activeForgeTab = 'cheatsheets'" :class="activeForgeTab === 'cheatsheets' ? 'bg-white text-emerald-600 shadow-sm border border-slate-200' : 'text-slate-500 hover:text-slate-700'" class="flex-1 py-3 md:py-4 2xl:py-6 rounded-2xl 2xl:rounded-3xl text-[10px] md:text-sm 2xl:text-xl font-black uppercase tracking-widest transition-all">
+
+        <button @click="changeForgeTab('cheatsheets')" :class="activeForgeTab === 'cheatsheets' ? 'bg-white text-emerald-600 shadow-sm border border-slate-200' : 'text-slate-500 hover:text-slate-700'" class="flex-1 py-3 md:py-4 2xl:py-6 rounded-2xl 2xl:rounded-3xl text-[10px] md:text-sm 2xl:text-xl font-black uppercase tracking-widest transition-all">
           Study Material
         </button>
-        <button @click="activeForgeTab = 'architecture'" :class="activeForgeTab === 'architecture' ? 'bg-pink-500 text-white' : 'bg-slate-200 text-slate-600'" class="px-6 py-3 rounded-xl font-bold transition-all">
-          ARCHITECTURE
+
+        <button @click="changeForgeTab('study_cards')" :class="activeForgeTab === 'study_cards' ? 'bg-white text-pink-600 shadow-sm border border-slate-200' : 'text-slate-500 hover:text-slate-700'" class="flex-1 py-3 md:py-4 2xl:py-6 rounded-2xl 2xl:rounded-3xl text-[10px] md:text-sm 2xl:text-xl font-black uppercase tracking-widest transition-all">
+          Flash Cards
+        </button>
+
+        <button @click="changeForgeTab('architecture')" :class="activeForgeTab === 'architecture' ? 'bg-white text-violet-600 shadow-sm border border-slate-200' : 'text-slate-500 hover:text-slate-700'" class="flex-1 py-3 md:py-4 2xl:py-6 rounded-2xl 2xl:rounded-3xl text-[10px] md:text-sm 2xl:text-xl font-black uppercase tracking-widest transition-all">
+          Architecture
         </button>
 
       </div>
@@ -820,20 +902,20 @@
 
               <div class="w-12 h-12 md:w-16 md:h-16 2xl:w-24 2xl:h-24 rounded-full flex items-center justify-center font-black text-lg md:text-xl 2xl:text-4xl transition-transform"
                    :class="(index !== 0 && !isPremiumUser) ? 'bg-slate-200 text-slate-400' : 'bg-indigo-50 text-indigo-500 group-hover:scale-110'">
-                <span v-if="index !== 0 && !isPremiumUser">🔒</span>
+                <span v-if="index !== 0 && !isPremiumUser">ðŸ”’</span>
                 <span v-else>{{ index + 1 }}</span>
               </div>
 
               <div class="text-left">
                 <div class="flex items-center gap-3 md:gap-4 2xl:gap-6 mb-1 2xl:mb-3">
                   <h3 class="text-lg md:text-2xl 2xl:text-4xl font-black tracking-tight" :class="(index !== 0 && !isPremiumUser) ? 'text-slate-500' : 'text-slate-900'">{{ domain.title }}</h3>
-                  <span v-if="index === 0" class="text-[9px] md:text-xs 2xl:text-sm font-black text-emerald-500 bg-emerald-50 px-2 py-1 md:px-3 2xl:px-4 2xl:py-2 rounded-md border border-emerald-200 uppercase tracking-widest">🔓 Free</span>
-                  <span v-else-if="!isPremiumUser" class="text-[9px] md:text-xs 2xl:text-sm font-black text-amber-500 bg-amber-50 px-2 py-1 md:px-3 2xl:px-4 2xl:py-2 rounded-md border border-amber-200 uppercase tracking-widest">⭐ Premium</span>
+                  <span v-if="index === 0" class="text-[9px] md:text-xs 2xl:text-sm font-black text-emerald-500 bg-emerald-50 px-2 py-1 md:px-3 2xl:px-4 2xl:py-2 rounded-md border border-emerald-200 uppercase tracking-widest">ðŸ”“ Free</span>
+                  <span v-else-if="!isPremiumUser" class="text-[9px] md:text-xs 2xl:text-sm font-black text-amber-500 bg-amber-50 px-2 py-1 md:px-3 2xl:px-4 2xl:py-2 rounded-md border border-amber-200 uppercase tracking-widest">â­ Premium</span>
                 </div>
                 <span class="text-xs md:text-sm 2xl:text-xl font-black text-slate-400 uppercase tracking-widest">Exam Weight: <span :class="(index !== 0 && !isPremiumUser) ? 'text-slate-400' : 'text-indigo-500'">{{ domain.weight }}</span></span>
               </div>
             </div>
-            <span v-if="index === 0 || isPremiumUser" class="text-3xl 2xl:text-5xl text-slate-300 transition-transform duration-300" :class="expandedDomain === index ? 'rotate-180' : ''">↓</span>
+            <span v-if="index === 0 || isPremiumUser" class="text-3xl 2xl:text-5xl text-slate-300 transition-transform duration-300" :class="expandedDomain === index ? 'rotate-180' : ''">â†“</span>
           </button>
 
           <div v-show="expandedDomain === index" class="px-6 pb-6 pt-2 md:px-10 md:pb-10 md:pt-4 2xl:px-16 2xl:pb-16 2xl:pt-6 border-t border-slate-100 bg-slate-50">
@@ -841,12 +923,12 @@
               <h4 class="text-xs md:text-sm 2xl:text-xl font-black text-slate-500 uppercase tracking-widest mb-4 2xl:mb-6">Core Topics:</h4>
               <ul class="space-y-3 2xl:space-y-5">
                 <li v-for="(topic, tIndex) in domain.topics" :key="tIndex" class="flex items-start gap-3 2xl:gap-5 text-base md:text-lg 2xl:text-2xl text-slate-600 font-medium">
-                  <span class="text-indigo-400 mt-1 2xl:mt-2">•</span> {{ topic }}
+                  <span class="text-indigo-400 mt-1 2xl:mt-2">â€¢</span> {{ topic }}
                 </li>
               </ul>
             </div>
             <div class="bg-indigo-100/50 border border-indigo-200 p-5 md:p-8 2xl:p-12 rounded-2xl 2xl:rounded-3xl flex gap-4 md:gap-6 2xl:gap-10 items-start">
-              <span class="text-3xl md:text-4xl 2xl:text-6xl">💡</span>
+              <span class="text-3xl md:text-4xl 2xl:text-6xl">ðŸ’¡</span>
               <div>
                 <span class="text-[10px] md:text-xs 2xl:text-base font-black text-indigo-600 uppercase tracking-widest block mb-2 2xl:mb-4">Matrix Fact</span>
                 <p class="text-base md:text-lg 2xl:text-2xl font-semibold text-slate-700 leading-relaxed">{{ domain.keyFact }}</p>
@@ -906,7 +988,7 @@
                 <h3 v-if="startWithTerm" class="text-2xl 2xl:text-4xl font-black text-slate-800">{{ card.term }}</h3>
                 <p v-else class="text-sm 2xl:text-xl font-medium text-slate-700 leading-relaxed">{{ card.definition }}</p>
 
-                <span class="text-[10px] 2xl:text-sm font-bold text-pink-400 absolute bottom-6 2xl:bottom-8 opacity-0 group-hover:opacity-100 transition-opacity">Click to flip ⤵</span>
+                <span class="text-[10px] 2xl:text-sm font-bold text-pink-400 absolute bottom-6 2xl:bottom-8 opacity-0 group-hover:opacity-100 transition-opacity">Click to flip â¤µ</span>
               </div>
 
               <div class="absolute inset-0 [backface-visibility:hidden] [transform:rotateY(180deg)] bg-pink-600 border-2 border-pink-700 rounded-3xl 2xl:rounded-[2.5rem] p-6 2xl:p-10 flex flex-col justify-center items-center text-center shadow-inner">
@@ -917,7 +999,7 @@
                 <p v-if="startWithTerm" class="text-sm 2xl:text-xl font-medium text-white leading-relaxed">{{ card.definition }}</p>
                 <h3 v-else class="text-2xl 2xl:text-5xl font-black text-white">{{ card.term }}</h3>
 
-                <span class="text-[10px] 2xl:text-sm font-bold text-pink-300 absolute bottom-6 2xl:bottom-8 opacity-0 group-hover:opacity-100 transition-opacity">Click to flip ⤵</span>
+                <span class="text-[10px] 2xl:text-sm font-bold text-pink-300 absolute bottom-6 2xl:bottom-8 opacity-0 group-hover:opacity-100 transition-opacity">Click to flip â¤µ</span>
               </div>
             </div>
           </div>
@@ -925,7 +1007,7 @@
         </div>
 
         <div v-else class="text-center py-20 bg-white rounded-3xl border border-slate-200 border-dashed">
-          <div class="text-4xl 2xl:text-6xl mb-4 opacity-50">📭</div>
+          <div class="text-4xl 2xl:text-6xl mb-4 opacity-50">ðŸ“­</div>
           <p class="text-slate-500 font-bold 2xl:text-2xl">No flashcards found for this domain.</p>
         </div>
       </div>
@@ -936,7 +1018,7 @@
 
           <div v-if="index !== 0 && !isPremiumUser" class="absolute inset-0 z-30 bg-slate-900/10 backdrop-blur-[2px] flex items-center justify-center rounded-3xl">
             <div class="bg-white/95 px-6 py-4 md:px-8 md:py-5 2xl:px-12 2xl:py-8 rounded-2xl shadow-xl border border-slate-200 flex flex-col items-center gap-2 2xl:gap-4 transform transition-transform hover:scale-105">
-              <span class="text-3xl md:text-4xl 2xl:text-6xl">🔒</span>
+              <span class="text-3xl md:text-4xl 2xl:text-6xl">ðŸ”’</span>
               <span class="text-xs md:text-sm 2xl:text-lg font-black text-slate-800 uppercase tracking-widest">Premium Module</span>
             </div>
           </div>
@@ -944,11 +1026,11 @@
           <div class="bg-slate-900 h-48 2xl:h-80 rounded-2xl 2xl:rounded-3xl relative flex items-center justify-center overflow-hidden">
             <div class="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent z-10"></div>
             <div class="absolute top-3 left-3 2xl:top-6 2xl:left-6 z-20">
-              <span v-if="index === 0" class="bg-emerald-500 text-white text-[9px] md:text-xs 2xl:text-base font-black uppercase tracking-widest px-2 py-1 md:px-3 2xl:px-4 2xl:py-2 rounded shadow-md">🔓 Free</span>
-              <span v-else-if="!isPremiumUser" class="bg-gradient-to-r from-amber-400 to-orange-500 text-white text-[9px] md:text-xs 2xl:text-base font-black uppercase tracking-widest px-2 py-1 md:px-3 2xl:px-4 2xl:py-2 rounded shadow-md">⭐ Premium</span>
+              <span v-if="index === 0" class="bg-emerald-500 text-white text-[9px] md:text-xs 2xl:text-base font-black uppercase tracking-widest px-2 py-1 md:px-3 2xl:px-4 2xl:py-2 rounded shadow-md">ðŸ”“ Free</span>
+              <span v-else-if="!isPremiumUser" class="bg-gradient-to-r from-amber-400 to-orange-500 text-white text-[9px] md:text-xs 2xl:text-base font-black uppercase tracking-widest px-2 py-1 md:px-3 2xl:px-4 2xl:py-2 rounded shadow-md">â­ Premium</span>
             </div>
             <div class="w-16 h-16 2xl:w-24 2xl:h-24 bg-white/20 backdrop-blur-md rounded-full flex items-center justify-center z-20 transition-transform border border-white/30" :class="(index === 0 || isPremiumUser) ? 'cursor-pointer group-hover:scale-110' : ''">
-              <span class="text-2xl 2xl:text-4xl ml-1 2xl:ml-2">▶️</span>
+              <span class="text-2xl 2xl:text-4xl ml-1 2xl:ml-2">â–¶ï¸</span>
             </div>
             <span class="absolute bottom-4 right-4 2xl:bottom-6 2xl:right-6 text-white font-mono text-xs md:text-sm 2xl:text-xl z-20 bg-black/50 px-2 py-1 2xl:px-4 2xl:py-2 rounded-md">14:2{{ i }}</span>
           </div>
@@ -961,27 +1043,28 @@
       </div>
 
       <div v-else-if="activeForgeTab === 'cheatsheets'" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6 2xl:gap-12 max-w-5xl 2xl:max-w-7xl mx-auto animate-fade-in">
-        <div v-for="(sheet, index) in ['Architecture Quick Start', 'Parameter Guide', 'Service Comparisons']" :key="sheet"
+        <div v-for="(domain, index) in currentForgeDomains" :key="index"
+             @click="(index === 0 || isPremiumUser) ? openStudyMaterial(selectedCert.code, domain.title) : null"
              class="bg-white p-6 md:p-8 2xl:p-12 rounded-[2rem] 2xl:rounded-[3rem] border border-slate-200 transition-all text-center relative overflow-hidden"
              :class="(index !== 0 && !isPremiumUser) ? 'opacity-80 cursor-not-allowed bg-slate-50' : 'shadow-sm hover:shadow-xl hover:-translate-y-1 hover:border-emerald-400 group cursor-pointer'">
 
           <div v-if="index !== 0 && !isPremiumUser" class="absolute inset-0 z-30 bg-slate-900/5 backdrop-blur-[2px] flex flex-col items-center justify-center rounded-[2rem] 2xl:rounded-[3rem]">
             <div class="bg-white/95 px-6 py-4 md:px-8 md:py-5 2xl:px-12 2xl:py-8 rounded-2xl shadow-xl border border-slate-200 flex flex-col items-center gap-2 2xl:gap-4 transform transition-transform hover:scale-105">
-              <span class="text-3xl md:text-4xl 2xl:text-6xl">🔒</span>
+              <span class="text-3xl md:text-4xl 2xl:text-6xl">ðŸ”’</span>
               <span class="text-xs md:text-sm 2xl:text-lg font-black text-slate-800 uppercase tracking-widest">Premium Archive</span>
             </div>
           </div>
 
           <div class="absolute top-4 left-4 2xl:top-8 2xl:left-8 z-20">
-            <span v-if="index === 0" class="text-[9px] md:text-xs 2xl:text-sm font-black text-emerald-500 bg-emerald-50 px-2 py-1 md:px-3 2xl:px-4 2xl:py-2 rounded-md border border-emerald-200 uppercase tracking-widest">🔓 Free</span>
+            <span v-if="index === 0" class="text-[9px] md:text-xs 2xl:text-sm font-black text-emerald-500 bg-emerald-50 px-2 py-1 md:px-3 2xl:px-4 2xl:py-2 rounded-md border border-emerald-200 uppercase tracking-widest">ðŸ”“ Free</span>
           </div>
 
           <div class="absolute -top-10 -right-10 w-32 h-32 md:w-40 md:h-40 2xl:w-64 2xl:h-64 bg-emerald-50 rounded-full blur-2xl transition-colors" :class="(index === 0 || isPremiumUser) ? 'group-hover:bg-emerald-100' : ''"></div>
           <div class="w-16 h-16 md:w-20 md:h-20 2xl:w-32 2xl:h-32 mx-auto bg-emerald-50 text-emerald-500 rounded-2xl 2xl:rounded-[2rem] flex items-center justify-center text-3xl md:text-4xl 2xl:text-6xl mb-4 md:mb-6 2xl:mb-8 relative z-10 border border-emerald-100 transition-transform" :class="(index === 0 || isPremiumUser) ? 'group-hover:scale-110' : ''">
-            📄
+            ðŸ“„
           </div>
-          <h3 class="text-md md:text-lg 2xl:text-2xl font-black relative z-10" :class="(index !== 0 && !isPremiumUser) ? 'text-slate-500' : 'text-slate-900'">{{ sheet }}</h3>
-          <p v-if="index === 0 || isPremiumUser" class="text-xs md:text-sm 2xl:text-lg text-slate-400 mt-2 md:mt-3 2xl:mt-4 font-bold uppercase tracking-widest relative z-10 hover:text-emerald-500">Download PDF ↓</p>
+          <h3 class="text-md md:text-lg 2xl:text-2xl font-black relative z-10" :class="(index !== 0 && !isPremiumUser) ? 'text-slate-500' : 'text-slate-900'">{{ domain.title }}</h3>
+          <p class="text-xs md:text-sm 2xl:text-lg text-slate-400 mt-2 md:mt-3 2xl:mt-4 font-bold uppercase tracking-widest relative z-10" :class="(index === 0 || isPremiumUser) ? 'group-hover:text-emerald-500' : ''">Read Study Guide â†’</p>
         </div>
       </div>
 
@@ -994,7 +1077,7 @@
       <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8 2xl:mb-12 border-b border-slate-200 pb-6 2xl:pb-10">
         <div>
           <button @click="currentView = 'library'" class="mb-3 2xl:mb-5 text-[10px] 2xl:text-sm font-black text-slate-400 hover:text-indigo-600 transition-colors uppercase tracking-widest flex items-center gap-1.5 2xl:gap-3 group">
-            <span class="group-hover:-translate-x-1 transition-transform">←</span> Return to Databanks
+            <span class="group-hover:-translate-x-1 transition-transform">â†</span> Return to Databanks
           </button>
           <h2 class="text-3xl 2xl:text-6xl font-black text-slate-900 tracking-tight flex items-center gap-3 2xl:gap-6">
             <span class="text-indigo-500">{{ activeDomain.icon }}</span>
@@ -1011,7 +1094,7 @@
 
             <div v-if="!isPlaying" class="absolute inset-0 flex flex-col items-center justify-center z-20">
               <button @click="isPlaying = true" class="w-20 h-20 2xl:w-32 2xl:h-32 bg-indigo-600/90 hover:bg-indigo-500 backdrop-blur-md rounded-full flex items-center justify-center transition-all hover:scale-110 shadow-[0_0_30px_rgba(79,70,229,0.5)] cursor-pointer">
-                <span class="text-white text-3xl 2xl:text-6xl ml-2 2xl:ml-4">▶</span>
+                <span class="text-white text-3xl 2xl:text-6xl ml-2 2xl:ml-4">â–¶</span>
               </button>
               <p class="text-slate-300 font-bold tracking-widest uppercase text-[10px] 2xl:text-sm mt-6 2xl:mt-10 bg-slate-900/50 px-4 py-1.5 2xl:px-6 2xl:py-2.5 rounded-full backdrop-blur-sm border border-slate-700">
                 {{ activeModule?.type === 'video' ? 'Initiate Video Protocol' : 'Access Databank Document' }}
@@ -1034,14 +1117,14 @@
 
                 <div class="bg-white px-6 py-4 2xl:px-10 2xl:py-6 border-b border-slate-200 flex justify-between items-center z-10 shadow-sm shrink-0">
                   <h3 class="font-black text-slate-800 text-lg 2xl:text-3xl flex items-center gap-2 2xl:gap-4">
-                    📄 {{ activeModule?.title || 'Classified Document' }}
+                    ðŸ“„ {{ activeModule?.title || 'Classified Document' }}
                   </h3>
                   <div class="flex gap-3 2xl:gap-5">
                     <button @click="downloadDocumentPDF" class="flex items-center gap-2 2xl:gap-3 bg-slate-800 hover:bg-slate-900 text-white px-4 py-2 2xl:px-6 2xl:py-3 rounded-lg 2xl:rounded-xl font-bold text-xs 2xl:text-lg uppercase tracking-widest transition-all hover:-translate-y-0.5 shadow-md">
-                      ⬇️ Save PDF
+                      â¬‡ï¸ Save PDF
                     </button>
                     <button @click="completeActiveModule" class="flex items-center gap-2 2xl:gap-3 bg-indigo-600 hover:bg-indigo-500 text-white px-4 py-2 2xl:px-6 2xl:py-3 rounded-lg 2xl:rounded-xl font-bold text-xs 2xl:text-lg uppercase tracking-widest transition-all hover:-translate-y-0.5 shadow-md shadow-indigo-500/30">
-                      ✓ Claim XP
+                      âœ“ Claim XP
                     </button>
                   </div>
                 </div>
@@ -1089,9 +1172,9 @@
                   :class="activeModule?.id === module.id ? 'bg-indigo-50 border border-indigo-100 shadow-sm' : 'hover:bg-slate-50 border border-transparent hover:border-slate-100'"
               >
                 <div class="mt-0.5 2xl:mt-1 shrink-0">
-                  <span v-if="activeModule?.id === module.id" class="flex h-6 w-6 2xl:w-10 2xl:h-10 items-center justify-center rounded-full bg-indigo-600 text-white shadow-md shadow-indigo-500/30 text-[10px] 2xl:text-base">▶</span>
-                  <span v-else-if="module.type === 'document'" class="flex h-6 w-6 2xl:w-10 2xl:h-10 items-center justify-center rounded-full bg-slate-100 text-slate-400 group-hover:text-slate-600 text-[10px] 2xl:text-base">📄</span>
-                  <span v-else class="flex h-6 w-6 2xl:w-10 2xl:h-10 items-center justify-center rounded-full bg-slate-100 text-slate-400 group-hover:text-slate-600 text-[10px] 2xl:text-base">📺</span>
+                  <span v-if="activeModule?.id === module.id" class="flex h-6 w-6 2xl:w-10 2xl:h-10 items-center justify-center rounded-full bg-indigo-600 text-white shadow-md shadow-indigo-500/30 text-[10px] 2xl:text-base">â–¶</span>
+                  <span v-else-if="module.type === 'document'" class="flex h-6 w-6 2xl:w-10 2xl:h-10 items-center justify-center rounded-full bg-slate-100 text-slate-400 group-hover:text-slate-600 text-[10px] 2xl:text-base">ðŸ“„</span>
+                  <span v-else class="flex h-6 w-6 2xl:w-10 2xl:h-10 items-center justify-center rounded-full bg-slate-100 text-slate-400 group-hover:text-slate-600 text-[10px] 2xl:text-base">ðŸ“º</span>
                 </div>
 
                 <div class="flex-grow">
@@ -1102,7 +1185,7 @@
                         class="text-[9px] 2xl:text-xs uppercase tracking-wider font-black px-1.5 py-0.5 2xl:px-2 2xl:py-1 rounded border"
                         :class="module.type === 'video' ? 'bg-indigo-100 text-indigo-600 border-indigo-200' : 'bg-emerald-100 text-emerald-600 border-emerald-200'"
                     >
-        {{ module.type === 'video' ? '▶ Video' : '📄 Doc' }}
+        {{ module.type === 'video' ? 'â–¶ Video' : 'ðŸ“„ Doc' }}
       </span>
                   </h5>
 
@@ -1127,121 +1210,247 @@
     <div v-else-if="currentView === 'admin'" class="max-w-7xl 2xl:max-w-[100rem] mx-auto px-4 py-8 animate-fade-in admin-dashboard">
 
       <button @click="currentView = 'landing'" class="mb-6 2xl:mb-10 bg-slate-100 hover:bg-slate-200 text-slate-600 px-5 py-2.5 2xl:px-8 2xl:py-4 rounded-xl 2xl:rounded-2xl font-bold text-xs 2xl:text-base uppercase tracking-widest transition-colors border border-slate-200 inline-flex items-center shadow-sm">
-        ← Return to Admin Hub
+        â† Return to Admin Hub
       </button>
 
       <div class="mb-8 2xl:mb-12 bg-slate-800 p-6 md:p-8 2xl:p-12 rounded-2xl 2xl:rounded-[2rem] border border-slate-700 relative overflow-hidden shadow-xl text-left">
         <h3 class="text-xl 2xl:text-3xl font-black text-white mb-2 2xl:mb-4 flex items-center gap-3">
-          <span class="p-2 2xl:p-3 bg-indigo-500/20 text-indigo-400 rounded-lg 2xl:rounded-xl">🗄️</span>
+          <span class="p-2 2xl:p-3 bg-indigo-500/20 text-indigo-400 rounded-lg 2xl:rounded-xl">ðŸ—„ï¸</span>
           Mass Databank Injection
         </h3>
-        <p class="text-sm 2xl:text-xl text-slate-400 mb-6 2xl:mb-10 max-w-2xl 2xl:max-w-4xl">Upload official AWS question sets (.csv) to update the Knowledge Forge. Ensure columns match the master schema.</p>
+        <p class="text-sm 2xl:text-xl text-slate-400 mb-6 2xl:mb-10 max-w-2xl 2xl:max-w-4xl">Upload official AWS data sets (.csv) to update the Knowledge Forge. Ensure columns match the master schema.</p>
 
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-8 2xl:gap-12">
+        <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6 2xl:gap-10">
 
-          <div class="bg-slate-900/50 p-4 2xl:p-8 rounded-xl 2xl:rounded-2xl border border-slate-700">
-            <h4 class="text-xs 2xl:text-base font-black text-indigo-400 uppercase tracking-widest mb-3 2xl:mb-5">Questions CSV (9 Columns)</h4>
-            <div class="flex flex-col gap-3 2xl:gap-5">
-              <input type="file" accept=".csv" @change="handleFileSelect" class="text-xs 2xl:text-base text-slate-400 file:mr-4 file:py-2 2xl:file:py-3 file:px-4 2xl:file:px-6 file:rounded-lg 2xl:file:rounded-xl file:border-0 file:text-xs 2xl:file:text-sm file:font-black file:uppercase file:bg-indigo-500/20 file:text-indigo-400 bg-slate-950 border border-slate-800 rounded-lg 2xl:rounded-xl cursor-pointer w-full" />
-              <button @click="uploadCsv" :disabled="!selectedCsvFile" class="py-2 2xl:py-4 rounded-lg 2xl:rounded-xl font-black text-xs 2xl:text-lg uppercase tracking-widest transition-all w-full" :class="selectedCsvFile ? 'bg-indigo-600 text-white hover:bg-indigo-500 shadow-lg shadow-indigo-500/30' : 'bg-slate-800 text-slate-500 cursor-not-allowed'">
+          <div class="bg-slate-900/50 p-6 2xl:p-8 rounded-xl 2xl:rounded-2xl border border-slate-700 flex flex-col justify-between">
+            <div>
+              <h4 class="text-sm 2xl:text-lg font-black text-indigo-400 uppercase tracking-widest mb-2">Questions CSV</h4>
+              <p class="text-[10px] 2xl:text-sm text-slate-500 mb-4 2xl:mb-6 font-bold uppercase tracking-wider">9 Column Schema</p>
+              <input type="file" accept=".csv" @change="handleFileSelect" class="w-full text-xs 2xl:text-base text-slate-400 file:mr-4 file:py-2 2xl:file:py-3 file:px-4 2xl:file:px-6 file:rounded-lg 2xl:file:rounded-xl file:border-0 file:font-black file:uppercase file:bg-indigo-500/20 file:text-indigo-400 bg-slate-950 border border-slate-800 rounded-lg 2xl:rounded-xl cursor-pointer mb-4 2xl:mb-6" />
+            </div>
+            <div>
+              <button @click="uploadCsv" :disabled="!selectedCsvFile" class="py-3 2xl:py-4 rounded-lg 2xl:rounded-xl font-black text-xs 2xl:text-base uppercase tracking-widest transition-all w-full" :class="selectedCsvFile ? 'bg-indigo-600 text-white hover:bg-indigo-500 shadow-lg shadow-indigo-500/30' : 'bg-slate-800 text-slate-500 cursor-not-allowed'">
                 Inject Questions
               </button>
+              <p v-if="uploadStatus" class="text-[10px] 2xl:text-sm font-bold mt-3 text-center" :class="uploadStatus.includes('âœ…') ? 'text-emerald-400' : 'text-amber-400'">{{ uploadStatus }}</p>
             </div>
-            <p v-if="uploadStatus" class="text-[10px] 2xl:text-sm font-bold mt-2 2xl:mt-4" :class="uploadStatus.includes('✅') ? 'text-emerald-400' : 'text-amber-400'">{{ uploadStatus }}</p>
           </div>
 
-          <div class="bg-slate-900/50 p-4 2xl:p-8 rounded-xl 2xl:rounded-2xl border border-slate-700">
-            <h4 class="text-xs 2xl:text-base font-black text-pink-400 uppercase tracking-widest mb-3 2xl:mb-5">Flashcards CSV (4 Columns)</h4>
-            <div class="flex flex-col gap-3 2xl:gap-5">
-              <input type="file" accept=".csv" @change="handleFlashcardSelect" class="text-xs 2xl:text-base text-slate-400 file:mr-4 file:py-2 2xl:file:py-3 file:px-4 2xl:file:px-6 file:rounded-lg 2xl:file:rounded-xl file:border-0 file:text-xs 2xl:file:text-sm file:font-black file:uppercase file:bg-pink-500/20 file:text-pink-400 bg-slate-950 border border-slate-800 rounded-lg 2xl:rounded-xl cursor-pointer w-full" />
-              <button @click="uploadFlashcardCsv" :disabled="!selectedFlashcardCsv" class="py-2 2xl:py-4 rounded-lg 2xl:rounded-xl font-black text-xs 2xl:text-lg uppercase tracking-widest transition-all w-full" :class="selectedFlashcardCsv ? 'bg-pink-600 text-white hover:bg-pink-500 shadow-lg shadow-pink-500/30' : 'bg-slate-800 text-slate-500 cursor-not-allowed'">
+          <div class="bg-slate-900/50 p-6 2xl:p-8 rounded-xl 2xl:rounded-2xl border border-slate-700 flex flex-col justify-between">
+            <div>
+              <h4 class="text-sm 2xl:text-lg font-black text-pink-400 uppercase tracking-widest mb-2">Flashcards CSV</h4>
+              <p class="text-[10px] 2xl:text-sm text-slate-500 mb-4 2xl:mb-6 font-bold uppercase tracking-wider">4 Column Schema</p>
+              <input type="file" accept=".csv" @change="handleFlashcardSelect" class="w-full text-xs 2xl:text-base text-slate-400 file:mr-4 file:py-2 2xl:file:py-3 file:px-4 2xl:file:px-6 file:rounded-lg 2xl:file:rounded-xl file:border-0 file:font-black file:uppercase file:bg-pink-500/20 file:text-pink-400 bg-slate-950 border border-slate-800 rounded-lg 2xl:rounded-xl cursor-pointer mb-4 2xl:mb-6" />
+            </div>
+            <div>
+              <button @click="uploadFlashcardCsv" :disabled="!selectedFlashcardCsv" class="py-3 2xl:py-4 rounded-lg 2xl:rounded-xl font-black text-xs 2xl:text-base uppercase tracking-widest transition-all w-full" :class="selectedFlashcardCsv ? 'bg-pink-600 text-white hover:bg-pink-500 shadow-lg shadow-pink-500/30' : 'bg-slate-800 text-slate-500 cursor-not-allowed'">
                 Inject Flashcards
               </button>
+              <p v-if="flashcardUploadStatus" class="text-[10px] 2xl:text-sm font-bold mt-3 text-center" :class="flashcardUploadStatus.includes('âœ…') ? 'text-emerald-400' : 'text-amber-400'">{{ flashcardUploadStatus }}</p>
             </div>
-            <p v-if="flashcardUploadStatus" class="text-[10px] 2xl:text-sm font-bold mt-2 2xl:mt-4" :class="flashcardUploadStatus.includes('✅') ? 'text-emerald-400' : 'text-amber-400'">{{ flashcardUploadStatus }}</p>
           </div>
 
-          <div class="p-4 border-2 border-pink-500 rounded-xl bg-pink-50 mt-4">
-            <h3 class="font-bold text-pink-700 mb-2">Inject Architecture Pipelines</h3>
+          <div class="bg-slate-900/50 p-6 2xl:p-8 rounded-xl 2xl:rounded-2xl border border-slate-700 flex flex-col justify-between">
+            <div>
+              <h4 class="text-sm 2xl:text-lg font-black text-cyan-400 uppercase tracking-widest mb-2">Study Material</h4>
+              <p class="text-[10px] 2xl:text-sm text-slate-500 mb-4 2xl:mb-6 font-bold uppercase tracking-wider">4 Column Schema</p>
+              <input type="file" accept=".csv" @change="handleStudyFileSelect" class="w-full text-xs 2xl:text-base text-slate-400 file:mr-4 file:py-2 2xl:file:py-3 file:px-4 2xl:file:px-6 file:rounded-lg 2xl:file:rounded-xl file:border-0 file:font-black file:uppercase file:bg-cyan-500/20 file:text-cyan-400 bg-slate-950 border border-slate-800 rounded-lg 2xl:rounded-xl cursor-pointer mb-4 2xl:mb-6" />
+            </div>
+            <div>
+              <button @click="submitStudyCsv" :disabled="!studyFile" class="py-3 2xl:py-4 rounded-lg 2xl:rounded-xl font-black text-xs 2xl:text-base uppercase tracking-widest transition-all w-full" :class="studyFile ? 'bg-cyan-600 text-white hover:bg-cyan-500 shadow-lg shadow-cyan-500/30' : 'bg-slate-800 text-slate-500 cursor-not-allowed'">
+                Inject Study Docs
+              </button>
+              <p v-if="studyUploadStatus" class="text-[10px] 2xl:text-sm font-bold mt-3 text-center" :class="studyUploadStatus.includes('âœ…') ? 'text-cyan-400' : 'text-amber-400'">{{ studyUploadStatus }}</p>
+            </div>
+          </div>
 
-            <input type="file" @change="handlePipelineFileSelect" class="block w-full text-sm text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-pink-100 file:text-pink-700 hover:file:bg-pink-200 mb-4"/>
+          <div class="bg-slate-900/50 p-6 2xl:p-8 rounded-xl 2xl:rounded-2xl border border-slate-700 flex flex-col justify-between">
+            <div>
+              <h4 class="text-sm 2xl:text-lg font-black text-emerald-400 uppercase tracking-widest mb-2">Architecture</h4>
+              <p class="text-[10px] 2xl:text-sm text-slate-500 mb-4 2xl:mb-6 font-bold uppercase tracking-wider">Pipeline Schema</p>
+              <input type="file" accept=".csv" @change="handlePipelineFileSelect" class="w-full text-xs 2xl:text-base text-slate-400 file:mr-4 file:py-2 2xl:file:py-3 file:px-4 2xl:file:px-6 file:rounded-lg 2xl:file:rounded-xl file:border-0 file:font-black file:uppercase file:bg-emerald-500/20 file:text-emerald-400 bg-slate-950 border border-slate-800 rounded-lg 2xl:rounded-xl cursor-pointer mb-4 2xl:mb-6" />
+            </div>
+            <div>
+              <button @click="submitPipelineCsv" :disabled="!pipelineFile" class="py-3 2xl:py-4 rounded-lg 2xl:rounded-xl font-black text-xs 2xl:text-base uppercase tracking-widest transition-all w-full" :class="pipelineFile ? 'bg-emerald-600 text-white hover:bg-emerald-500 shadow-lg shadow-emerald-500/30' : 'bg-slate-800 text-slate-500 cursor-not-allowed'">
+                Inject Pipelines
+              </button>
+              <p v-if="pipelineUploadStatus" class="text-[10px] 2xl:text-sm font-bold mt-3 text-center" :class="pipelineUploadStatus.includes('âœ…') ? 'text-emerald-400' : 'text-amber-400'">{{ pipelineUploadStatus }}</p>
+            </div>
+          </div>
 
-            <button @click="submitPipelineCsv" class="w-full bg-pink-500 hover:bg-pink-600 text-white font-black py-3 rounded-lg transition-all shadow-md active:scale-[0.98] tracking-widest">
-              INJECT PIPELINES
-            </button>
+        </div>
+      </div>
+
+      <div class="flex gap-4 2xl:gap-8 mb-6 2xl:mb-10 border-b border-slate-700">
+        <button @click="adminActiveTab = 'questions'" :class="adminActiveTab === 'questions' ? 'text-indigo-400 border-b-2 border-indigo-400 pb-3 2xl:pb-4' : 'text-slate-400 hover:text-white pb-3 2xl:pb-4'" class="font-black tracking-widest uppercase text-xs 2xl:text-lg transition-all">
+          Questions Matrix
+        </button>
+        <button @click="adminActiveTab = 'flashcards'" :class="adminActiveTab === 'flashcards' ? 'text-pink-400 border-b-2 border-pink-400 pb-3 2xl:pb-4' : 'text-slate-400 hover:text-white pb-3 2xl:pb-4'" class="font-black tracking-widest uppercase text-xs 2xl:text-lg transition-all">
+          Flashcard Matrix
+        </button>
+        <button @click="adminActiveTab = 'architecture'" :class="adminActiveTab === 'architecture' ? 'text-emerald-400 border-b-2 border-emerald-400 pb-3 2xl:pb-4' : 'text-slate-400 hover:text-white pb-3 2xl:pb-4'" class="font-black tracking-widest uppercase text-xs 2xl:text-lg transition-all">
+          Architecture Data
+        </button>
+        <button @click="adminActiveTab = 'analytics'; loadAdminAnalytics()" :class="adminActiveTab === 'analytics' ? 'text-amber-400 border-b-2 border-amber-400 pb-3 2xl:pb-4' : 'text-slate-400 hover:text-white pb-3 2xl:pb-4'" class="font-black tracking-widest uppercase text-xs 2xl:text-lg transition-all">
+          ðŸ“Š Analytics
+        </button>
+      </div>
+
+      <!-- ðŸ“Š ANALYTICS TAB -->
+      <div v-if="adminActiveTab === 'analytics'" class="animate-fade-in">
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 2xl:gap-10 mb-8">
+
+          <div class="bg-white rounded-2xl 2xl:rounded-3xl p-6 2xl:p-10 border border-slate-200 shadow-sm">
+            <h3 class="text-sm 2xl:text-lg font-black text-slate-800 uppercase tracking-widest mb-4 2xl:mb-6 flex items-center gap-2">
+              <span class="text-indigo-500">ðŸŽ®</span> Game Mode Popularity
+            </h3>
+            <canvas ref="gameModeChartRef" height="220"></canvas>
+          </div>
+
+          <div class="bg-white rounded-2xl 2xl:rounded-3xl p-6 2xl:p-10 border border-slate-200 shadow-sm">
+            <h3 class="text-sm 2xl:text-lg font-black text-slate-800 uppercase tracking-widest mb-4 2xl:mb-6 flex items-center gap-2">
+              <span class="text-emerald-500">ðŸ†</span> Certification Popularity
+            </h3>
+            <canvas ref="certPopChartRef" height="220"></canvas>
           </div>
 
         </div>
 
-        <div v-if="uploadStatus" class="mt-6 2xl:mt-10 pt-4 2xl:pt-6 border-t border-slate-700">
-          <p class="text-sm 2xl:text-xl font-bold flex items-center gap-2" :class="uploadStatus.includes('✅') ? 'text-emerald-400' : (uploadStatus.includes('❌') ? 'text-rose-400' : 'text-amber-400 animate-pulse')">
-            {{ uploadStatus }}
-          </p>
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-4 2xl:gap-8 mb-8">
+          <div class="bg-gradient-to-br from-indigo-500 to-blue-600 p-6 2xl:p-8 rounded-2xl 2xl:rounded-3xl text-center text-white shadow-lg">
+            <div class="text-3xl 2xl:text-5xl font-black">{{ adminAnalytics.totalGameSessions || 0 }}</div>
+            <div class="text-xs 2xl:text-sm font-bold uppercase tracking-widest mt-1 opacity-80">Total Game Sessions</div>
+          </div>
+          <div class="bg-gradient-to-br from-emerald-500 to-green-600 p-6 2xl:p-8 rounded-2xl 2xl:rounded-3xl text-center text-white shadow-lg">
+            <div class="text-3xl 2xl:text-5xl font-black">{{ adminAnalytics.totalStudyViews || 0 }}</div>
+            <div class="text-xs 2xl:text-sm font-bold uppercase tracking-widest mt-1 opacity-80">Study Material Views</div>
+          </div>
+          <div class="bg-gradient-to-br from-purple-500 to-violet-600 p-6 2xl:p-8 rounded-2xl 2xl:rounded-3xl text-center text-white shadow-lg">
+            <div class="text-3xl 2xl:text-5xl font-black">{{ adminAnalytics.topMode || '-' }}</div>
+            <div class="text-xs 2xl:text-sm font-bold uppercase tracking-widest mt-1 opacity-80">Most Popular Mode</div>
+          </div>
+          <div class="bg-gradient-to-br from-amber-500 to-orange-600 p-6 2xl:p-8 rounded-2xl 2xl:rounded-3xl text-center text-white shadow-lg">
+            <div class="text-3xl 2xl:text-5xl font-black">{{ adminAnalytics.topCert || '-' }}</div>
+            <div class="text-xs 2xl:text-sm font-bold uppercase tracking-widest mt-1 opacity-80">Most Popular Cert</div>
+          </div>
+        </div>
+
+        <div class="bg-white rounded-2xl 2xl:rounded-3xl p-6 2xl:p-10 border border-slate-200 shadow-sm">
+          <h3 class="text-sm 2xl:text-lg font-black text-slate-800 uppercase tracking-widest mb-4 2xl:mb-6 flex items-center gap-2">
+            <span class="text-pink-500">ðŸ“ˆ</span> Games vs. Study Material (Engagement Split)
+          </h3>
+          <canvas ref="engagementSplitChartRef" height="160"></canvas>
         </div>
       </div>
 
-      <div class="admin-header 2xl:mb-8">
-        <h2 class="2xl:text-3xl">SYSTEM MAINFRAME: QUESTION DATABASE</h2>
-        <button @click="openAdminModal(null)" class="btn-create 2xl:text-lg 2xl:px-6 2xl:py-3">+ INJECT NEW QUESTION</button>
+      <div v-if="adminActiveTab === 'questions'" class="animate-fade-in">
+        <div class="admin-header 2xl:mb-8 flex justify-between items-end">
+          <h2 class="2xl:text-3xl font-black text-slate-800">QUESTION DATABASE</h2>
+          <button @click="openAdminModal(null)" class="btn-create 2xl:text-lg 2xl:px-6 2xl:py-3">+ INJECT NEW QUESTION</button>
+        </div>
+
+        <table class="admin-table 2xl:text-lg w-full">
+          <thead>
+          <tr>
+            <th class="2xl:p-4">ID</th>
+            <th class="2xl:p-4">Cert</th>
+            <th class="2xl:p-4">Category</th>
+            <th class="2xl:p-4">Question Text</th>
+            <th class="2xl:p-4 text-right">Actions</th>
+          </tr>
+          </thead>
+          <tbody>
+          <tr v-for="q in allAdminQuestions" :key="q.id">
+            <td class="2xl:p-4">{{ q.id }}</td>
+            <td class="2xl:p-4"><span class="badge 2xl:text-sm">{{ q.certCode }}</span></td>
+            <td class="2xl:p-4">{{ q.domain }}</td>
+            <td class="truncate 2xl:p-4 max-w-xs xl:max-w-md">{{ q.questionText }}</td>
+            <td class="action-buttons 2xl:p-4 text-right">
+              <button @click="openAdminModal(q)" class="btn-edit 2xl:px-4 2xl:py-2 mr-2">EDIT</button>
+              <button @click="deleteAdminQuestion(q.id)" class="btn-delete 2xl:px-4 2xl:py-2">VAPORIZE</button>
+            </td>
+          </tr>
+          <tr v-if="allAdminQuestions.length === 0">
+            <td colspan="5" class="text-center text-slate-400 py-8 2xl:py-16 font-bold uppercase tracking-widest text-xs 2xl:text-base">
+              No questions in databank. Inject CSV to begin.
+            </td>
+          </tr>
+          </tbody>
+        </table>
       </div>
 
-      <table class="admin-table 2xl:text-lg">
-        <thead>
-        <tr>
-          <th class="2xl:p-4">ID</th>
-          <th class="2xl:p-4">Cert</th>
-          <th class="2xl:p-4">Category</th>
-          <th class="2xl:p-4">Question Text</th>
-          <th class="2xl:p-4">Actions</th>
-        </tr>
-        </thead>
-        <tbody>
-        <tr v-for="q in allAdminQuestions" :key="q.id">
-          <td class="2xl:p-4">{{ q.id }}</td>
-          <td class="2xl:p-4"><span class="badge 2xl:text-sm">{{ q.certCode }}</span></td>
-          <td class="2xl:p-4">{{ q.domain }}</td>
-          <td class="truncate 2xl:p-4">{{ q.questionText }}</td>
-          <td class="action-buttons 2xl:p-4">
-            <button @click="openAdminModal(q)" class="btn-edit 2xl:px-4 2xl:py-2">EDIT</button>
-            <button @click="deleteAdminQuestion(q.id)" class="btn-delete 2xl:px-4 2xl:py-2">VAPORIZE</button>
-          </td>
-        </tr>
-        </tbody>
-      </table>
+      <div v-if="adminActiveTab === 'flashcards'" class="animate-fade-in">
+        <div class="admin-header 2xl:mb-8">
+          <h2 class="2xl:text-3xl font-black text-slate-800">FLASHCARD DATABASE</h2>
+        </div>
 
-      <div class="admin-header mt-12 2xl:mt-24 2xl:mb-8">
-        <h2 class="2xl:text-3xl">SYSTEM MAINFRAME: FLASHCARD DATABASE</h2>
+        <table class="admin-table 2xl:text-lg w-full">
+          <thead>
+          <tr>
+            <th class="2xl:p-4">ID</th>
+            <th class="2xl:p-4">Cert</th>
+            <th class="2xl:p-4">Category</th>
+            <th class="2xl:p-4">Term</th>
+            <th class="2xl:p-4">Definition</th>
+            <th class="2xl:p-4 text-right">Actions</th>
+          </tr>
+          </thead>
+          <tbody>
+          <tr v-for="f in allAdminFlashcards" :key="'f-'+f.id">
+            <td class="2xl:p-4">{{ f.id }}</td>
+            <td class="2xl:p-4"><span class="badge 2xl:text-sm">{{ f.examCode }}</span></td>
+            <td class="2xl:p-4">{{ f.category }}</td>
+            <td class="font-bold text-pink-600 2xl:p-4">{{ f.term }}</td>
+            <td class="truncate 2xl:p-4 max-w-xs xl:max-w-md" :title="f.definition">{{ f.definition }}</td>
+            <td class="action-buttons 2xl:p-4 text-right">
+              <button @click="deleteAdminFlashcard(f.id)" class="btn-delete 2xl:px-4 2xl:py-2">VAPORIZE</button>
+            </td>
+          </tr>
+          <tr v-if="!allAdminFlashcards || allAdminFlashcards.length === 0">
+            <td colspan="6" class="text-center text-slate-400 py-8 2xl:py-16 font-bold uppercase tracking-widest text-xs 2xl:text-base">
+              No flashcards in databank. Inject CSV to begin.
+            </td>
+          </tr>
+          </tbody>
+        </table>
       </div>
 
-      <table class="admin-table 2xl:text-lg">
-        <thead>
-        <tr>
-          <th class="2xl:p-4">ID</th>
-          <th class="2xl:p-4">Cert</th>
-          <th class="2xl:p-4">Category</th>
-          <th class="2xl:p-4">Term</th>
-          <th class="2xl:p-4">Definition</th>
-          <th class="2xl:p-4">Actions</th>
-        </tr>
-        </thead>
-        <tbody>
-        <tr v-for="f in allAdminFlashcards" :key="'f-'+f.id">
-          <td class="2xl:p-4">{{ f.id }}</td>
-          <td class="2xl:p-4"><span class="badge 2xl:text-sm">{{ f.examCode }}</span></td>
-          <td class="2xl:p-4">{{ f.category }}</td>
-          <td class="font-bold text-indigo-600 2xl:p-4">{{ f.term }}</td>
-          <td class="truncate 2xl:p-4" style="max-width: 400px;">{{ f.definition }}</td>
-          <td class="action-buttons 2xl:p-4">
-            <button @click="deleteAdminFlashcard(f.id)" class="btn-delete 2xl:px-4 2xl:py-2">VAPORIZE</button>
-          </td>
-        </tr>
-        <tr v-if="allAdminFlashcards.length === 0">
-          <td colspan="6" class="text-center text-slate-400 py-8 2xl:py-16 font-bold uppercase tracking-widest text-xs 2xl:text-base">
-            No flashcards in databank. Inject CSV to begin.
-          </td>
-        </tr>
-        </tbody>
-      </table>
+      <div v-if="adminActiveTab === 'architecture'" class="animate-fade-in">
+        <div class="admin-header 2xl:mb-8 flex justify-between items-end">
+          <h2 class="2xl:text-3xl font-black text-slate-800">ARCHITECTURE PIPELINES</h2>
+        </div>
+
+        <table class="admin-table 2xl:text-lg w-full">
+          <thead>
+          <tr>
+            <th class="2xl:p-4">ID</th>
+            <th class="2xl:p-4">Cert</th>
+            <th class="2xl:p-4">Scenario / Title</th>
+            <th class="2xl:p-4 text-right">Actions</th>
+          </tr>
+          </thead>
+          <tbody>
+          <tr v-for="p in allAdminPipelines" :key="'p-'+p.id">
+            <td class="2xl:p-4">{{ p.id }}</td>
+
+            <td class="2xl:p-4"><span class="badge 2xl:text-sm">{{ p.examCode }}</span></td>
+
+            <td class="font-bold text-emerald-600 2xl:p-4 truncate max-w-xs xl:max-w-md" :title="p.scenarioDescription">
+              {{ p.scenarioDescription }}
+            </td>
+
+            <td class="action-buttons 2xl:p-4 text-right">
+              <button @click="deleteAdminPipeline(p.id)" class="btn-delete 2xl:px-4 2xl:py-2">VAPORIZE</button>
+            </td>
+          </tr>
+          <tr v-if="!allAdminPipelines || allAdminPipelines.length === 0">
+            <td colspan="4" class="text-center text-slate-400 py-8 2xl:py-16 font-bold uppercase tracking-widest text-xs 2xl:text-base">
+              No architecture pipelines in databank. Inject CSV to begin.
+            </td>
+          </tr>
+          </tbody>
+        </table>
+      </div>
 
       <div v-if="showAdminModal" class="admin-modal-overlay">
         <div class="admin-modal-content max-h-[90vh] overflow-y-auto 2xl:max-w-4xl 2xl:p-12">
@@ -1288,7 +1497,7 @@
                   @click.prevent="removeOption(index)"
                   class="w-8 h-8 2xl:w-12 2xl:h-12 flex items-center justify-center bg-red-100 text-red-600 rounded-lg 2xl:rounded-xl font-black 2xl:text-2xl hover:bg-red-200 transition-colors flex-shrink-0"
                   title="Remove Option">
-                ×
+                Ã—
               </button>
             </div>
           </div>
@@ -1301,11 +1510,44 @@
           </div>
         </div>
       </div>
+
     </div>
+
+    <div v-if="showAbortModal" class="fixed inset-0 z-[100] flex items-center justify-center bg-slate-950/80 backdrop-blur-sm animate-fade-in px-4">
+      <div class="bg-slate-900 border border-red-500/30 rounded-2xl p-6 md:p-8 max-w-md w-full shadow-2xl shadow-red-900/20 text-center relative overflow-hidden">
+
+        <div class="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-transparent via-red-500 to-transparent opacity-50"></div>
+
+        <div class="w-16 h-16 bg-red-500/10 rounded-full flex items-center justify-center mx-auto mb-6 border border-red-500/20">
+          <span class="text-3xl">âš ï¸</span>
+        </div>
+
+        <h3 class="text-xl md:text-2xl font-black text-white mb-2 uppercase tracking-widest">Abort Simulation?</h3>
+        <p class="text-slate-400 mb-8 font-medium text-sm md:text-base leading-relaxed">
+          Are you sure you want to exit? Your progress will be wiped, and no score or XP will be recorded.
+        </p>
+
+        <div class="flex flex-col sm:flex-row gap-4 justify-center">
+          <button @click="showAbortModal = false" class="px-6 py-3 rounded-xl font-bold text-slate-300 bg-slate-800 hover:bg-slate-700 transition-colors w-full sm:w-auto border border-slate-700">
+            CANCEL
+          </button>
+          <button @click="confirmAbort" class="px-6 py-3 rounded-xl font-black tracking-wider text-white bg-red-600 hover:bg-red-500 transition-colors w-full sm:w-auto shadow-lg shadow-red-600/30 active:scale-95">
+            YES, ABORT
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <StudyMaterialView
+        v-if="currentView === 'study_reader'"
+        :certCode="studyActiveCert"
+        :domain="studyActiveDomain"
+        @back="currentView = 'library'"
+    />
 
     <div v-if="showGuestLimitModal" class="fixed inset-0 bg-slate-900/80 backdrop-blur-md z-[400] flex items-center justify-center p-4">
       <div class="bg-slate-900 border border-cyan-500/50 rounded-[2rem] w-full max-w-md 2xl:max-w-2xl overflow-hidden shadow-[0_0_30px_rgba(6,182,212,0.3)] relative p-10 2xl:p-16 text-center">
-        <div class="text-5xl 2xl:text-7xl mb-4 2xl:mb-8 animate-pulse">🛑</div>
+        <div class="text-5xl 2xl:text-7xl mb-4 2xl:mb-8 animate-pulse">ðŸ›‘</div>
         <h2 class="text-2xl 2xl:text-4xl font-black text-cyan-400 mb-4 2xl:mb-6 font-mono uppercase tracking-widest">Free Compute Exhausted</h2>
         <p class="text-slate-300 mb-8 2xl:mb-12 font-mono text-sm 2xl:text-xl leading-relaxed italic">"You've taken your first step into a larger world..."<br><br><span class="not-italic text-slate-400 text-xs 2xl:text-base">However, unauthorized access to the deeper Jedi Archives is restricted. Register your biometric signature to unlock the full simulator and save your history.</span></p>
         <div class="flex flex-col gap-3 2xl:gap-5">
@@ -1328,7 +1570,7 @@
                 <div class="absolute left-0 top-0 w-8 h-8 2xl:w-12 2xl:h-12 rounded-full bg-gradient-to-br from-blue-600 to-blue-500 text-white flex items-center justify-center font-black text-sm 2xl:text-xl shadow-md">{{ index + 1 }}</div>
                 <h3 class="text-xl md:text-2xl 2xl:text-4xl font-extrabold text-slate-900 leading-tight">Question Details</h3>
               </div>
-              <span :class="userResults[q.id] ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'" class="font-black uppercase text-xs 2xl:text-lg tracking-wider px-3 py-1 2xl:px-5 2xl:py-2 rounded-full flex items-center gap-1.5 2xl:gap-3">{{ userResults[q.id] ? '✓ Correct' : '✗ Incorrect' }}</span>
+              <span :class="userResults[q.id] ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'" class="font-black uppercase text-xs 2xl:text-lg tracking-wider px-3 py-1 2xl:px-5 2xl:py-2 rounded-full flex items-center gap-1.5 2xl:gap-3">{{ userResults[q.id] ? 'âœ“ Correct' : 'âœ— Incorrect' }}</span>
             </div>
             <p class="text-slate-800 text-lg 2xl:text-3xl leading-relaxed mb-8 2xl:mb-12">{{ q.questionText }}</p>
             <div class="bg-blue-50/50 p-6 md:p-8 2xl:p-12 rounded-3xl 2xl:rounded-[2.5rem] border border-blue-100 shadow-inner relative">
@@ -1342,7 +1584,7 @@
         <div class="bg-slate-50 p-8 2xl:p-12 border-t border-slate-200 mt-4 2xl:mt-8 rounded-b-[2rem] 2xl:rounded-b-[3rem]">
           <div class="flex flex-col md:flex-row justify-center items-center gap-4 2xl:gap-8">
             <button @click="handlePrint" class="w-full md:w-auto flex items-center justify-center gap-2 2xl:gap-4 bg-slate-800 hover:bg-slate-950 text-white py-4 px-10 2xl:py-6 2xl:px-16 rounded-2xl 2xl:rounded-[2rem] font-black 2xl:text-2xl shadow-lg hover:shadow-xl hover:-translate-y-1 transition-all duration-300">Export to PDF</button>
-            <button @click="closeReview" class="w-full md:w-auto bg-blue-600 hover:bg-blue-700 text-white py-4 px-12 2xl:py-6 2xl:px-20 rounded-2xl 2xl:rounded-[2rem] font-black 2xl:text-2xl shadow-lg hover:shadow-xl hover:-translate-y-1 transition-all duration-300">✓ Got it! Close Review</button>
+            <button @click="closeReview" class="w-full md:w-auto bg-blue-600 hover:bg-blue-700 text-white py-4 px-12 2xl:py-6 2xl:px-20 rounded-2xl 2xl:rounded-[2rem] font-black 2xl:text-2xl shadow-lg hover:shadow-xl hover:-translate-y-1 transition-all duration-300">âœ“ Got it! Close Review</button>
           </div>
         </div>
       </div>
@@ -1354,7 +1596,7 @@
         <div class="absolute inset-0 bg-[linear-gradient(transparent_0%,rgba(34,211,238,0.05)_50%,transparent_100%)] bg-[length:100%_4px] animate-[scan_2s_linear_infinite]"></div>
 
         <div class="relative z-10">
-          <div class="text-6xl 2xl:text-8xl mb-6 2xl:mb-10 animate-bounce">✨</div>
+          <div class="text-6xl 2xl:text-8xl mb-6 2xl:mb-10 animate-bounce">âœ¨</div>
           <h2 class="text-cyan-400 font-mono font-black text-2xl 2xl:text-4xl mb-4 2xl:mb-6 tracking-[0.2em] uppercase italic">Identity Initialized</h2>
           <p class="text-white font-mono text-lg 2xl:text-2xl leading-relaxed mb-8 2xl:mb-12 italic opacity-90">"{{ welcomeMessage }}"</p>
 
@@ -1372,7 +1614,7 @@
         <div class="p-6 md:p-8 2xl:p-12 flex items-start gap-5 2xl:gap-8 border-b border-slate-800/60 bg-gradient-to-b from-red-950/20 to-transparent">
           <div class="w-14 h-14 2xl:w-20 2xl:h-20 rounded-xl 2xl:rounded-2xl bg-red-500/10 border border-red-500/20 flex items-center justify-center flex-shrink-0 relative overflow-hidden">
             <div class="absolute inset-0 bg-red-500/20 animate-ping opacity-50"></div>
-            <span class="text-3xl 2xl:text-5xl relative z-10">⚠️</span>
+            <span class="text-3xl 2xl:text-5xl relative z-10">âš ï¸</span>
           </div>
           <div>
             <h3 class="text-2xl 2xl:text-4xl font-black text-slate-100 tracking-tight uppercase">System Override</h3>
@@ -1401,34 +1643,34 @@
       </div>
     </div>
 
-    <div v-if="showPremiumModal" class="fixed inset-0 z-50 flex items-center justify-center p-4">
+    <div v-if="showPremiumModal" class="fixed inset-0 z-50 flex items-start md:items-center justify-center p-4 overflow-y-auto">
       <div class="absolute inset-0 bg-slate-900/60 backdrop-blur-sm" @click="showPremiumModal = false"></div>
 
-      <div class="relative bg-white rounded-3xl 2xl:rounded-[3rem] shadow-2xl w-full max-w-4xl 2xl:max-w-6xl overflow-hidden animate-fade-in-up flex flex-col md:flex-row">
+      <div class="relative bg-white rounded-3xl 2xl:rounded-[3rem] shadow-2xl w-full max-w-3xl 2xl:max-w-4xl animate-fade-in-up flex flex-col md:flex-row my-8">
 
-        <div class="bg-slate-900 p-8 md:p-12 2xl:p-20 text-white md:w-1/2 flex flex-col justify-center relative overflow-hidden">
+        <div class="bg-slate-900 p-6 md:p-8 2xl:p-12 text-white md:w-2/5 flex flex-col justify-center relative overflow-hidden">
           <div class="absolute top-0 right-0 w-64 h-64 2xl:w-96 2xl:h-96 bg-indigo-500/20 rounded-full blur-3xl -translate-y-1/2 translate-x-1/3"></div>
 
-          <h2 class="text-3xl md:text-4xl 2xl:text-6xl font-black mb-4 2xl:mb-8 leading-tight">
+          <h2 class="text-2xl md:text-3xl 2xl:text-4xl font-black mb-3 2xl:mb-6 leading-tight">
             Unlock the <span class="text-transparent bg-clip-text bg-gradient-to-r from-indigo-400 to-purple-400">Knowledge Forge</span>
           </h2>
-          <p class="text-slate-400 font-medium mb-8 2xl:mb-12 2xl:text-xl">
-            Stop guessing. Get the exact architectural breakdowns, video modules, and survival guides you need to dominate your AWS certification.
+          <p class="text-slate-400 font-medium mb-6 2xl:mb-8 text-sm 2xl:text-base">
+            Stop guessing. Get unlimited exam simulations, all game modes, and the full study material library to dominate your AWS certification.
           </p>
 
           <ul class="space-y-4 2xl:space-y-6 font-medium text-sm 2xl:text-xl text-slate-300">
-            <li class="flex items-center gap-3 2xl:gap-5"><span class="flex h-6 w-6 2xl:h-8 2xl:w-8 rounded-full bg-emerald-500/20 text-emerald-400 items-center justify-center text-xs 2xl:text-sm">✓</span> Unlimited Video Modules</li>
-            <li class="flex items-center gap-3 2xl:gap-5"><span class="flex h-6 w-6 2xl:h-8 2xl:w-8 rounded-full bg-emerald-500/20 text-emerald-400 items-center justify-center text-xs 2xl:text-sm">✓</span> High-Res Architecture Diagrams</li>
-            <li class="flex items-center gap-3 2xl:gap-5"><span class="flex h-6 w-6 2xl:h-8 2xl:w-8 rounded-full bg-emerald-500/20 text-emerald-400 items-center justify-center text-xs 2xl:text-sm">✓</span> Downloadable Cheat Sheets</li>
+            <li class="flex items-center gap-3 2xl:gap-5"><span class="flex h-6 w-6 2xl:h-8 2xl:w-8 rounded-full bg-emerald-500/20 text-emerald-400 items-center justify-center text-xs 2xl:text-sm">âœ“</span> Unlimited Exam Simulations</li>
+            <li class="flex items-center gap-3 2xl:gap-5"><span class="flex h-6 w-6 2xl:h-8 2xl:w-8 rounded-full bg-emerald-500/20 text-emerald-400 items-center justify-center text-xs 2xl:text-sm">âœ“</span> All Game Modes (AMRAP, Flashcards)</li>
+            <li class="flex items-center gap-3 2xl:gap-5"><span class="flex h-6 w-6 2xl:h-8 2xl:w-8 rounded-full bg-emerald-500/20 text-emerald-400 items-center justify-center text-xs 2xl:text-sm">âœ“</span> Full Study Material Library</li>
           </ul>
         </div>
 
-        <div class="p-8 md:p-12 2xl:p-20 md:w-1/2 bg-slate-50 flex flex-col justify-center gap-6 2xl:gap-10">
-          <button @click="showPremiumModal = false" class="absolute top-4 right-4 2xl:top-8 2xl:right-8 text-slate-400 hover:text-slate-600 transition-colors">
-            <span class="text-2xl 2xl:text-4xl font-black">×</span>
+        <div class="p-6 md:p-8 2xl:p-12 pt-[5.5rem] md:pt-24 2xl:pt-28 md:w-3/5 bg-slate-50 flex flex-col justify-center gap-4 2xl:gap-6 overflow-visible rounded-r-3xl 2xl:rounded-r-[3rem]">
+          <button @click="showPremiumModal = false" class="absolute top-4 right-4 2xl:top-6 2xl:right-6 text-slate-400 hover:text-slate-600 transition-colors z-10">
+            <span class="text-2xl 2xl:text-3xl font-black">Ã—</span>
           </button>
 
-          <div class="relative bg-white rounded-2xl 2xl:rounded-3xl p-6 2xl:p-10 border-2 border-indigo-500 shadow-[0_0_30px_rgba(99,102,241,0.15)] transition-all hover:-translate-y-1 group cursor-pointer" @click="initiateCheckout('trial')">
+          <div class="relative bg-white rounded-2xl 2xl:rounded-3xl p-6 2xl:p-10 border-2 border-indigo-500 shadow-[0_0_30px_rgba(99,102,241,0.15)] transition-all" :class="isCheckoutLoading ? 'opacity-50 pointer-events-none' : 'hover:-translate-y-1'">
             <div class="absolute -top-3 2xl:-top-4 left-1/2 -translate-x-1/2 bg-indigo-500 text-white text-[10px] 2xl:text-sm font-black uppercase tracking-widest px-3 py-1 2xl:px-5 2xl:py-2 rounded-full">
               Most Popular
             </div>
@@ -1438,23 +1680,67 @@
                 <span class="text-3xl 2xl:text-5xl font-black text-indigo-600">$1</span>
               </div>
             </div>
-            <p class="text-sm 2xl:text-xl text-slate-500 font-medium mb-4 2xl:mb-6">Test the waters. Renews at $10.99/mo. Cancel anytime.</p>
-            <button class="w-full py-3 2xl:py-5 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl 2xl:rounded-2xl font-bold 2xl:text-xl tracking-wide transition-all shadow-md group-hover:shadow-indigo-500/30">
-              Start $1 Trial
+            <p class="text-sm 2xl:text-xl text-slate-500 font-medium mb-4 2xl:mb-6">Test the waters. Renews at $9.99/mo. Cancel anytime.</p>
+
+            <button
+                @click="prepareCheckout('trial')"
+                :disabled="isCheckoutLoading"
+                class="w-full py-3 2xl:py-5 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl 2xl:rounded-2xl font-bold 2xl:text-xl tracking-wide transition-all shadow-md hover:shadow-indigo-500/30 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+            >
+    <span v-if="isCheckoutLoading" class="flex items-center gap-2">
+      <svg class="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
+      Connecting...
+    </span>
+              <span v-else>Start $1 Trial</span>
             </button>
           </div>
 
-          <div class="bg-white rounded-2xl 2xl:rounded-3xl p-6 2xl:p-10 border border-slate-200 transition-all hover:-translate-y-1 hover:border-slate-300 hover:shadow-lg cursor-pointer" @click="initiateCheckout('monthly')">
+          <div class="bg-white rounded-2xl 2xl:rounded-3xl p-6 2xl:p-10 border border-slate-200 transition-all" :class="isCheckoutLoading ? 'opacity-50 pointer-events-none' : 'hover:-translate-y-1 hover:border-slate-300 hover:shadow-lg'">
             <div class="flex justify-between items-end mb-2 2xl:mb-4">
               <h3 class="text-lg 2xl:text-3xl font-bold text-slate-700">Monthly Pro</h3>
               <div class="text-right">
-                <span class="text-2xl 2xl:text-4xl font-black text-slate-800">$10.99</span>
+                <span class="text-2xl 2xl:text-4xl font-black text-slate-800">$9.99</span>
                 <span class="text-xs 2xl:text-lg text-slate-400 font-bold">/mo</span>
               </div>
             </div>
             <p class="text-sm 2xl:text-xl text-slate-500 font-medium mb-4 2xl:mb-6">Jump straight into the deep end. Cancel anytime.</p>
-            <button class="w-full py-3 2xl:py-5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl 2xl:rounded-2xl font-bold 2xl:text-xl tracking-wide transition-all">
-              Subscribe Monthly
+
+            <button
+                @click="prepareCheckout('monthly')"
+                :disabled="isCheckoutLoading"
+                class="w-full py-3 2xl:py-5 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl 2xl:rounded-2xl font-bold 2xl:text-xl tracking-wide transition-all shadow-md hover:shadow-indigo-500/30 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+            >
+    <span v-if="isCheckoutLoading" class="flex items-center gap-2">
+      <svg class="animate-spin h-5 w-5 text-slate-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
+      Connecting...
+    </span>
+              <span v-else>Subscribe Monthly</span>
+            </button>
+          </div>
+
+          <div class="bg-white rounded-2xl 2xl:rounded-3xl p-6 2xl:p-10 border border-emerald-200 transition-all relative" :class="isCheckoutLoading ? 'opacity-50 pointer-events-none' : 'hover:-translate-y-1 hover:border-emerald-400 hover:shadow-lg'">
+            <div class="absolute -top-3 2xl:-top-4 right-4 2xl:right-6 bg-emerald-500 text-white text-[10px] 2xl:text-sm font-black uppercase tracking-widest px-3 py-1 2xl:px-5 2xl:py-2 rounded-full">
+              Save 33%
+            </div>
+            <div class="flex justify-between items-end mb-2 2xl:mb-4">
+              <h3 class="text-lg 2xl:text-3xl font-bold text-slate-700">Annual Plan</h3>
+              <div class="text-right">
+                <span class="text-2xl 2xl:text-4xl font-black text-emerald-600">$79.99</span>
+                <span class="text-xs 2xl:text-lg text-slate-400 font-bold">/yr</span>
+              </div>
+            </div>
+            <p class="text-sm 2xl:text-xl text-slate-500 font-medium mb-4 2xl:mb-6">Best value. That's just $6.67/mo. Cancel anytime.</p>
+
+            <button
+                @click="prepareCheckout('annual')"
+                :disabled="isCheckoutLoading"
+                class="w-full py-3 2xl:py-5 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl 2xl:rounded-2xl font-bold 2xl:text-xl tracking-wide transition-all shadow-md hover:shadow-indigo-500/30 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+            >
+    <span v-if="isCheckoutLoading" class="flex items-center gap-2">
+      <svg class="animate-spin h-5 w-5 text-emerald-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
+      Connecting...
+    </span>
+              <span v-else>Subscribe Annually</span>
             </button>
           </div>
 
@@ -1466,13 +1752,13 @@
       <div class="bg-white rounded-3xl 2xl:rounded-[3rem] p-8 2xl:p-16 max-w-md 2xl:max-w-2xl w-full shadow-2xl relative border border-slate-100 text-center animate-fade-in-up">
 
         <div class="w-20 h-20 2xl:w-32 2xl:h-32 bg-indigo-50 text-indigo-600 rounded-full flex items-center justify-center text-4xl 2xl:text-6xl mx-auto mb-6 2xl:mb-10 shadow-inner">
-          🚀
+          ðŸš€
         </div>
 
         <h2 class="text-2xl 2xl:text-4xl font-black text-slate-800 mb-3 2xl:mb-6">Unlock Knowledge Forge</h2>
 
         <p class="text-slate-600 mb-8 2xl:mb-12 font-medium 2xl:text-xl leading-relaxed">
-          Premium access is required to enter the Forge. Start your 7-day trial for just <span class="font-black text-indigo-600 text-lg 2xl:text-2xl">$1</span>, then $10.99/mo. Cancel anytime.
+          Premium access is required to enter the Forge. Start your 7-day trial for just <span class="font-black text-indigo-600 text-lg 2xl:text-2xl">$1</span>, then $9.99/mo. Cancel anytime.
         </p>
 
         <div class="flex gap-4 2xl:gap-6 mt-4">
@@ -1491,7 +1777,7 @@
     <div v-if="showAlreadyPremiumModal" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/80 backdrop-blur-sm">
       <div class="bg-white rounded-3xl 2xl:rounded-[3rem] p-8 2xl:p-16 max-w-md 2xl:max-w-2xl w-full shadow-2xl border border-slate-100 text-center animate-fade-in-up">
 
-        <div class="text-6xl 2xl:text-8xl mb-4 2xl:mb-8">🌟</div>
+        <div class="text-6xl 2xl:text-8xl mb-4 2xl:mb-8">ðŸŒŸ</div>
         <h3 class="text-2xl 2xl:text-4xl font-bold text-slate-800 mb-2 2xl:mb-4">You're Already Premium!</h3>
         <p class="text-slate-500 mb-8 2xl:mb-12 2xl:text-xl leading-relaxed">
           Your account is already fully upgraded. You have unrestricted access to the Knowledge Forge and all Premium features.
@@ -1525,7 +1811,7 @@
     <div v-if="showWelcomeModal" class="fixed inset-0 bg-slate-900/95 backdrop-blur-md flex items-center justify-center z-[100] p-4 transition-all">
       <div class="bg-slate-800 border-2 border-blue-500 rounded-[2.5rem] p-10 text-center shadow-[0_0_60px_rgba(59,130,246,0.3)] animate-fade-in w-full max-w-md">
 
-        <div class="text-6xl mb-6 animate-bounce">⚔️</div>
+        <div class="text-6xl mb-6 animate-bounce">âš”ï¸</div>
 
         <h2 class="text-3xl font-black text-white mb-2 tracking-tight">Welcome to the Forge,</h2>
         <h3 class="text-4xl font-black text-blue-400 mb-8 uppercase tracking-widest">{{ authForm.username }}</h3>
@@ -1544,7 +1830,7 @@
   <div v-if="showLevelUp" class="cyber-overlay">
     <div class="cyber-modal">
       <div class="scanlines"></div>
-      <div class="cyber-header">⚠ SECURE CONNECTION ESTABLISHED ⚠</div>
+      <div class="cyber-header">âš  SECURE CONNECTION ESTABLISHED âš </div>
       <h1 class="cyber-title">SYSTEM MASTERY</h1>
       <h2 class="cyber-subtitle">MODULE COMPLETED</h2>
       <div class="xp-container">
@@ -1558,18 +1844,9 @@
   </div>
 </Transition>
 
-  <footer class="mt-20 border-t border-slate-200 bg-white py-10 w-full text-center">
-    <div class="flex justify-center gap-8 mb-4 font-bold text-slate-500 text-sm">
-      <button @click="showAboutModal = true" class="hover:text-pink-500 transition-colors">About Us</button>
-      <button @click="showCancelModal = true" class="hover:text-pink-500 transition-colors">Cancel Membership</button>
-      <a href="#" class="hover:text-pink-500 transition-colors">Terms of Service</a>
-    </div>
-    <p class="text-xs text-slate-400">© 2026 Knowledge Forge Academy. All rights reserved.</p>
-  </footer>
-
   <div v-if="showCancelModal" class="fixed inset-0 bg-slate-900/80 backdrop-blur-sm flex items-center justify-center z-50 p-4">
     <div class="bg-white rounded-3xl w-full max-w-2xl p-8 md:p-12 shadow-2xl relative">
-      <button @click="showCancelModal = false" class="absolute top-6 right-6 text-slate-400 hover:text-slate-700 font-bold text-xl">✕</button>
+      <button @click="showCancelModal = false" class="absolute top-6 right-6 text-slate-400 hover:text-slate-700 font-bold text-xl">âœ•</button>
 
       <h2 class="text-3xl font-black text-slate-900 mb-2">Cancel Premium</h2>
       <p class="text-slate-500 font-medium mb-6">We're sorry to see you go. Please review the terms of cancellation below.</p>
@@ -1590,7 +1867,7 @@
         <span class="text-sm font-bold text-red-900">I have read and agree to the Limitation of Liability, and I understand my membership will remain active until the end of the term with no refunds.</span>
       </label>
 
-      <p v-if="cancelFeedback" class="text-center font-bold mb-4" :class="cancelFeedback.includes('✅') ? 'text-emerald-600' : 'text-red-500'">
+      <p v-if="cancelFeedback" class="text-center font-bold mb-4" :class="cancelFeedback.includes('âœ…') ? 'text-emerald-600' : 'text-red-500'">
         {{ cancelFeedback }}
       </p>
 
@@ -1605,17 +1882,70 @@
     </div>
   </div>
 
+  <div v-if="showRatingModal" class="fixed inset-0 bg-slate-900/80 backdrop-blur-sm flex items-center justify-center z-[100] p-4 animate-fade-in">
+    <div class="bg-white rounded-[2rem] w-full max-w-lg p-8 md:p-10 shadow-2xl relative border border-slate-200">
+      <button @click="showRatingModal = false" class="absolute top-6 right-6 text-slate-400 hover:text-slate-700 font-bold text-xl transition-colors">âœ•</button>
+
+      <h2 class="text-3xl font-black text-slate-900 mb-2">Rate Your Training</h2>
+      <p class="text-slate-500 font-medium mb-8">How is the Knowledge Forge preparing you for the exam?</p>
+
+      <div class="flex gap-2 justify-center mb-8">
+        <button
+            v-for="star in 5" :key="star"
+            @click="reviewForm.rating = star"
+            class="text-4xl transition-all hover:scale-110"
+            :class="star <= reviewForm.rating ? 'text-amber-400 drop-shadow-md' : 'text-slate-200 grayscale'"
+        >
+          â­
+        </button>
+      </div>
+
+      <select
+          v-model="reviewForm.jobTitle"
+          class="w-full bg-slate-50 border-2 border-slate-200 text-slate-700 font-bold rounded-xl p-4 mb-4 focus:outline-none focus:border-indigo-500 transition-colors cursor-pointer"
+      >
+        <option value="Cloud Enthusiast">Cloud Enthusiast</option>
+        <option value="Cloud Practitioner">Cloud Practitioner</option>
+        <option value="Solutions Architect">Solutions Architect</option>
+        <option value="DevOps Engineer">DevOps Engineer</option>
+        <option value="Data Engineer">Data Engineer</option>
+        <option value="Security Specialist">Security Specialist</option>
+        <option value="Software Developer">Software Developer</option>
+      </select>
+
+      <textarea
+          v-model="reviewForm.reviewText"
+          rows="4"
+          placeholder="Tell us about your experience..."
+          class="w-full bg-slate-50 border-2 border-slate-200 text-slate-700 rounded-xl p-4 focus:outline-none focus:border-indigo-500 transition-colors resize-none mb-6 font-medium"
+      ></textarea>
+
+      <p v-if="reviewFeedbackMessage" class="text-center font-bold mb-4" :class="reviewFeedbackMessage.includes('âœ…') ? 'text-emerald-600' : 'text-red-500'">
+        {{ reviewFeedbackMessage }}
+      </p>
+
+      <button
+          @click="submitUserReview"
+          class="w-full py-4 rounded-xl font-black text-lg transition-all bg-indigo-600 hover:bg-indigo-500 text-white shadow-lg hover:shadow-indigo-500/30 hover:-translate-y-0.5"
+      >
+        SUBMIT DATABANK REVIEW
+      </button>
+    </div>
+  </div>
+
 </template>
 
 <script setup>
-  import { ref, onMounted, computed, watch, onUnmounted } from 'vue';
+  import { ref, onMounted, computed, watch, onUnmounted, nextTick } from 'vue';
   import { jsPDF } from "jspdf";
   import autoTable from 'jspdf-autotable';
   import { Radar } from 'vue-chartjs';
-  import { Chart as ChartJS, RadialLinearScale, PointElement, LineElement, Filler, Tooltip, Legend } from 'chart.js';
+  import { Chart as ChartJS, RadialLinearScale, PointElement, LineElement, Filler, Tooltip, Legend, BarElement, CategoryScale, LinearScale, ArcElement, DoughnutController, BarController } from 'chart.js';
   import ArchitectureMatrix from './ArchitectureMatrix.vue';
+  import StudyMaterialView from './StudyMaterialView.vue';
 
-ChartJS.register(RadialLinearScale, PointElement, LineElement, Filler, Tooltip, Legend);
+  // Register all Chart.js components we need
+  ChartJS.register(RadialLinearScale, PointElement, LineElement, Filler, Tooltip, Legend, BarElement, CategoryScale, LinearScale, ArcElement, DoughnutController, BarController);
 
 // 1. THE MACRO: defineProps must always be the very first thing
 const props = defineProps({
@@ -1630,13 +1960,26 @@ watch(() => [props.isLoggedIn, props.username, props.isPremium],([isLoggedIn, us
 
         // A. Rebuild the user
         if (isLoggedIn && username) {
+          // ðŸš¨ THE SHIELD: Is the local user already premium?
+          const isLocallyPremium = currentUser.value ? currentUser.value.isPremium : false;
+
           currentUser.value = {
             ...currentUser.value,
             username: username,
-            isPremium: isPremium
+            // ðŸš¨ THE FIX: If local says True, ignore the stale False prop!
+            isPremium: isLocallyPremium ? true : isPremium
           };
         } else if (!isLoggedIn) {
-          currentUser.value = null;
+          // ðŸš¨ THE MASTER SHIELD: App.vue thinks we are logged out, but ARE WE?
+          // Check the browser's permanent memory before destroying the user!
+          const actualToken = localStorage.getItem('aws_jwt');
+
+          if (!actualToken) {
+            currentUser.value = null; // Only wipe if the token is ACTUALLY gone!
+          } else {
+            // If the token exists, ignore the parent's 'false' prop!
+            console.log("ðŸ›¡ï¸ Master Shield activated: Blocked an unwarranted logout request from App.vue.");
+          }
         }
 
         // B. The Auto-Launcher (Bulletproof Version)
@@ -1653,7 +1996,7 @@ watch(() => [props.isLoggedIn, props.username, props.isPremium],([isLoggedIn, us
           }
 
           setTimeout(() => {
-            // 🚨 NO MORE TRAPDOORS: We route them based strictly on where they left!
+            // ðŸš¨ NO MORE TRAPDOORS: We route them based strictly on where they left!
             if (savedView === 'library') {
               console.log("Stripe return detected! Forcing entry to Knowledge Forge...");
               currentView.value = 'library';
@@ -1669,7 +2012,7 @@ watch(() => [props.isLoggedIn, props.username, props.isPremium],([isLoggedIn, us
 
             localStorage.removeItem('aws_return_view');
 
-            // 🚨 URL SCRUBBER: Erase Stripe's "?success=true" from the URL so Vue doesn't get confused on refresh!
+            // ðŸš¨ URL SCRUBBER: Erase Stripe's "?success=true" from the URL so Vue doesn't get confused on refresh!
             window.history.replaceState({}, document.title, window.location.pathname + "#" + currentView.value);
 
           }, 500);
@@ -1678,8 +2021,7 @@ watch(() => [props.isLoggedIn, props.username, props.isPremium],([isLoggedIn, us
       { immediate: true }
   );
 
-// 🚨 WATCHER 2: "The Seamless Bridge"
-
+// ðŸš¨ WATCHER 2: "The Seamless Bridge"
 watch(currentUser, (newUser) => {
     // If a user just logged in, they are NOT premium yet, AND they have the memory flag...
     if (newUser && !newUser.isPremium && localStorage.getItem('aws_pending_checkout') === 'true') {
@@ -1697,7 +2039,34 @@ watch(currentUser, (newUser) => {
         }
       }, 300);
     }
+
+    // ðŸ“Š Fetch personal analytics when user logs in
+    if (newUser && newUser.username) {
+      fetchUserStats(newUser.username);
+    } else {
+      userStats.value = null;
+    }
   });
+
+// ðŸ“Š Fetch user's personal analytics
+const fetchUserStats = async (username) => {
+  try {
+    const response = await fetch(`${API_BASE_URL}/api/analytics/user/${encodeURIComponent(username)}`);
+    if (response.ok) {
+      const data = await response.json();
+      // Derive top mode and top cert for display
+      const modes = data.gameModeBreakdown || {};
+      const topModeEntry = Object.entries(modes).sort((a, b) => b[1] - a[1])[0];
+      data.topMode = topModeEntry && topModeEntry[1] > 0 ? topModeEntry[0] : '-';
+
+      const certs = data.certEngagement || {};
+      const topCertEntry = Object.entries(certs).sort((a, b) => b[1] - a[1])[0];
+      data.topCert = topCertEntry ? topCertEntry[0] : '-';
+
+      userStats.value = data;
+    }
+  } catch (e) { /* silent fail */ }
+};
 
 // --- Core State ---
 const question = ref(null);
@@ -1757,20 +2126,172 @@ const showAgreementModal = ref(false);
 const hasAcceptedTerms = ref(false);
 const pendingPlanType = ref(null);
 const pipelineFile = ref(null);
+const studyFile = ref(null);
+const studyUploadStatus = ref('');
+const studyPasteForm = ref({ certCode: '', domain: '', title: '', content: '' });
+const studyPasteStatus = ref('');
+const adminActiveTab = ref('questions');
 
 // --- Platform State ---
 const currentView = ref(window.location.hash.replace('#', '') || 'landing');
-// --- 🚀 ONBOARDING PROTOCOL STATE ---
+// --- ðŸš€ ONBOARDING PROTOCOL STATE ---
 const activeSlide = ref(0);
 const selectedCert = ref(null);
 const showGuestLimitModal = ref(false);
 const hallOfFame = ref([]);
+const isCheckoutLoading = ref(false);
+const checkoutError = ref('');
+const studyActiveCert = ref('');
+const studyActiveDomain = ref('');
 
-// --- 🧠 THE KNOWLEDGE FORGE STATE ---
+// --- ðŸ”” TOAST NOTIFICATION STATE ---
+const toastMessage = ref('');
+const toastType = ref('error'); // 'error', 'warning', 'success', 'info'
+const toastVisible = ref(false);
+let toastTimer = null;
+
+const showToast = (message, type = 'error', duration = 4000) => {
+  toastMessage.value = message;
+  toastType.value = type;
+  toastVisible.value = true;
+  if (toastTimer) clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => { toastVisible.value = false; }, duration);
+};
+
+// ðŸ“Š ANALYTICS: Track user engagement events
+const trackEvent = (eventType, certCode = null, detail = null) => {
+  const username = currentUser.value?.username || 'guest';
+  fetch(${API_BASE_URL}/api/analytics/event, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ username, eventType, certCode, detail })
+  }).catch(() => {}); // Fire and forget
+};
+
+// --- ðŸ§  THE KNOWLEDGE FORGE STATE ---
 const activeForgeTab = ref('domains'); // 'domains', 'videos', or 'cheatsheets'
 const expandedDomain = ref(null); // Tracks which accordion is currently open
 
-// --- 🎴 FLASHCARD MATRIX STATE ---
+// --- ðŸ“Š USER ANALYTICS STATE ---
+const userStats = ref(null);
+
+// --- ðŸ“Š ADMIN ANALYTICS STATE ---
+const adminAnalytics = ref({});
+const gameModeChartRef = ref(null);
+const certPopChartRef = ref(null);
+const engagementSplitChartRef = ref(null);
+let gameModeChartInstance = null;
+let certPopChartInstance = null;
+let engagementSplitChartInstance = null;
+
+const loadAdminAnalytics = async () => {
+  try {
+    const response = await fetch(${API_BASE_URL}/api/analytics/admin/summary);
+    if (!response.ok) return;
+    const data = await response.json();
+    adminAnalytics.value = data;
+
+    // Derive top mode and top cert
+    const modes = data.gameModePopularity || {};
+    const topModeEntry = Object.entries(modes).sort((a, b) => b[1] - a[1])[0];
+    adminAnalytics.value.topMode = topModeEntry ? topModeEntry[0] : '-';
+
+    const certs = data.certPopularity || {};
+    const topCertEntry = Object.entries(certs).sort((a, b) => b[1] - a[1])[0];
+    adminAnalytics.value.topCert = topCertEntry ? topCertEntry[0] : '-';
+
+    // Render charts after DOM updates
+    await nextTick();
+    renderAdminCharts(data);
+  } catch (e) { console.error('Analytics fetch failed:', e); }
+};
+
+const renderAdminCharts = (data) => {
+  // Destroy existing charts
+  if (gameModeChartInstance) gameModeChartInstance.destroy();
+  if (certPopChartInstance) certPopChartInstance.destroy();
+  if (engagementSplitChartInstance) engagementSplitChartInstance.destroy();
+
+  const modeColors = ['#6366f1', '#ef4444', '#a855f7', '#ec4899'];
+  const certColors = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#06b6d4', '#f97316', '#84cc16', '#e11d48', '#14b8a6', '#6366f1', '#d946ef'];
+
+  // Game Mode Bar Chart
+  if (gameModeChartRef.value) {
+    const modes = data.gameModePopularity || {};
+    const labels = Object.keys(modes).map(m => m.replace('_', ' ').toUpperCase());
+    const values = Object.values(modes);
+    gameModeChartInstance = new ChartJS(gameModeChartRef.value, {
+      type: 'bar',
+      data: {
+        labels,
+        datasets: [{
+          label: 'Sessions',
+          data: values,
+          backgroundColor: modeColors.slice(0, labels.length),
+          borderRadius: 8,
+          borderSkipped: false
+        }]
+      },
+      options: {
+        responsive: true,
+        plugins: { legend: { display: false } },
+        scales: { y: { beginAtZero: true, ticks: { stepSize: 1 } } }
+      }
+    });
+  }
+
+  // Cert Popularity Bar Chart
+  if (certPopChartRef.value) {
+    const certs = data.certPopularity || {};
+    const labels = Object.keys(certs);
+    const values = Object.values(certs);
+    certPopChartInstance = new ChartJS(certPopChartRef.value, {
+      type: 'bar',
+      data: {
+        labels,
+        datasets: [{
+          label: 'Engagements',
+          data: values,
+          backgroundColor: certColors.slice(0, labels.length),
+          borderRadius: 8,
+          borderSkipped: false
+        }]
+      },
+      options: {
+        responsive: true,
+        plugins: { legend: { display: false } },
+        scales: { y: { beginAtZero: true, ticks: { stepSize: 1 } } }
+      }
+    });
+  }
+
+  // Engagement Split Doughnut
+  if (engagementSplitChartRef.value) {
+    const gameSessions = data.totalGameSessions || 0;
+    const studyViews = data.totalStudyViews || 0;
+    engagementSplitChartInstance = new ChartJS(engagementSplitChartRef.value, {
+      type: 'doughnut',
+      data: {
+        labels: ['Game Sessions', 'Study Material Views'],
+        datasets: [{
+          data: [gameSessions, studyViews],
+          backgroundColor: ['#6366f1', '#10b981'],
+          borderWidth: 0,
+          spacing: 4
+        }]
+      },
+      options: {
+        responsive: true,
+        cutout: '60%',
+        plugins: {
+          legend: { position: 'bottom', labels: { font: { weight: 'bold' }, padding: 20 } }
+        }
+      }
+    });
+  }
+};
+
+// --- ðŸŽ´ FLASHCARD MATRIX STATE ---
 const allFlashcards = ref([]);
 const currentFlashcardRound = ref(0);
 const displayTerms = ref([]);
@@ -1785,7 +2306,7 @@ const flashcardAttempts = ref(0);         // Every pair they click counts as 1 a
 const flashcardMisses = ref({});          // A dictionary of terms they fumbled
 const isFlashcardGameComplete = ref(false); // Triggers the final Results screen
 
-// --- 🎴 STUDY CARDS (LIBRARY) STATE ---
+// --- ðŸŽ´ STUDY CARDS (LIBRARY) STATE ---
 const librarySelectedDomain = ref('All');
 const startWithTerm = ref(false);
 const libraryFlashcards = ref([]);
@@ -1806,6 +2327,8 @@ const authError = ref('');
 const authToken = ref(localStorage.getItem('aws_jwt') || null); // Load saved token if it exists
 const authValidationMessage = ref("");
 const showWelcomeModal = ref(false);
+const reviewForm = ref({ rating: 5, reviewText: '', jobTitle: 'Cloud Enthusiast' });
+const reviewFeedbackMessage = ref('');
 
 // --- Category Logic ---
 const selectedCategory = ref('All');
@@ -1828,7 +2351,7 @@ watch(() => props.isLoggedIn, (newStatus) => {
         isPremium: props.isPremium
       };
     }
-    // 🚨 THE FIX: We deleted the 'else' block that was prematurely wiping your user!
+    // ðŸš¨ THE FIX: We deleted the 'else' block that was prematurely wiping your user!
   }, { immediate: true });
 
 // 3. THE UPGRADE CATCHER & AUTO-LAUNCHER
@@ -1837,7 +2360,7 @@ watch(() => props.isPremium, (newPremium) => {
       currentUser.value.isPremium = newPremium;
     }
 
-    // 🚨 THE SMART BREADCRUMB: Wait for Java to confirm Premium before launching!
+    // ðŸš¨ THE SMART BREADCRUMB: Wait for Java to confirm Premium before launching!
     if (newPremium === true && localStorage.getItem('aws_awaiting_stripe_return') === 'true') {
 
       // 1. Clean up the breadcrumbs
@@ -1856,14 +2379,13 @@ watch(() => props.isPremium, (newPremium) => {
   }, { immediate: true });
 
 const allAdminQuestions = ref([]);
+const allAdminPipelines = ref([]);
 const showAdminModal = ref(false);
 const isAdminEditing = ref(false);
 
-const isAudioEnabled = ref(true); // Global mute switch
-const isMusicPlaying = ref(false); // Background lo-fi track
-
 // --- Review & Print ---
 const showReviewModal = ref(false);
+const showRatingModal = ref(false);
 
 const allExamQuestions = ref([]);
 const allFetchedFlashcards = ref([]);
@@ -1875,6 +2397,7 @@ const welcomeMessage = ref('');
 const lastAttemptId = ref(null);
 const selectedCsvFile = ref(null);
 const uploadStatus = ref('');
+const pipelineUploadStatus = ref('');
 
 // --- THE KNOWLEDGE FORGE: DYNAMIC DATABASE FETCH ---
 const libraryModules = ref([]);
@@ -1886,8 +2409,6 @@ const legalAgreed = ref(false);
 const cancelFeedback = ref("");
 
 // --- DYNAMIC TARGETED FETCH ---
-  // --- DYNAMIC TARGETED FETCH ---
-  // --- DYNAMIC TARGETED FETCH ---
 const fetchKnowledgeForge = async (targetCertCode) => {
     if (!targetCertCode) return;
 
@@ -1896,7 +2417,7 @@ const fetchKnowledgeForge = async (targetCertCode) => {
       let completedModules = [];
       if (currentUser.value && currentUser.value.username) {
         const actualToken = localStorage.getItem('aws_jwt');
-        const progressResponse = await fetch(`http://localhost:8080/api/progress/${currentUser.value.username}`, {
+        const progressResponse = await fetch(`${API_BASE_URL}/api/progress/${currentUser.value.username}`, {
           headers: { 'Authorization': `Bearer ${actualToken}` }
         });
 
@@ -1905,16 +2426,16 @@ const fetchKnowledgeForge = async (targetCertCode) => {
         }
       }
 
-      // 🚨 THE FIX: Force the 5 custom modules to load BEFORE asking the database!
+      // ðŸš¨ THE FIX: Force the 5 custom modules to load BEFORE asking the database!
       if (targetCertCode === 'SCS-C02') {
         console.warn("Forcing custom SCS-C02 Matrix curriculum...");
 
         const scsDomains = [
-          { id: 'scs-domain-1', title: 'Identity and Access Management', icon: '🔐', description: 'Master IAM policies, cross-account roles, AWS SSO, and federated identity. The absolute foundation of all AWS security architecture.', lessonCount: 4, studyGuide: 'IAM Foundation Guide' },
-          { id: 'scs-domain-2', title: 'Threat Detection & Incident Response', icon: '🚨', description: 'Deploy Amazon GuardDuty, AWS Security Hub, and automate incident response using EventBridge and Lambda to neutralize threats.', lessonCount: 5, studyGuide: 'Threat Mitigation Guide' },
-          { id: 'scs-domain-3', title: 'Infrastructure Security', icon: '🧱', description: 'Secure your VPCs, master AWS Network Firewalls, WAF, Shield Advanced, and lock down your EC2 and container environments.', lessonCount: 6, studyGuide: 'Infrastructure Hardening' },
-          { id: 'scs-domain-4', title: 'Data Protection', icon: '💎', description: 'Encrypt data at rest and in transit using AWS KMS, CloudHSM, and master Macie for discovering sensitive data across S3.', lessonCount: 4, studyGuide: 'Cryptography & KMS' },
-          { id: 'scs-domain-5', title: 'Security Logging & Monitoring', icon: '📡', description: 'Centralize your visibility using CloudTrail, VPC Flow Logs, and CloudWatch to ensure total architectural transparency.', lessonCount: 3, studyGuide: 'Visibility & Auditing' }
+          { id: 'scs-domain-1', title: 'Identity and Access Management', icon: 'ðŸ”', description: 'Master IAM policies, cross-account roles, AWS SSO, and federated identity. The absolute foundation of all AWS security architecture.', lessonCount: 4, studyGuide: 'IAM Foundation Guide' },
+          { id: 'scs-domain-2', title: 'Threat Detection & Incident Response', icon: 'ðŸš¨', description: 'Deploy Amazon GuardDuty, AWS Security Hub, and automate incident response using EventBridge and Lambda to neutralize threats.', lessonCount: 5, studyGuide: 'Threat Mitigation Guide' },
+          { id: 'scs-domain-3', title: 'Infrastructure Security', icon: 'ðŸ§±', description: 'Secure your VPCs, master AWS Network Firewalls, WAF, Shield Advanced, and lock down your EC2 and container environments.', lessonCount: 6, studyGuide: 'Infrastructure Hardening' },
+          { id: 'scs-domain-4', title: 'Data Protection', icon: 'ðŸ’Ž', description: 'Encrypt data at rest and in transit using AWS KMS, CloudHSM, and master Macie for discovering sensitive data across S3.', lessonCount: 4, studyGuide: 'Cryptography & KMS' },
+          { id: 'scs-domain-5', title: 'Security Logging & Monitoring', icon: 'ðŸ“¡', description: 'Centralize your visibility using CloudTrail, VPC Flow Logs, and CloudWatch to ensure total architectural transparency.', lessonCount: 3, studyGuide: 'Visibility & Auditing' }
         ];
 
         libraryModules.value = scsDomains.map(mod => ({
@@ -1923,11 +2444,18 @@ const fetchKnowledgeForge = async (targetCertCode) => {
           videos: Array.from({ length: mod.lessonCount }).map((_, i) => ({ title: `Video Lesson ${i + 1}`, id: `vid-${i}` }))
         }));
 
-        return; // 🚨 EXIT EARLY! Do not ask the database!
+        return; // ðŸš¨ EXIT EARLY! Do not ask the database!
       }
 
       // 3. For all OTHER certifications, ask the database normally
-      const response = await fetch(`http://localhost:8080/api/modules/cert/${targetCertCode}`);
+      const response = await fetch(`${API_BASE_URL}/api/modules/cert/${targetCertCode}`, {
+        method: 'GET',
+        headers: {
+          // ðŸš¨ Hand Java the VIP badge so it unlocks the databank!
+          'Authorization': `Bearer ${actualToken}`,
+          'Content-Type': 'application/json'
+        }
+      });
 
       if (response.ok) {
         const dbModules = await response.json();
@@ -1964,7 +2492,7 @@ const isPremiumUser = computed(() => {
   });
 
   const toggleDomain = (index) => {
-    // 🚨 THE FREEMIUM LOCK: If it's not the first item (index 0) and they aren't premium, deny access!
+    // ðŸš¨ THE FREEMIUM LOCK: If it's not the first item (index 0) and they aren't premium, deny access!
     if (index !== 0 && !isPremiumUser.value) {
       console.log("Access Denied: Premium Databank.");
       // Optional: If you have a toast notification system, trigger it here telling them to upgrade!
@@ -1972,10 +2500,9 @@ const isPremiumUser = computed(() => {
     }
 
     expandedDomain.value = expandedDomain.value === index ? null : index;
-    if (isAudioEnabled.value && expandedDomain.value !== null) playSound('click');
   };
 
-// 📚 Mock Data for the UI (You can move this to your Java backend later!)
+// ðŸ“š Mock Data for the UI (You can move this to your Java backend later!)
 const forgeDomains = [
     {
       title: "Domain 1: Fundamentals of AI & ML",
@@ -2060,7 +2587,7 @@ const radarOptions = {
   responsive: true,
   maintainAspectRatio: false,
 
-  // 🚨 THE FIX 1: Push the entire chart inward so the labels don't hit the walls
+  // ðŸš¨ THE FIX 1: Push the entire chart inward so the labels don't hit the walls
   layout: {
     padding: {
       left: 30,
@@ -2089,7 +2616,7 @@ const radarOptions = {
         },
         color: '#334155',
 
-        // 🚨 THE FIX 2: The Auto-Wrapper. If a label is longer than 18 characters, stack it!
+        // ðŸš¨ THE FIX 2: The Auto-Wrapper. If a label is longer than 18 characters, stack it!
         callback: function(label) {
           if (label.length > 18) {
             const words = label.split(' ');
@@ -2127,10 +2654,10 @@ const openReviewRoom = async (attemptId) => {
     return;
   }
 
-  // 2. THE HISTORICAL FETCH (For clicking the 👁️ on the dashboard)
+  // 2. THE HISTORICAL FETCH (For clicking the ðŸ‘ï¸ on the dashboard)
   // Check if attemptId is missing or if it's accidentally a mouse click event object
   if (!attemptId || typeof attemptId === 'object') {
-    alert("Unable to load review. Invalid attempt ID.");
+    showToast("Invalid attempt ID. Cannot load review.", "warning");
     return;
   }
 
@@ -2138,19 +2665,25 @@ const openReviewRoom = async (attemptId) => {
   const targetAttempt = examHistory.value.find(a => String(a.id) === String(attemptId));
 
   if (!targetAttempt) {
-    alert("Could not find this attempt in your history archives.");
+    showToast("Attempt not found in your history archives.", "warning");
     return;
   }
 
+  // Get missed question IDs
+  const missedIds = targetAttempt.missedQuestionIds || '';
+
   // Handle Flawless Victories (No missed questions!)
-  if (!targetAttempt.missedQuestionIds || targetAttempt.missedQuestionIds.trim() === "") {
-    alert("Flawless Victory! You didn't miss any questions on this attempt.");
+  if (!missedIds || missedIds.trim() === "") {
+    showToast("Flawless Victory! Zero missed questions on this attempt.", "success");
     return;
   }
 
   // Fetch the specific missed questions from Spring Boot
   try {
-    const response = await fetch(`http://localhost:8080/api/questions/batch?ids=${targetAttempt.missedQuestionIds}`);
+    const token = localStorage.getItem('aws_jwt');
+    const response = await fetch(`${API_BASE_URL}/api/questions/batch?ids=${missedIds}`, {
+      headers: { 'Authorization': token ? `Bearer ${token}` : '' }
+    });
 
     if (!response.ok) throw new Error("Backend refused the batch request.");
 
@@ -2165,19 +2698,15 @@ const openReviewRoom = async (attemptId) => {
       userResults.value[q.id] = false;
     });
 
-    // 3. THE FIX: Explicitly change the Vue state so the HTML actually renders!
-    currentView.value = 'quiz';      // Move off the dashboard!
-    showResults.value = true;        // Trigger the results screen!
+    // 3. Show the review in quiz view with results overlay
+    currentView.value = 'quiz';
+    showResults.value = true;
     isHistoricalView.value = true;
-
-    // (If you have a separate boolean for a modal, keep it here just in case)
-    if (typeof showReviewModal !== 'undefined') {
-      showReviewModal.value = true;
-    }
+    showReviewModal.value = true;
 
   } catch (error) {
     console.error("Historical Review Error:", error);
-    alert("The Jedi Archives are offline. Could not retrieve past questions.");
+    showToast("Jedi Archives offline. Could not retrieve past questions.", "error");
   }
 };
 
@@ -2191,6 +2720,7 @@ const resetSession = () => {
   selectedAnswersRecord.value = {};
   selectedAnswers.value = [];
   missedQuestionIds.value = [];
+  seenQuestionIds.value = [];
   lastAttemptId.value = null;
 
   //Reset the master clocks!
@@ -2200,8 +2730,10 @@ const resetSession = () => {
   // 2. Turn off all the end-of-quiz UI screens
   showResults.value = false;
   showReviewModal.value = false;
+  isHistoricalView.value = false;
   showExplanation.value = false;
   feedback.value = '';
+  question.value = null;
 
   // 3. Route back to the landing dashboard!
   currentView.value = 'landing';
@@ -2269,7 +2801,7 @@ const goBackToLanding = () => {
   if (typeof fetchLeaderboard === 'function') fetchLeaderboard();
 };
 
-// 🎮 THE ARCADE ROSTER: Controls the gates for every game
+// ðŸŽ® THE ARCADE ROSTER: Controls the gates for every game
 const arcadeConfig = {
     sudden_death: {
       name: 'Sudden Death',
@@ -2342,47 +2874,119 @@ const formattedTime = computed(() => {
   return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
 });
 
-  const handlePipelineFileSelect = (event) => {
+const handlePipelineFileSelect = (event) => {
     pipelineFile.value = event.target.files[0];
   };
 
-  // 3. When the user clicks the INJECT button, fire it to Java!
-  const submitPipelineCsv = async () => {
+// 3. When the user clicks the INJECT button, fire it to Java!
+const submitPipelineCsv = async () => {
     if (!pipelineFile.value) {
-      alert("❌ Please select a pipeline CSV file first.");
+      pipelineUploadStatus.value = "âŒ Please select a pipeline CSV file first.";
       return;
     }
 
     const formData = new FormData();
     formData.append('file', pipelineFile.value);
+    pipelineUploadStatus.value = 'Injecting into mainframes...';
 
     try {
-      const response = await fetch('http://localhost:8080/api/questions/pipeline/upload', {
+      // ðŸš¨ Ensure we grab the official token!
+      const token = localStorage.getItem('aws_jwt');
+
+      // (Ensure this URL matches your Java upload endpoint)
+      const response = await fetch(${API_BASE_URL}/api/questions/pipeline/upload, {
         method: 'POST',
         headers: {
-          'X-Admin-Key': 'masterkey', // Use your real key!
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
+          'X-Admin-Key': 'masterkey',
+          'Authorization': `Bearer ${token}`
         },
         body: formData
       });
 
       const result = await response.json();
+
       if (response.ok) {
-        alert("✅ " + result.message);
-        pipelineFile.value = null; // Clear the file after success
+        // âœ… Replaced the ugly alert() with the sleek UI text!
+        pipelineUploadStatus.value = "âœ… " + result.message;
+        pipelineFile.value = null;
+
+        // ðŸš¨ THE FIX: Instantly refresh the table below!
+        if (typeof fetchAdminPipelines === 'function') {
+          fetchAdminPipelines();
+        }
       } else {
-        alert("❌ " + result.error);
+        pipelineUploadStatus.value = "âŒ " + (result.error || "Upload failed.");
       }
     } catch (error) {
       console.error("Upload failed", error);
-      alert("❌ Critical Error: Could not reach the Matrix.");
+      pipelineUploadStatus.value = "âŒ Critical Error: Could not reach the Matrix.";
     }
   };
+
+const handleStudyFileSelect = (event) => {
+    studyFile.value = event.target.files[0];
+  };
+
+// 3. The Injection Function
+const submitStudyCsv = async () => {
+    if (!studyFile.value) {
+      studyUploadStatus.value = "âŒ Please select a Study Material CSV.";
+      return;
+    }
+
+    const formData = new FormData();
+    formData.append('file', studyFile.value);
+    studyUploadStatus.value = 'Injecting curriculum into mainframes...';
+
+    try {
+      const token = localStorage.getItem('aws_jwt');
+      const response = await fetch(${API_BASE_URL}/api/study/upload, {
+        method: 'POST',
+        headers: { 'Authorization': `Bearer ${token}` },
+        body: formData
+      });
+
+      const result = await response.json();
+
+      if (response.ok) {
+        studyUploadStatus.value = "âœ… " + result.message + ` (${result.count} documents)`;
+        studyFile.value = null;
+      } else {
+        studyUploadStatus.value = "âŒ " + (result.error || "Upload failed.");
+      }
+    } catch (error) {
+      studyUploadStatus.value = "âŒ Critical Error: Could not reach the Matrix.";
+    }
+  };
+
+const submitStudyPaste = async () => {
+  studyPasteStatus.value = 'Injecting document into the Knowledge Forge...';
+  try {
+    const token = localStorage.getItem('aws_jwt');
+    const response = await fetch(${API_BASE_URL}/api/study/create, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': token ? `Bearer ${token}` : ''
+      },
+      body: JSON.stringify(studyPasteForm.value)
+    });
+    const result = await response.json();
+    if (response.ok) {
+      studyPasteStatus.value = "âœ… Document injected successfully!";
+      studyPasteForm.value = { certCode: '', domain: '', title: '', content: '' };
+    } else {
+      studyPasteStatus.value = "âŒ " + (result.error || "Upload failed.");
+    }
+  } catch (error) {
+    studyPasteStatus.value = "âŒ Critical Error: Could not reach the server.";
+  }
+};
 
 // Function to handle clicking a card
   // Function to handle clicking a card
 const openModule = (moduleId) => {
-    // 1. Find the exact module they clicked and its index in the array
+    // 1. Find the exact module they clicked and its index
     const targetIndex = libraryModules.value.findIndex(m => m.id === moduleId);
     const targetModule = libraryModules.value[targetIndex];
 
@@ -2393,23 +2997,16 @@ const openModule = (moduleId) => {
     const isLocked = targetIndex > 0 && (!currentUser.value || !currentUser.value.isPremium);
 
     if (isLocked) {
-      // 3. Play a denied sound (optional, but satisfying)
-      if (typeof playSound === 'function') playSound('wrong');
-
-      // 4. Offer the upsell!
-      const wantsToUpgrade = confirm("🔒 PREMIUM ARCHIVE LOCKED\n\nThis module contains advanced AWS concepts reserved for Premium members.\n\nWould you like to establish a secure connection to the Stripe Gateway and upgrade your access?");
-
-      if (wantsToUpgrade) {
-        upgradeToPremium();
-      }
+      // ðŸš¨ UI UPGRADE: Use your sleek custom modal instead of an ugly browser alert!
+      showPremiumModal.value = true;
       return; // Abort! Do not let them open the video player!
     }
 
-    // 5. If it's the free module OR they are Premium, let them in!
-    if (typeof playSound === 'function') playSound('click');
+    // 3. If it's the free module OR they are Premium, let them in!
+    // (Audio successfully removed)
     activeModule.value = targetModule;
     currentVideoIndex.value = 0;
-    currentView.value = 'lessonViewer';
+    currentView.value = 'lessonViewer'; // Opens the Video Player
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
@@ -2417,44 +3014,41 @@ const onboardingSlides = [
     {
       title: "Propel Your Cloud Career",
       text: "Obtaining AWS certifications is the ultimate catalyst for your tech career. Knowledge Forge Academy works tirelessly to provide the most up-to-date training modules, dynamic quizzes, and real-world scenarios. We are constantly evolving our databanks to ensure you are exam-ready.",
-      icon: "🚀"
+      icon: "ðŸš€"
     },
     {
       title: "Certification Databanks",
       text: "Select your target protocol. Whether you are aiming for Cloud Practitioner, Solutions Architect, Developer, or specialized AI/ML certifications, our forges adapt to your specific exam requirements.",
-      icon: "🗄️"
+      icon: "ðŸ—„ï¸"
     },
     {
       title: "The Skill Radar",
       text: "Stop guessing what to study. Our dynamic Skill Radar tracks your quiz performance across every AWS domain in real-time, instantly highlighting your strengths and generating Target Priorities to patch your weakest architectural blind spots.",
-      icon: "🎯"
+      icon: "ðŸŽ¯"
     },
     {
       title: "Ascended Masters",
       text: "Compete with the elite. The Ascended Masters leaderboard ranks our top engineers. Your rank is dynamically calculated based on your accumulated XP, Sudden Death survival rates, and overall quiz accuracy. Claim your spot at the top.",
-      icon: "👑"
+      icon: "ðŸ‘‘"
     }
   ];
 
 const nextSlide = () => {
     if (activeSlide.value < onboardingSlides.length - 1) {
       activeSlide.value++;
-      if (isAudioEnabled.value) playSound('click');
     } else {
       // If it's the last slide, send them to the main dashboard!
       currentView.value = 'landing';
-      if (isAudioEnabled.value) playSound('success');
     }
   };
 
 const prevSlide = () => {
     if (activeSlide.value > 0) {
       activeSlide.value--;
-      if (isAudioEnabled.value) playSound('click');
     }
   };
 
-// --- 🎯 DYNAMIC SKILL RADAR ENGINE ---
+// --- ðŸŽ¯ DYNAMIC SKILL RADAR ENGINE ---
 
 // 1. Track what the user selects in the dropdown
 const selectedRadarCert = ref('AIF-C01');
@@ -2476,7 +3070,7 @@ const radarDatabase = {
   };
 
 const dynamicRadarData = computed(() => {
-  // 🚨 THE FIX: Dynamically read the exact categories and scores directly from your database!
+  // ðŸš¨ THE FIX: Dynamically read the exact categories and scores directly from your database!
   const labels = Object.keys(categoryScores.value || {});
   const dataPoints = Object.values(categoryScores.value || {});
 
@@ -2513,13 +3107,13 @@ const dynamicRadarData = computed(() => {
 const completeActiveModule = async () => {
   // 1. Security Check: Are they logged in?
   if (!currentUser.value || !currentUser.value.username) {
-    alert("Warning: Guest mode active. Progress not saved to the Mainframe.");
+    showToast("Guest mode active. Progress not saved to Mainframe.", "warning");
     return;
   }
 
   try {
     // 2. Send the completion data to Spring Boot
-    const response = await fetch(`http://localhost:8080/api/progress/complete?username=${currentUser.value.username}&moduleId=${activeModule.value.id}`, {
+    const response = await fetch(`${API_BASE_URL}/api/progress/complete?username=${currentUser.value.username}&moduleId=${activeModule.value.id}`, {
       method: 'POST',
       headers: {
         // THIS IS THE VIP PASS!
@@ -2550,7 +3144,7 @@ const completeActiveModule = async () => {
     }
   } catch (error) {
     console.error("Transmission failed:", error);
-    alert("❌ Error connecting to the Jedi Archives.");
+    showToast("Connection to Jedi Archives failed.", "error");
   }
 };
 
@@ -2567,7 +3161,7 @@ const jumpToForge = async (categoryName) => {
 
     // 1. THE FALLBACK: Auto-select cert if clicked from global dashboard
     if (!targetCode) {
-      const response = await fetch('http://localhost:8080/api/modules');
+      const response = await fetch(${API_BASE_URL}/api/modules);
       if (response.ok) {
         const allModules = await response.json();
 
@@ -2591,7 +3185,7 @@ const jumpToForge = async (categoryName) => {
     }
 
     if (!targetCode) {
-      alert(`⚠️ Could not locate the Jedi Archives for "${categoryName}". Please select a certification path above first.`);
+      showToast(`Could not locate archives for "${categoryName}". Select a cert first.`, "warning");
       return;
     }
 
@@ -2631,7 +3225,7 @@ const formattedCurrentTime = computed(() => {
 
 // 2. The total time shown on the Results screen
 const formattedTotalTime = computed(() => {
-  // 🚨 THE FIX: Calculate "Time Spent" based on the game mode
+  // ðŸš¨ THE FIX: Calculate "Time Spent" based on the game mode
   let secondsSpent = totalExamSeconds.value;
 
   if (isAmrapMode.value) {
@@ -2667,18 +3261,18 @@ const formattedAverageTime = computed(() => {
 const examResultMessage = computed(() => {
   if (finalScore.value >= 72) {
     return {
-      title: "You are Worthy. ⚡️",
+      title: "You are Worthy. âš¡ï¸",
       text: "The cloud bends to your will. You've summoned the lightning, conquered the architecture, and secured your place among the AWS Pantheon. You are officially God of Thunder tier.",
       color: "text-emerald-500",
-      icon: "🌩️",
+      icon: "ðŸŒ©ï¸",
       image: "/image/thor.gif" // Thor ascending
     };
   } else {
     return {
-      title: "Whatever It Takes. 🛡️",
+      title: "Whatever It Takes. ðŸ›¡ï¸",
       text: "Even Earth's mightiest heroes take a hit. Dust yourself off, review the mission logs in the archives below, and gear up for round two. We don't give up. Get back in the fight.",
       color: "text-blue-500",
-      icon: "💥",
+      icon: "ðŸ’¥",
       image: "/image/marvel.gif" // Avengers standing tall
     };
   }
@@ -2694,11 +3288,14 @@ const fetchQuestion = async () => {
         : '';
 
     // 2. Ask the server for a random question, excluding the ones we've seen
-    const response = await fetch(`http://localhost:8080/api/questions/random?examCode=${selectedCert.value.code}${excludeQuery}`);
+    const token = localStorage.getItem('aws_jwt'); // Grab the token
+    const response = await fetch(`${API_BASE_URL}/api/questions/random?examCode=${selectedCert.value.code}${excludeQuery}`, {
+      // ðŸš¨ THE FIX: Add the safe header
+      headers: { 'Authorization': token ? `Bearer ${token}` : '' }
+    });
 
     // 3. If the server returns 204, the bank is completely empty!
     if (response.status === 204 || !response.ok) {
-      alert("Simulation Complete: You have exhausted the entire question bank for this certification!");
 
       // If we are in the middle of a quiz and run out of questions, force the grade!
       if (currentView.value === 'quiz') forceGradeExam();
@@ -2710,7 +3307,7 @@ const fetchQuestion = async () => {
 
     const data = JSON.parse(text);
 
-    // 🚨 THE TRANSLATOR: Convert Java's flat fields into Vue's Option array!
+    // ðŸš¨ THE TRANSLATOR: Convert Java's flat fields into Vue's Option array!
     if (!data.options) {
       const builtOptions = [];
       const correctAnswers = data.correctOption ? data.correctOption.split('||') : [];
@@ -2737,11 +3334,11 @@ const fetchQuestion = async () => {
 
   } catch (error) {
     console.error(error);
-    alert("Communication error with the Jedi Archives.");
+    showToast("Uplink severed. Backend mainframe is offline.", "error");
   }
 };
 
-// --- 🛡️ ADMIN SECURITY PROTOCOL ---
+// --- ðŸ›¡ï¸ ADMIN SECURITY PROTOCOL ---
 const triggerAdminLock = () => {
     // 1. Throw up the browser's native password prompt
     const authCode = prompt("SECURITY OVERRIDE: Enter Admin Authorization Code");
@@ -2750,7 +3347,7 @@ const triggerAdminLock = () => {
     if (authCode === "masterkey") {
       currentView.value = 'admin'; // Grant Access
     } else if (authCode !== null && authCode !== "") {
-      alert("❌ Authorization Denied. Invalid Code.");
+      showToast("Authorization Denied. Invalid Code.", "error");
     }
   };
 
@@ -2778,11 +3375,15 @@ const loadNextQuestion = async () => {
           : '';
 
       // 2. Fetch using the filter
-      const response = await fetch(`http://localhost:8080/api/questions/random?examCode=${codeToFetch}${excludeQuery}`);
+      const token = localStorage.getItem('aws_jwt'); // Grab the token
+      const response = await fetch(`${API_BASE_URL}/api/questions/random?examCode=${codeToFetch}${excludeQuery}`, {
+        // ðŸš¨ THE FIX: Add the safe header
+        headers: { 'Authorization': token ? `Bearer ${token}` : '' }
+      });
 
       // 3. THE SAFETY NET: Check if they are an absolute beast and exhausted the bank!
       if (response.status === 204 || !response.ok) {
-        alert("Bank Exhausted! You have ripped through every single question available for this certification.");
+        showToast("Bank Exhausted! You cleared every question for this cert.", "success");
         forceGradeExam(); // End the AMRAP session early and score them!
         return;
       }
@@ -2792,7 +3393,7 @@ const loadNextQuestion = async () => {
 
       const data = JSON.parse(text);
 
-      // 🚨 THE TRANSLATOR: Convert Java's flat fields into Vue's Option array!
+      // ðŸš¨ THE TRANSLATOR: Convert Java's flat fields into Vue's Option array!
       if (!data.options) {
         const builtOptions = [];
         const correctAnswers = data.correctOption ? data.correctOption.split('||') : [];
@@ -2841,73 +3442,71 @@ const loadNextQuestion = async () => {
       await fetchQuestion();
       window.scrollTo({top: 0, behavior: 'smooth'});
     } catch (error) {
-      alert("Could not load the next trial. Please check your uplink.");
+      showToast("Could not load next trial. Check your uplink.", "error");
     }
   }
 };
 
 const checkAnswer = () => {
-  const currentQ = question.value;
+    const currentQ = question.value;
 
-  if (!currentQ || !currentQ.options) {
-    return;
-  }
+    if (!currentQ || !currentQ.options) {
+      return;
+    }
 
-  // Save their answer
-  selectedAnswersRecord.value[currentQ.id] = [...selectedAnswers.value];
+    // Save their answer
+    selectedAnswersRecord.value[currentQ.id] = [...selectedAnswers.value];
 
-  // --- THE MULTI-SELECT UPGRADE ---
-  const userSelectedIds = selectedAnswers.value.map(id => String(id));
-  const correctOptionIds = currentQ.options
-      .filter(opt => opt.isCorrect === true || opt.correct === true)
-      .map(opt => String(opt.id));
+    // --- THE MULTI-SELECT UPGRADE ---
+    const userSelectedIds = selectedAnswers.value.map(id => String(id));
+    const correctOptionIds = currentQ.options
+        .filter(opt => opt.isCorrect === true || opt.correct === true)
+        .map(opt => String(opt.id));
 
-  const isRight =
-      userSelectedIds.length === correctOptionIds.length &&
-      userSelectedIds.every(id => correctOptionIds.includes(id));
-  // ---------------------------------
+    const isRight =
+        userSelectedIds.length === correctOptionIds.length &&
+        userSelectedIds.every(id => correctOptionIds.includes(id));
+    // ---------------------------------
 
-  userResults.value[currentQ.id] = isRight;
+    userResults.value[currentQ.id] = isRight;
 
-  // Set visual feedback for the explanation screen
-  if (isRight) {
-    playSound('correct');
-    feedback.value = "✓ CORRECT";
-    feedbackClass.value = "bg-green-100 text-green-800 border-2 border-green-200";
-  } else {
-    playSound('wrong');
-    feedback.value = "✗ INCORRECT";
-    feedbackClass.value = "bg-red-100 text-red-800 border-2 border-red-200";
-  }
+    // Set visual feedback for the explanation screen (AUDIO DELETED)
+    if (isRight) {
+      feedback.value = "âœ“ CORRECT";
+      feedbackClass.value = "bg-green-100 text-green-800 border-2 border-green-200";
+    } else {
+      feedback.value = "âœ— INCORRECT";
+      feedbackClass.value = "bg-red-100 text-red-800 border-2 border-red-200";
+    }
 
-  // Tell the AMRAP referee to count the rep!
-  if (isAmrapMode.value) {
-    amrapCorrectCount.value++;
-  }
+    // Tell the AMRAP referee to count the rep!
+    if (isAmrapMode.value) {
+      amrapCorrectCount.value++;
+    }
 
-  // --- THE SUDDEN DEATH ENGINE ---
-  if (isSuddenDeath.value) {
-    if (!isRight) {
-      playSound('shatter');
-      healthPoints.value--;
-      console.warn(`DAMAGE TAKEN! HP remaining: ${healthPoints.value}`);
+    // --- THE SUDDEN DEATH ENGINE ---
+    if (isSuddenDeath.value) {
+      if (!isRight) {
+        // AUDIO DELETED
+        healthPoints.value--;
+        console.warn(`DAMAGE TAKEN! HP remaining: ${healthPoints.value}`);
 
-      // Fatal Blow - Terminate the Exam instantly
-      if (isDead.value) {
-        // Push the fatal question into the array so the Results screen can grade it.
-        if (question.value && !questions.value.some(q => q.id === question.value.id)) {
-          questions.value.push(question.value);
+        // Fatal Blow - Terminate the Exam instantly
+        if (isDead.value) {
+          // Push the fatal question into the array so the Results screen can grade it.
+          if (question.value && !questions.value.some(q => q.id === question.value.id)) {
+            questions.value.push(question.value);
+          }
+          // Instantly force the grade and boot them to the results screen
+          forceGradeExam();
+          return;
         }
-        // Instantly force the grade and boot them to the results screen
-        forceGradeExam();
-        return;
       }
     }
-  }
 
-  // Show the explanation if they survived!
-  showExplanation.value = true;
-};
+    // Show the explanation if they survived!
+    showExplanation.value = true;
+  };
 
 // The Countdown Formatter (e.g., "09:42")
 const formattedAmrapTime = computed(() => {
@@ -2915,48 +3514,6 @@ const formattedAmrapTime = computed(() => {
   const s = amrapTimeLeft.value % 60;
   return `${m}:${s.toString().padStart(2, '0')}`;
 });
-
-const sfx = {
-  click: new Audio('/sounds/mechanical_click.mp3'),
-  correct: new Audio('/sounds/heavy_thud.mp3'),     // Or a satisfying chime
-  wrong: new Audio('/sounds/error_glitch.mp3'),     // A digital glitch or low buzz
-  shatter: new Audio('/sounds/glass_shatter.mp3'),  // For Sudden Death damage
-  trash: new Audio('/sounds/digital_sweep.mp3')
-};
-
-// Lower the volume on the SFX so they aren't deafening
-Object.values(sfx).forEach(audio => audio.volume = 0.4);
-
-// 2. The Lo-Fi Focus Track
-const bgMusic = new Audio('/sounds/lofi_focus_loop.mp3');
-bgMusic.loop = true;
-bgMusic.volume = 0.05; // Keep this very quiet so it sits in the background!
-
-// 3. The Play Helper Function
-const playSound = (type) => {
-  if (!isAudioEnabled.value) return;
-
-  // Clone the audio node so it can play rapidly overlapping clicks!
-  const sound = sfx[type].cloneNode();
-  sound.volume = sfx[type].volume;
-  sound.play().catch(e => console.warn("Browser blocked audio auto-play"));
-};
-
-const toggleMusic = () => {
-  isMusicPlaying.value = !isMusicPlaying.value;
-  if (isMusicPlaying.value) {
-    bgMusic.play().catch(e => console.warn("Browser blocked audio"));
-  } else {
-    bgMusic.pause();
-  }
-};
-
-const toggleSFX = () => {
-    isAudioEnabled.value = !isAudioEnabled.value;
-    if (isAudioEnabled.value) {
-      playSound('click'); // Give them auditory feedback that it turned back on!
-    }
-  };
 
 // The Strict 10-Minute Clock
 const startAmrapTimer = () => {
@@ -2975,7 +3532,7 @@ const startAmrapTimer = () => {
         title: "TIME EXHAUSTED",
         text: `AMRAP Session Complete. You successfully completed ${amrapCorrectCount.value} reps.`,
         color: "text-amber-500",
-        icon: "⏱️"
+        icon: "â±ï¸"
       };
 
       forceGradeExam();
@@ -3013,7 +3570,7 @@ const analyzeCategoryMastery = async () => {
 
     updates.push({
       category: catName,
-      // 🚨 THE FIX: Send both names so Java's parser can't possibly miss it!
+      // ðŸš¨ THE FIX: Send both names so Java's parser can't possibly miss it!
       isCorrect: gotItRight,
       correct: gotItRight
     });
@@ -3021,7 +3578,7 @@ const analyzeCategoryMastery = async () => {
   if (currentUser.value && currentUser.value.username) {
     try {
       const actualToken = localStorage.getItem('aws_jwt');
-      const response = await fetch(`http://localhost:8080/api/progress/${currentUser.value.username}/radar/update`, {
+      const response = await fetch(`${API_BASE_URL}/api/progress/${currentUser.value.username}/radar/update`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${actualToken}`,
@@ -3031,7 +3588,7 @@ const analyzeCategoryMastery = async () => {
       });
 
       if (response.ok) {
-        console.log("✅ Mastery data successfully synced to Jedi Archives.");
+        console.log("âœ… Mastery data successfully synced to Jedi Archives.");
         await fetchRadarStats();
       }
     } catch (error) {
@@ -3053,7 +3610,7 @@ const syncXpToDatabase = async (correctCount, totalQuestions) => {
 
   try {
     // 2. Target the exact endpoint Spring Boot is guarding
-    const url = `http://localhost:8080/api/progress/award-xp?username=${savedUser.username}&correctCount=${correctCount}&totalQuestions=${totalQuestions}`;
+    const url = `${API_BASE_URL}/api/progress/award-xp?username=${savedUser.username}&correctCount=${correctCount}&totalQuestions=${totalQuestions}`;
 
     const response = await fetch(url, {
       method: 'POST',
@@ -3074,7 +3631,7 @@ const syncXpToDatabase = async (correctCount, totalQuestions) => {
       if (currentUser.value) {
         currentUser.value.xp = updatedUser.xp;
       }
-      console.log(`🛡️ Server Sync Complete! New Lifetime XP: ${updatedUser.xp}`);
+      console.log(`ðŸ›¡ï¸ Server Sync Complete! New Lifetime XP: ${updatedUser.xp}`);
     } else {
       console.error("XP Sync blocked by server firewall.");
     }
@@ -3118,6 +3675,18 @@ const saveResults = async () => {
       }
     });
 
+    // Determine weakest category from missed questions
+    const missedCategories = {};
+    activeQs.forEach(q => {
+      const catName = q.domain || q.category || null;
+      if (userResults.value[q.id] === false && catName) {
+        missedCategories[catName] = (missedCategories[catName] || 0) + 1;
+      }
+    });
+    // Get top 3 weakest areas
+    const sortedWeak = Object.entries(missedCategories).sort((a, b) => b[1] - a[1]);
+    const top3Weak = sortedWeak.slice(0, 3).map(e => e[0]).join(', ');
+
     const token = localStorage.getItem('aws_jwt');
 
     const historyData = {
@@ -3128,10 +3697,11 @@ const saveResults = async () => {
       totalQuestions: attemptedCount,
       correctCount: correctAnswers,
       missedQuestionIds: missedIds.join(','),
+      weakestCategory: top3Weak || 'Flawless',
       timeSpentSeconds: isAmrapMode.value ? (600 - amrapTimeLeft.value) : totalExamSeconds.value
     };
 
-    const response = await fetch(`http://localhost:8080/api/questions/history/save?userId=${currentUser.value.id}`, {
+    const response = await fetch(`${API_BASE_URL}/api/questions/history/save?userId=${currentUser.value.id}`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -3140,13 +3710,13 @@ const saveResults = async () => {
       body: JSON.stringify(historyData)
     });
 
-    // 🚨 THE UNMASKER: If Java refuses to save the exam, tell us why!
+    // ðŸš¨ THE UNMASKER: If Java refuses to save the exam, tell us why!
     if (!response.ok) {
       const errText = await response.text();
       console.error("JAVA REJECTED EXAM SAVE:", errText);
-      alert("Database rejected the score! Error: " + errText);
+      showToast("Database rejected the score: " + errText, "error");
     } else {
-      console.log("✅ Exam History Saved Successfully!");
+      console.log("âœ… Exam History Saved Successfully!");
       // Instantly update the UI tables so you don't have to refresh
       if (typeof fetchHistory === 'function') fetchHistory();
       if (typeof fetchLeaderboard === 'function') fetchLeaderboard();
@@ -3161,15 +3731,15 @@ const fetchHistory = async () => {
   try {
     const token = localStorage.getItem('aws_jwt');
 
-    // 🚨 The Ghost ID Tripwire
+    // ðŸš¨ The Ghost ID Tripwire
     if (!token || !currentUser.value) return;
     if (!currentUser.value.id) {
-      console.warn("⚠️ Data Bridge Paused: Awaiting official User ID from Java...");
+      console.warn("âš ï¸ Data Bridge Paused: Awaiting official User ID from Java...");
       return;
     }
 
     // Direct Data Bridge: Pulling via the official DB ID
-    const response = await fetch(`http://localhost:8080/api/questions/history?userId=${currentUser.value.id}`, {
+    const response = await fetch(`${API_BASE_URL}/api/questions/history?userId=${currentUser.value.id}`, {
       method: 'GET',
       headers: { 'Authorization': `Bearer ${token}` }
     });
@@ -3177,15 +3747,15 @@ const fetchHistory = async () => {
     if (response.ok) {
       const data = await response.json();
 
-      // 🚨 THE ARMOR: Only accept the data if it is a list!
+      // ðŸš¨ THE ARMOR: Only accept the data if it is a list!
       if (Array.isArray(data)) {
         examHistory.value = data;
-        console.log("📊 RECENT ACTIVITY DATA:", examHistory.value);
-        console.log(`📡 EXM HISTORY: Bridge established. ${examHistory.value.length} nodes received.`);
+        console.log("ðŸ“Š RECENT ACTIVITY DATA:", examHistory.value);
+        console.log(`ðŸ“¡ EXM HISTORY: Bridge established. ${examHistory.value.length} nodes received.`);
       } else {
         // If Java sends a weird error object, default to an empty array
         examHistory.value = [];
-        console.warn("⚠️ Data Bridge warning: Expected an array, but received an object.");
+        console.warn("âš ï¸ Data Bridge warning: Expected an array, but received an object.");
       }
     } else {
       examHistory.value = [];
@@ -3211,7 +3781,7 @@ const adminForm = ref({
     category: '',
     examCode: 'SCS-C02',
     explanation: '',
-    // 🚨 THE NEW UPGRADE: An array of objects instead of a single string
+    // ðŸš¨ THE NEW UPGRADE: An array of objects instead of a single string
     options: [
       { text: '', isCorrect: true },  // Default Option 1
       { text: '', isCorrect: false }, // Default Option 2
@@ -3238,7 +3808,7 @@ const fetchAdminQuestions = async () => {
     const token = localStorage.getItem('aws_jwt');
     if (!token) return;
 
-    const response = await fetch('http://localhost:8080/api/questions/all', {
+    const response = await fetch(${API_BASE_URL}/api/questions/all, {
       headers: { 'Authorization': `Bearer ${token}` }
     });
     if (response.ok) {
@@ -3253,12 +3823,12 @@ const fetchAdminQuestions = async () => {
 const saveAdminQuestion = async () => {
   const token = localStorage.getItem('aws_jwt');
   const url = isAdminEditing.value
-      ? `http://localhost:8080/api/admin/questions/${adminForm.value.id}`
-      : 'http://localhost:8080/api/admin/questions';
+      ? `${API_BASE_URL}/api/admin/questions/${adminForm.value.id}`
+      : `${API_BASE_URL}/api/admin/questions`;
 
   const method = isAdminEditing.value ? 'PUT' : 'POST';
 
-// 🚨 THE TRANSLATOR: Convert the UI array back into Java's flat format
+// ðŸš¨ THE TRANSLATOR: Convert the UI array back into Java's flat format
 const correctOpt = adminForm.value.options.find(o => o.isCorrect);
 
 const javaPayload =
@@ -3271,8 +3841,8 @@ const javaPayload =
     optionB: adminForm.value.options[1]?.text || '',
     optionC: adminForm.value.options[2]?.text || '',
     optionD: adminForm.value.options[3]?.text || '',
-    optionE: adminForm.value.options[4]?.text || '', // 🚨 ADDED
-    optionF: adminForm.value.options[5]?.text || '', // 🚨 ADDED
+    optionE: adminForm.value.options[4]?.text || '', // ðŸš¨ ADDED
+    optionF: adminForm.value.options[5]?.text || '', // ðŸš¨ ADDED
     correctOption: correctOpt ? correctOpt.text : '',
     explanation: adminForm.value.explanation
   };
@@ -3284,7 +3854,7 @@ const javaPayload =
         'Authorization': `Bearer ${token}`,
         'Content-Type': 'application/json'
       },
-      body: JSON.stringify(javaPayload) // 🚨 Send the translated payload!
+      body: JSON.stringify(javaPayload) // ðŸš¨ Send the translated payload!
     });
 
     if (response.ok) {
@@ -3300,7 +3870,7 @@ const javaPayload =
 
 // 3. DELETE: Vaporize a question
 const deleteAdminQuestion = async (id) => {
-  if (!confirm("⚠ VAPORIZE QUESTION? This cannot be undone.")) return;
+  if (!confirm("âš  VAPORIZE QUESTION? This cannot be undone.")) return;
 
   try {
     const token = localStorage.getItem('aws_jwt');
@@ -3319,7 +3889,7 @@ const deleteAdminQuestion = async (id) => {
 
 const fetchReviews = async () => {
     try {
-      const response = await fetch('http://localhost:8080/api/questions/public/reviews');
+      const response = await fetch(${API_BASE_URL}/api/questions/public/reviews);
       if (response.ok) {
         recentReviews.value = await response.json();
       }
@@ -3328,11 +3898,13 @@ const fetchReviews = async () => {
     }
   };
 
-// Fetch them when the app loads
-import { onMounted } from 'vue';
-onMounted(() => {
-    fetchReviews();
-  });
+// The trigger to open the reader
+const openStudyMaterial = (cert, domain) => {
+    studyActiveCert.value = cert;
+    studyActiveDomain.value = domain;
+    currentView.value = 'study_reader';
+    trackEvent('study_material_view', cert, domain);
+  };
 
 // 4. UI HELPER: Open the modal for editing or creating
 const openAdminModal = (question = null) => {
@@ -3341,7 +3913,7 @@ const openAdminModal = (question = null) => {
       adminForm.value = { ...question };
       isAdminEditing.value = true;
     } else {
-      // 🚨 UPDATED BLANK FORM: Now includes the default 4 options!
+      // ðŸš¨ UPDATED BLANK FORM: Now includes the default 4 options!
       adminForm.value = {
         id: null,
         text: '',
@@ -3366,7 +3938,7 @@ const fetchRadarStats = async () => {
 
   try {
     const actualToken = localStorage.getItem('aws_jwt');
-    const response = await fetch(`http://localhost:8080/api/progress/${currentUser.value.username}/radar`, {
+    const response = await fetch(`${API_BASE_URL}/api/progress/${currentUser.value.username}/radar`, {
       headers: {
         'Authorization': `Bearer ${actualToken}`
       }
@@ -3387,113 +3959,140 @@ const fetchRadarStats = async () => {
 
 const streakDisplay = computed(() => {
   if (userStreak.value >= 14) {
-    return { color: 'text-slate-900', icon: '🔥', label: 'Domain Expansion', aura: 'drop-shadow-[0_0_8px_rgba(0,0,0,0.8)]' }; // Black Flame
+    return { color: 'text-slate-900', icon: 'ðŸ”¥', label: 'Domain Expansion', aura: 'drop-shadow-[0_0_8px_rgba(0,0,0,0.8)]' }; // Black Flame
   } else if (userStreak.value >= 7) {
-    return { color: 'text-blue-500', icon: '🔥', label: 'Blue Hot', aura: 'drop-shadow-[0_0_8px_rgba(59,130,246,0.8)]' }; // Blue Flame
+    return { color: 'text-blue-500', icon: 'ðŸ”¥', label: 'Blue Hot', aura: 'drop-shadow-[0_0_8px_rgba(59,130,246,0.8)]' }; // Blue Flame
   } else if (userStreak.value >= 3) {
-    return { color: 'text-orange-500', icon: '🔥', label: 'Ignited', aura: 'drop-shadow-[0_0_8px_rgba(249,115,22,0.8)]' }; // Orange Flame
+    return { color: 'text-orange-500', icon: 'ðŸ”¥', label: 'Ignited', aura: 'drop-shadow-[0_0_8px_rgba(249,115,22,0.8)]' }; // Orange Flame
   } else if (userStreak.value > 0) {
-    return { color: 'text-amber-400', icon: '🔥', label: 'Spark', aura: '' }; // Standard Flame
+    return { color: 'text-amber-400', icon: 'ðŸ”¥', label: 'Spark', aura: '' }; // Standard Flame
   } else {
-    return { color: 'text-slate-300', icon: '🧊', label: 'Cold', aura: '' }; // Frozen/Zero
+    return { color: 'text-slate-300', icon: 'ðŸ§Š', label: 'Cold', aura: '' }; // Frozen/Zero
   }
 });
 
 // --- THE PROTOCOL ROUTER ---
 const initiateProtocol = (targetView) => {
-  const gameConfig = arcadeConfig[targetView];
+    const gameConfig = arcadeConfig[targetView];
 
-  if (!gameConfig) {
-    currentView.value = targetView;
-    return;
-  }
-
-  // --- GATE 1: THE PREMIUM WALL ---
-  if (gameConfig.requiresPremium && !isPremiumUser.value) {
-    if (typeof playSound === 'function') playSound('wrong');
-
-    localStorage.setItem('aws_intended_protocol', targetView);
-    showUpgradePrompt.value = true;
-    return;
-  }
-
-  // --- GATE 2: THE 3-STRIKE TRACKER (For Free/Unregistered Users) ---
-  if (!isPremiumUser.value && gameConfig.maxFreePlays) {
-    const strikes = parseInt(localStorage.getItem(`aws_${targetView}_strikes`) || '0');
-
-    if (strikes >= gameConfig.maxFreePlays) {
-      if (typeof playSound === 'function') playSound('wrong');
-      showUpgradePrompt.value = true;
-      return; // Abort!
+    if (!gameConfig) {
+      currentView.value = targetView;
+      return;
     }
 
-    localStorage.setItem(`aws_${targetView}_strikes`, (strikes + 1).toString());
-    console.log(`🎫 Free play granted for ${gameConfig.name}: Strike ${strikes + 1} of ${gameConfig.maxFreePlays}`);
-  }
+    // ðŸš¨ THE FIX: Reliably check the user's premium status!
+    const isPremium = currentUser.value && currentUser.value.isPremium;
 
-  // --- VIP ACCESS GRANTED ---
-  if (typeof playSound === 'function') playSound('click');
-
-  if (['standard', 'amrap', 'sudden_death', 'flashcards'].includes(targetView)) {
-    bootQuizEngine(targetView);
-  } else {
-    currentView.value = targetView;
-
-    // 🚨 THE FIX: Force Vue to actually fetch the Data when you enter the library!
-    if (targetView === 'library' && selectedCert.value) {
-      fetchKnowledgeForge(selectedCert.value.code);
+    // --- GATE 1: THE PREMIUM WALL ---
+    if (gameConfig.requiresPremium && !isPremium) {
+      localStorage.setItem('aws_intended_protocol', targetView);
+      showPremiumModal.value = true;
+      return;
     }
-  }
 
-  window.scrollTo({ top: 0, behavior: 'smooth' });
-};
+    // --- GATE 2: THE 3-STRIKE TRACKER ---
+    if (!isPremium && gameConfig.maxFreePlays) {
+      const strikes = parseInt(localStorage.getItem(`aws_${targetView}_strikes`) || '0');
 
-const fetchFlashcards = async () => {
-  const codeToFetch = selectedCert.value?.code;
-  if (!codeToFetch) return;
-
-  try {
-    const token = localStorage.getItem('aws_jwt');
-    const response = await fetch(`http://localhost:8080/api/questions/flashcards/game?examCode=${codeToFetch}`, {
-      headers: { 'Authorization': `Bearer ${token}` }
-    });
-
-    if (response.ok) {
-      const rawCards = await response.json();
-      if (rawCards.length === 0) {
-        alert("No flashcards found in the Matrix.");
-        return;
+      if (strikes >= gameConfig.maxFreePlays) {
+        showPremiumModal.value = true;
+        return; // Abort!
       }
 
-      // 1. Reset Telemetry for a new game
-      flashcardAttempts.value = 0;
-      flashcardMisses.value = {};
-      isFlashcardGameComplete.value = false;
-
-      // 2. Save all cards and shuffle the master deck
-      allFetchedFlashcards.value = rawCards.sort(() => Math.random() - 0.5);
-
-      // 3. Start Round 1
-      currentFlashcardRound.value = 0;
-      loadNextFlashcardRound();
+      localStorage.setItem(`aws_${targetView}_strikes`, (strikes + 1).toString());
+      console.log(`ðŸŽ« Free play granted for ${gameConfig.name}: Strike ${strikes + 1} of ${gameConfig.maxFreePlays}`);
     }
-  } catch (error) {
-    console.error("Flashcard API Offline:", error);
-  }
-};
+
+    // --- VIP ACCESS GRANTED ---
+    // ðŸ“Š Track the game start
+    const eventMap = { standard: 'exam_start', amrap: 'amrap_start', sudden_death: 'sudden_death_start', flashcards: 'flashcard_start' };
+    if (eventMap[targetView]) {
+      trackEvent(eventMap[targetView], selectedCert.value?.code);
+    }
+
+    if (['standard', 'amrap', 'sudden_death', 'flashcards'].includes(targetView)) {
+      bootQuizEngine(targetView);
+    } else {
+      currentView.value = targetView;
+      if (targetView === 'library' && selectedCert.value) {
+        fetchKnowledgeForge(selectedCert.value.code);
+      }
+    }
+
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+const changeForgeTab = (targetTab) => {
+    // 1. The VIP Rooms matching your exact Vue IDs
+    const premiumTabs = ['study_cards', 'architecture'];
+
+    // 2. Check their ID
+    const isPremium = currentUser.value && currentUser.value.isPremium;
+
+    // 3. THE BOUNCER
+    if (premiumTabs.includes(targetTab) && !isPremium) {
+      showPremiumModal.value = true;
+      return; // Abort the tab switch!
+    }
+
+    // 4. If they pass, let them in!
+    activeForgeTab.value = targetTab;
+
+    // Fetch the flashcards if they enter the study_cards tab
+    if (targetTab === 'study_cards' && selectedCert.value) {
+      if (typeof fetchLibraryFlashcards === 'function') {
+        fetchLibraryFlashcards(selectedCert.value.code);
+      }
+    }
+  };
+
+const fetchFlashcards = async () => {
+    const codeToFetch = selectedCert.value?.code;
+    if (!codeToFetch) return;
+
+    try {
+      const token = localStorage.getItem('aws_jwt');
+      const response = await fetch(`${API_BASE_URL}/api/questions/flashcards/game?examCode=${codeToFetch}`, {
+        // ðŸš¨ THE FIX: Only send the Bearer text if the token actually exists!
+        headers: { 'Authorization': token ? `Bearer ${token}` : '' }
+      });
+
+      if (response.ok) {
+        const rawCards = await response.json();
+        if (rawCards.length === 0) {
+          showToast("No flashcards found in the Matrix for this cert.", "warning");
+          return;
+        }
+
+        // 1. Reset Telemetry for a new game
+        flashcardAttempts.value = 0;
+        flashcardMisses.value = {};
+        isFlashcardGameComplete.value = false;
+
+        // 2. Save all cards and shuffle the master deck
+        allFetchedFlashcards.value = rawCards.sort(() => Math.random() - 0.5);
+
+        // 3. Start Round 1
+        currentFlashcardRound.value = 0;
+        loadNextFlashcardRound();
+      }
+    } catch (error) {
+      console.error("Flashcard API Offline:", error);
+    }
+  };
 
 const loadNextFlashcardRound = () => {
   matchedPairs.value = [];
   selectedTerm.value = null;
   selectedDef.value = null;
 
-  // 🚨 THE LIMITER: Change this to 5 when you are done testing!
+  // ðŸš¨ THE LIMITER: Change this to 5 when you are done testing!
   const MAX_ROUNDS = 1;
 
   const startIndex = currentFlashcardRound.value * 6;
   const roundCards = allFetchedFlashcards.value.slice(startIndex, startIndex + 6);
 
-  // 🚨 THE TRIGGER: End the game if the database is empty OR they hit the Max Rounds!
+  // ðŸš¨ THE TRIGGER: End the game if the database is empty OR they hit the Max Rounds!
   if (roundCards.length === 0 || currentFlashcardRound.value >= MAX_ROUNDS) {
 
     // 1. Trigger the Results Screen
@@ -3512,7 +4111,6 @@ const loadNextFlashcardRound = () => {
     if (currentUser.value) {
       const xpEarned = Math.round(flashcardFinalScore.value * 1.5);
       userTotalXp.value += xpEarned;
-      if (typeof playSound === 'function') playSound('correct');
     }
     return;
   }
@@ -3534,19 +4132,64 @@ const selectDef = (def) => {
   checkFlashcardMatch();
 };
 
+const fetchAdminPipelines = async () => {
+    try {
+      const token = localStorage.getItem('aws_jwt');
+      // ðŸš¨ Notice the /admin/ in this URL!
+      const response = await fetch(${API_BASE_URL}/api/admin/questions/pipeline/all, {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      if (response.ok) {
+        allAdminPipelines.value = await response.json();
+      }
+    } catch (error) {
+      console.error("Architecture Matrix Offline:", error);
+    }
+  };
+
+const fetchAdminFlashcards = async () => {
+    try {
+      const token = localStorage.getItem('aws_jwt');
+      // ðŸš¨ Notice the /admin/ in this URL!
+      const response = await fetch(${API_BASE_URL}/api/admin/questions/flashcards/all, {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      if (response.ok) {
+        allAdminFlashcards.value = await response.json();
+      }
+    } catch (error) {
+      console.error("Flashcard Matrix Offline:", error);
+    }
+  };
+
+// 3. The function to delete a pipeline
+const deleteAdminPipeline = async (id) => {
+    if (!confirm("âš  VAPORIZE PIPELINE? This cannot be undone.")) return;
+    try {
+      const token = localStorage.getItem('aws_jwt');
+      const response = await fetch(`${API_BASE_URL}/api/questions/pipeline/${id}`, {
+        method: 'DELETE',
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      if (response.ok) fetchAdminPipelines(); // Refresh table!
+    } catch (error) {
+      console.error("Failed to vaporize pipeline:", error);
+    }
+  };
+
 const checkFlashcardMatch = () => {
   if (selectedTerm.value && selectedDef.value) {
 
-    // 📈 TELEMETRY: Every time they click a pair, it's 1 attempt!
+    // ðŸ“ˆ TELEMETRY: Every time they click a pair, it's 1 attempt!
     flashcardAttempts.value++;
 
     if (selectedTerm.value.id === selectedDef.value.id) {
-      // ✅ MATCH
+      // âœ… MATCH
       matchedPairs.value.push(selectedTerm.value.id);
       selectedTerm.value = null;
       selectedDef.value = null;
     } else {
-      // ❌ FAILED MATCH: Log it in the telemetry dictionary!
+      // âŒ FAILED MATCH: Log it in the telemetry dictionary!
       const missedId = selectedTerm.value.id;
       if (!flashcardMisses.value[missedId]) {
         // If they haven't missed it before, save the full term and definition
@@ -3569,29 +4212,30 @@ const checkFlashcardMatch = () => {
 
 // 1. Fetch exactly the cards needed for the Library
 const fetchLibraryFlashcards = async (certCode) => {
-  if (!certCode) return;
-  try {
-    const token = localStorage.getItem('aws_jwt');
-    const response = await fetch(`http://localhost:8080/api/questions/flashcards/game?examCode=${certCode}`, {
-      headers: { 'Authorization': `Bearer ${token}` }
-    });
+    if (!certCode) return;
+    try {
+      const token = localStorage.getItem('aws_jwt');
+      const response = await fetch(`${API_BASE_URL}/api/questions/flashcards/game?examCode=${certCode}`, {
+        // ðŸš¨ THE FIX: Safely handle guests!
+        headers: { 'Authorization': token ? `Bearer ${token}` : '' }
+      });
 
-    if (response.ok) {
-      const rawCards = await response.json();
-      console.log("🃏 FLASHCARDS FROM JAVA:", rawCards);
+      if (response.ok) {
+        const rawCards = await response.json();
+        console.log("ðŸƒ FLASHCARDS FROM JAVA:", rawCards);
 
-      // 🚨 Inject the reactive 'flipped' variable into every card so they can flip individually!
-      libraryFlashcards.value = rawCards.map(card => ({
-        ...card,
-        flipped: false
-      }));
-    } else {
-      libraryFlashcards.value = [];
+        // ðŸš¨ Inject the reactive 'flipped' variable into every card so they can flip individually!
+        libraryFlashcards.value = rawCards.map(card => ({
+          ...card,
+          flipped: false
+        }));
+      } else {
+        libraryFlashcards.value = [];
+      }
+    } catch (error) {
+      console.error("Failed to load library flashcards:", error);
     }
-  } catch (error) {
-    console.error("Failed to load library flashcards:", error);
-  }
-};
+  };
 
 // 2. Automatically extract unique domains to build the dropdown menu
 const libraryFlashcardDomains = computed(() => {
@@ -3610,7 +4254,7 @@ const filteredLibraryFlashcards = computed(() => {
   return libraryFlashcards.value.filter(c => c.category === librarySelectedDomain.value);
 });
 
-// 🚨 THE NEW ENGINE STARTER
+// ðŸš¨ THE NEW ENGINE STARTER
 const bootQuizEngine = async (mode) => {
     // 1. Reset all previous state
     resetSession();
@@ -3643,13 +4287,13 @@ const bootQuizEngine = async (mode) => {
     await fetchQuestion();
   };
 
-// --- 🎴 DYNAMIC FLASHCARD ENGINE ---
+// --- ðŸŽ´ DYNAMIC FLASHCARD ENGINE ---
 
 const deleteAdminFlashcard = async (id) => {
-  if (!confirm("⚠ VAPORIZE FLASHCARD? This cannot be undone.")) return;
+  if (!confirm("âš  VAPORIZE FLASHCARD? This cannot be undone.")) return;
   try {
     const token = localStorage.getItem('aws_jwt');
-    const response = await fetch(`http://localhost:8080/api/questions/flashcards/${id}`, {
+    const response = await fetch(`${API_BASE_URL}/api/questions/flashcards/${id}`, {
       method: 'DELETE',
       headers: { 'Authorization': `Bearer ${token}` }
     });
@@ -3661,37 +4305,86 @@ const deleteAdminFlashcard = async (id) => {
 
 watch(activeForgeTab, (newTab) => {
   if (newTab === 'study_cards' && selectedCert.value) {
-    console.log("🃏 Tab clicked! Fetching flashcards for:", selectedCert.value.code);
+    console.log("ðŸƒ Tab clicked! Fetching flashcards for:", selectedCert.value.code);
     fetchLibraryFlashcards(selectedCert.value.code);
   }
 });
 
 // Also, let's make sure it fetches immediately if they load directly into the tab
 onMounted(() => {
-  if (activeForgeTab.value === 'study_cards' && selectedCert.value) {
-    fetchLibraryFlashcards(selectedCert.value.code);
-  }
-});
+    // 1. Fetch Flashcards if needed
+    if (activeForgeTab.value === 'study_cards' && selectedCert.value) {
+      fetchLibraryFlashcards(selectedCert.value.code);
+    }
+
+    // 2. Fetch the Social Proof Reviews
+    fetchReviews();
+
+    // (If you have any other functions that need to run on load, put them inside this single block too!)
+  });
+
+// ðŸš¨ THE SUBMISSION FUNCTION
+const submitUserReview = async () => {
+    if (!reviewForm.value.reviewText) {
+      reviewFeedbackMessage.value = "Please enter your feedback.";
+      return;
+    }
+
+    try {
+      const token = localStorage.getItem('aws_jwt');
+      const authorName = currentUser.value?.username || 'Anonymous Architect';
+
+      const response = await fetch(${API_BASE_URL}/api/questions/reviews, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          authorName: authorName,
+          rating: reviewForm.value.rating,
+          reviewText: reviewForm.value.reviewText,
+          jobTitle: reviewForm.value.jobTitle
+        })
+      });
+
+      if (response.ok) {
+        reviewFeedbackMessage.value = "âœ… Database updated. Thank you!";
+
+        // Dramatic pause, then close the modal and update the homepage instantly!
+        setTimeout(() => {
+          showRatingModal.value = false;
+          reviewForm.value.reviewText = '';
+          reviewFeedbackMessage.value = '';
+          fetchReviews(); // ðŸš¨ This is the magic line that updates the homepage dynamically!
+        }, 2000);
+      } else {
+        reviewFeedbackMessage.value = "âŒ Authentication error. Are you logged in?";
+      }
+    } catch (error) {
+      reviewFeedbackMessage.value = "âŒ Critical Error: Could not reach the Matrix.";
+    }
+  };
 
 // 1. Add the Certifications list
 const certifications = ref([
     // --- FOUNDATIONAL ---
     {
       code: 'CLF-C02', name: 'Cloud Practitioner', category: 'Foundational',
-      image: '/badges/clf-badge.png', color: 'bg-orange-400', icon: '☁️',
+      image: '/badges/clf-badge.png', color: 'bg-orange-400', icon: 'â˜ï¸',
       domains: [
-        { name: 'Cloud Concepts', description: 'Define the AWS Cloud, its value proposition, and basic cloud economics.', icon: '💡', modules: [] },
-        { name: 'Security and Compliance', description: 'Shared responsibility model, access management, and security capabilities.', icon: '🛡️', modules: [] },
-        { name: 'Technology and Services', description: 'Core AWS services spanning compute, network, database, and storage.', icon: '⚙️', modules: [] },
-        { name: 'Billing and Pricing', description: 'Pricing models, account structures, and billing support.', icon: '💳', modules: [] }
+        { name: 'Domain 1: Cloud Concepts', description: 'Define the AWS Cloud, its value proposition, and basic cloud economics.', icon: 'ðŸ’¡', modules: [] },
+        { name: 'Domain 2: Security & Compliance', description: 'Shared responsibility model, access management, and security capabilities.', icon: 'ðŸ›¡ï¸', modules: [] },
+        { name: 'Domain 3: Cloud Technology & Services', description: 'Core AWS services spanning compute, network, database, and storage.', icon: 'âš™ï¸', modules: [] },
+        { name: 'Domain 4: Billing & Pricing', description: 'Pricing models, account structures, and billing support.', icon: 'ðŸ’³', modules: [] }
       ]
     },
     {
       code: 'AIF-C01', name: 'AI Practitioner', category: 'Foundational',
-      image: '/badges/aif-badge.png', color: 'bg-zinc-500', icon: '✨',
+      image: '/badges/aif-badge.png', color: 'bg-zinc-500', icon: 'âœ¨',
       domains: [
         {
-          name: 'Fundamentals of AI & ML', description: 'Core concepts, terminologies, and use cases of Artificial Intelligence.', icon: '🧠',
+          name: 'Fundamentals of AI & ML', description: 'Core concepts, terminologies, and use cases of Artificial Intelligence.', icon: 'ðŸ§ ',
           modules: [
             { id: 'aif1-1', title: 'What is Machine Learning?', duration: '8:45', type: 'video', videoUrl: 'https://www.youtube.com/embed/HcqpanDadyQ?autoplay=1' },
             { id: 'aif1-2', title: 'Supervised vs Unsupervised Learning', duration: '12:20', type: 'video', videoUrl: 'https://www.youtube.com/embed/PeM1hOcFa4A?autoplay=1' },
@@ -3700,14 +4393,14 @@ const certifications = ref([
               title: 'Core Terminology Cheatsheet',
               duration: 'Read',
               type: 'document',
-              // 👇 ADD THIS CONTENT STRING (Use \n for line breaks!)
+              // ðŸ‘‡ ADD THIS CONTENT STRING (Use \n for line breaks!)
               content: "Artificial Intelligence (AI)\nThe simulation of human intelligence processes by machines, especially computer systems.\n\nMachine Learning (ML)\nA subset of AI that enables systems to learn and improve from experience without being explicitly programmed.\n\nDeep Learning (DL)\nA subset of ML based on artificial neural networks with multiple layers (hence 'deep').\n\nFoundation Models (FMs)\nLarge-scale machine learning models trained on vast amounts of unlabelled data, which can be adapted to a wide range of downstream tasks."
             },
             { id: 'aif1-4', title: 'Neural Networks Explained', duration: '15:10', type: 'video', videoUrl: 'https://www.youtube.com/embed/bfmFfD2RIcg?autoplay=1' }
           ]
         },
         {
-          name: 'Fundamentals of Generative AI', description: 'Understanding Foundation Models, tokens, and prompt engineering.', icon: '🎨',
+          name: 'Fundamentals of Generative AI', description: 'Understanding Foundation Models, tokens, and prompt engineering.', icon: 'ðŸŽ¨',
           modules: [
             { id: 'aif2-1', title: 'Introduction to LLMs', duration: '10:05', type: 'video', videoUrl: 'https://www.youtube.com/embed/zjkBMFhNj_g?autoplay=1' },
             { id: 'aif2-2', title: 'The Anatomy of a Token', duration: '7:30', type: 'video', videoUrl: 'https://www.youtube.com/embed/f9nAjpKDE0g?autoplay=1' },
@@ -3715,7 +4408,7 @@ const certifications = ref([
           ]
         },
         {
-          name: 'Applications of Foundation Models', description: 'Selecting and utilizing AWS AI services for specific business needs.', icon: '🚀',
+          name: 'Applications of Foundation Models', description: 'Selecting and utilizing AWS AI services for specific business needs.', icon: 'ðŸš€',
           modules: [
             { id: 'aif3-1', title: 'Amazon Bedrock Overview', duration: '14:20', type: 'video', videoUrl: 'https://www.youtube.com/embed/ab1ebJv8Q0A?autoplay=1' },
             { id: 'aif3-2', title: 'Retrieval-Augmented Generation (RAG)', duration: '18:50', type: 'video', videoUrl: 'https://www.youtube.com/embed/T-D1OfcDW1M?autoplay=1' },
@@ -3723,7 +4416,7 @@ const certifications = ref([
           ]
         },
         {
-          name: 'Responsible AI & Security', description: 'Governance, bias mitigation, and secure AI implementation.', icon: '⚖️',
+          name: 'Responsible AI & Security', description: 'Governance, bias mitigation, and secure AI implementation.', icon: 'âš–ï¸',
           modules: [
             { id: 'aif4-1', title: 'Identifying and Mitigating Bias', duration: '11:40', type: 'video', videoUrl: 'https://www.youtube.com/embed/EwjrE1M1r2A?autoplay=1' },
             { id: 'aif4-2', title: 'Data Privacy in Generative AI', duration: '9:15', type: 'video', videoUrl: 'https://www.youtube.com/embed/z57Xyv6p6nE?autoplay=1' },
@@ -3736,83 +4429,87 @@ const certifications = ref([
     // --- ASSOCIATE ---
     {
       code: 'SAA-C03', name: 'Solutions Architect', category: 'Associate',
-      image: '/badges/saa-badge.png', color: 'bg-blue-600', icon: '🏗️',
+      image: '/badges/saa-badge.png', color: 'bg-blue-600', icon: 'ðŸ—ï¸',
       domains: [
-        { name: 'Secure Architectures', description: 'Design secure access, data protection, and robust security tiers.', icon: '🔐', modules: [] },
-        { name: 'Resilient Architectures', description: 'Design scalable, fault-tolerant, and highly available systems.', icon: '🔄', modules: [] },
-        { name: 'High-Performing Architectures', description: 'Optimize compute, storage, networking, and database solutions.', icon: '⚡', modules: [] },
-        { name: 'Cost-Optimized Architectures', description: 'Design cost-effective compute, storage, and network architectures.', icon: '💰', modules: [] }
+        { name: 'Secure Architectures', description: 'Design secure access, data protection, and robust security tiers.', icon: 'ðŸ”', modules: [] },
+        { name: 'Resilient Architectures', description: 'Design scalable, fault-tolerant, and highly available systems.', icon: 'ðŸ”„', modules: [] },
+        { name: 'High-Performing Architectures', description: 'Optimize compute, storage, networking, and database solutions.', icon: 'âš¡', modules: [] },
+        { name: 'Cost-Optimized Architectures', description: 'Design cost-effective compute, storage, and network architectures.', icon: 'ðŸ’°', modules: [] }
       ]
     },
     {
       code: 'DVA-C02', name: 'Developer Associate', category: 'Associate',
-      image: '/badges/dva-badge.png', color: 'bg-blue-500', icon: '💻',
+      image: '/badges/dva-badge.png', color: 'bg-blue-500', icon: 'ðŸ’»',
       domains: [
-        { name: 'Development with AWS', description: 'Code for serverless applications, APIs, and AWS integration.', icon: '👨‍💻', modules: [] },
-        { name: 'Security', description: 'Implement application security, encryption, and IAM authentication.', icon: '🔑', modules: [] },
-        { name: 'Deployment', description: 'Deploy applications using CI/CD pipelines and AWS deployment tools.', icon: '🚢', modules: [] },
-        { name: 'Troubleshooting & Optimization', description: 'Monitor, trace, and optimize code performance on AWS.', icon: '🔧', modules: [] }
+        { name: 'Domain 1: Development with AWS Services', description: 'Lambda, API Gateway, DynamoDB, S3, SQS/SNS, Step Functions.', icon: 'ðŸ‘¨â€ðŸ’»', modules: [] },
+        { name: 'Domain 2: Security', description: 'IAM, Cognito, encryption, secrets management, application security.', icon: 'ðŸ”‘', modules: [] },
+        { name: 'Domain 3: Deployment', description: 'CI/CD, Elastic Beanstalk, CloudFormation, SAM, containers.', icon: 'ðŸš¢', modules: [] },
+        { name: 'Domain 4: Troubleshooting & Optimization', description: 'CloudWatch, X-Ray, performance tuning, caching, cost optimization.', icon: 'ðŸ”§', modules: [] }
       ]
     },
     {
       code: 'SOA-C02', name: 'SysOps Admin', category: 'Associate',
-      image: '/badges/soa-badge.png', color: 'bg-blue-400', icon: '⚙️',
+      image: '/badges/soa-badge.png', color: 'bg-blue-400', icon: 'âš™ï¸',
       domains: [
-        { name: 'Monitoring & Logging', description: 'Implement metrics, alarms, and remediation strategies.', icon: '📈', modules: [] },
-        { name: 'Reliability & Continuity', description: 'Implement scalable environments and disaster recovery.', icon: '🏥', modules: [] },
-        { name: 'Deployment & Provisioning', description: 'Automate infrastructure using CloudFormation and Systems Manager.', icon: '🏗️', modules: [] },
-        { name: 'Security & Compliance', description: 'Implement and manage security policies and compliance frameworks.', icon: '📋', modules: [] }
+        { name: 'Monitoring & Logging', description: 'Implement metrics, alarms, and remediation strategies.', icon: 'ðŸ“ˆ', modules: [] },
+        { name: 'Reliability & Continuity', description: 'Implement scalable environments and disaster recovery.', icon: 'ðŸ¥', modules: [] },
+        { name: 'Deployment & Provisioning', description: 'Automate infrastructure using CloudFormation and Systems Manager.', icon: 'ðŸ—ï¸', modules: [] },
+        { name: 'Security & Compliance', description: 'Implement and manage security policies and compliance frameworks.', icon: 'ðŸ“‹', modules: [] }
       ]
     },
     {
       code: 'DEA-C01', name: 'Data Engineering', category: 'Associate',
-      image: '/badges/dea-badge.png', color: 'bg-teal-500', icon: '🗄️',
+      image: '/badges/dea-badge.png', color: 'bg-teal-500', icon: 'ðŸ—„ï¸',
       domains: [
-        { name: 'Data Ingestion & Transformation', description: 'Design data pipelines, ETL processes, and stream processing.', icon: '🌊', modules: [] },
-        { name: 'Data Store Management', description: 'Manage operational databases, data warehouses, and data lakes.', icon: '💾', modules: [] },
-        { name: 'Data Operations & Support', description: 'Automate data processing and maintain pipeline reliability.', icon: '⚙️', modules: [] },
-        { name: 'Data Security & Governance', description: 'Implement data encryption, auditing, and access controls.', icon: '🔒', modules: [] }
+        { name: 'Domain 1: Data Ingestion & Transformation', description: 'Design data pipelines, ETL processes, and stream processing.', icon: 'ðŸŒŠ', modules: [] },
+        { name: 'Domain 2: Data Store Management', description: 'Manage operational databases, data warehouses, and data lakes.', icon: 'ðŸ’¾', modules: [] },
+        { name: 'Domain 3: Data Operations & Support', description: 'Automate data processing and maintain pipeline reliability.', icon: 'âš™ï¸', modules: [] },
+        { name: 'Domain 4: Data Security & Governance', description: 'Implement data encryption, auditing, and access controls.', icon: 'ðŸ”’', modules: [] }
       ]
     },
 
     // --- PROFESSIONAL ---
     {
       code: 'AIP-C01', name: 'Generative AI Developer', category: 'Professional',
-      image: '/badges/aip-badge.png', color: 'bg-cyan-500', icon: '🧠',
+      image: '/badges/aip-badge.png', color: 'bg-cyan-500', icon: 'ðŸ§ ',
       domains: [
-        { name: 'Gen AI Fundamentals', description: 'Advanced understanding of LLMs, fine-tuning, and RAG architectures.', icon: '📚', modules: [] },
-        { name: 'Implementation & Operations', description: 'Deploying, monitoring, and scaling Gen AI models in production.', icon: '🏭', modules: [] },
-        { name: 'Security & Governance', description: 'Managing model toxicity, compliance, and secure data handling.', icon: '🛡️', modules: [] }
+        { name: 'Domain 1: GenAI Fundamentals', description: 'FM integration, data management, vector stores, RAG, and compliance.', icon: 'ðŸ“š', modules: [] },
+        { name: 'Domain 2: Implementation & Integration', description: 'Agentic AI, deployment strategies, enterprise integration, and resilience.', icon: 'ðŸ­', modules: [] },
+        { name: 'Domain 3: AI Safety & Governance', description: 'Security, responsible AI, guardrails, and compliance frameworks.', icon: 'ðŸ›¡ï¸', modules: [] },
+        { name: 'Domain 4: Operational Efficiency', description: 'Cost optimization, monitoring, scaling, and performance tuning.', icon: 'âš¡', modules: [] },
+        { name: 'Domain 5: Testing & Troubleshooting', description: 'Evaluation metrics, debugging, validation, and model comparison.', icon: 'ðŸ”', modules: [] }
       ]
     },
     {
       code: 'SAP-C02', name: 'Solutions Architect Pro', category: 'Professional',
-      image: '/badges/sap-badge.png', color: 'bg-indigo-700', icon: '🏛️',
+      image: '/badges/sap-badge.png', color: 'bg-indigo-700', icon: 'ðŸ›ï¸',
       domains: [
-        { name: 'Organizational Complexity', description: 'Design multi-account environments and complex network topologies.', icon: '🏢', modules: [] },
-        { name: 'New Solutions', description: 'Architect massive, highly scalable, and specialized enterprise solutions.', icon: '✨', modules: [] },
-        { name: 'Migration Planning', description: 'Plan large-scale enterprise migrations to the AWS Cloud.', icon: '🚚', modules: [] },
-        { name: 'Cost Control & Improvement', description: 'Implement advanced enterprise cost allocation and optimization.', icon: '📉', modules: [] }
+        { name: 'Organizational Complexity', description: 'Design multi-account environments and complex network topologies.', icon: 'ðŸ¢', modules: [] },
+        { name: 'New Solutions', description: 'Architect massive, highly scalable, and specialized enterprise solutions.', icon: 'âœ¨', modules: [] },
+        { name: 'Migration Planning', description: 'Plan large-scale enterprise migrations to the AWS Cloud.', icon: 'ðŸšš', modules: [] },
+        { name: 'Cost Control & Improvement', description: 'Implement advanced enterprise cost allocation and optimization.', icon: 'ðŸ“‰', modules: [] }
       ]
     },
     {
       code: 'DOP-C02', name: 'DevOps Engineer Pro', category: 'Professional',
-      image: '/badges/dop-badge.png', color: 'bg-indigo-600', icon: '♾️',
+      image: '/badges/dop-badge.png', color: 'bg-indigo-600', icon: 'â™¾ï¸',
       domains: [
-        { name: 'SDLC Automation', description: 'Automate complex software delivery lifecycles and CI/CD pipelines.', icon: '⚙️', modules: [] },
-        { name: 'Configuration & IaC', description: 'Manage complex infrastructure as code and configuration management.', icon: '📜', modules: [] },
-        { name: 'Incident & Event Response', description: 'Design automated incident routing and remediation systems.', icon: '🚨', modules: [] },
-        { name: 'High Availability & DR', description: 'Implement multi-region architectures and automated disaster recovery.', icon: '🌍', modules: [] }
+        { name: 'Domain 1: SDLC Automation', description: 'Implement CI/CD pipelines, deployment strategies, and automated testing.', icon: 'âš™ï¸', modules: [] },
+        { name: 'Domain 2: Configuration & IaC', description: 'Manage infrastructure as code with CloudFormation, CDK, and configuration management.', icon: 'ðŸ“œ', modules: [] },
+        { name: 'Domain 3: Resilient Architectures', description: 'Design highly available, fault-tolerant, and self-healing systems.', icon: 'ðŸ—ï¸', modules: [] },
+        { name: 'Domain 4: Monitoring & Logging', description: 'Implement observability, centralized logging, and automated alerting.', icon: 'ðŸ“Š', modules: [] },
+        { name: 'Domain 5: Incident & Event Response', description: 'Automate incident detection, routing, and remediation.', icon: 'ðŸš¨', modules: [] },
+        { name: 'Domain 6: Security & Compliance', description: 'Implement security automation, secrets management, and compliance as code.', icon: 'ðŸ”’', modules: [] }
       ]
     },
 
     // --- SPECIALTY ---
     {
       code: 'MLS-C01', name: 'Machine Learning', category: 'Specialty',
-      image: '/badges/mls-badge.png', color: 'bg-purple-600', icon: '🤖',
+      image: '/badges/mls-badge.png', color: 'bg-purple-600', icon: 'ðŸ¤–',
       domains: [
         {
-          name: 'Data Engineering', description: 'Data ingestion, transformation, and feature engineering for ML.', icon: '🗄️',
+          name: 'Domain 1: Data Engineering', description: 'Data ingestion, transformation, and feature engineering for ML.', icon: 'ðŸ—„ï¸',
           modules: [
             { id: 'mls1-1', title: 'Building S3 Data Lakes', duration: '14:00', type: 'video', videoUrl: 'https://www.youtube.com/embed/k1RI5locZE4?autoplay=1' },
             { id: 'mls1-2', title: 'ETL Pipelines with AWS Glue', duration: '20:45', type: 'video', videoUrl: 'https://www.youtube.com/embed/5T2k2n0P3q8?autoplay=1' },
@@ -3820,7 +4517,7 @@ const certifications = ref([
           ]
         },
         {
-          name: 'Exploratory Data Analysis', description: 'Sanitizing, preparing, and visualizing data for modeling.', icon: '📊',
+          name: 'Domain 2: Exploratory Data Analysis', description: 'Sanitizing, preparing, and visualizing data for modeling.', icon: 'ðŸ“Š',
           modules: [
             { id: 'mls2-1', title: 'Handling Missing Data & Outliers', duration: '12:30', type: 'video', videoUrl: 'https://www.youtube.com/embed/8b512c-n-X8?autoplay=1' },
             { id: 'mls2-2', title: 'Data Visualization with QuickSight', duration: '15:20', type: 'video', videoUrl: 'https://www.youtube.com/embed/K81l-R1Xl7A?autoplay=1' },
@@ -3828,7 +4525,7 @@ const certifications = ref([
           ]
         },
         {
-          name: 'Modeling', description: 'Framing problems, selecting algorithms, and training ML models.', icon: '🧠',
+          name: 'Domain 3: Modeling', description: 'Framing problems, selecting algorithms, and training ML models.', icon: 'ðŸ§ ',
           modules: [
             { id: 'mls3-1', title: 'Built-in SageMaker Algorithms', duration: '25:00', type: 'video', videoUrl: 'https://www.youtube.com/embed/YpQ_M-K535U?autoplay=1' },
             { id: 'mls3-2', title: 'Hyperparameter Tuning Strategies', duration: '16:40', type: 'video', videoUrl: 'https://www.youtube.com/embed/u1Q_q0XfJ2M?autoplay=1' },
@@ -3836,7 +4533,7 @@ const certifications = ref([
           ]
         },
         {
-          name: 'ML Implementation & Ops', description: 'Deploying, monitoring, and maintaining models in production.', icon: '🚀',
+          name: 'Domain 4: ML Implementation & Ops', description: 'Deploying, monitoring, and maintaining models in production.', icon: 'ðŸš€',
           modules: [
             { id: 'mls4-1', title: 'Deploying SageMaker Endpoints', duration: '14:50', type: 'video', videoUrl: 'https://www.youtube.com/embed/3K3qXv9Pz0s?autoplay=1' },
             { id: 'mls4-2', title: 'Model Monitor and Drift Detection', duration: '17:35', type: 'video', videoUrl: 'https://www.youtube.com/embed/z1X_u6I0D4w?autoplay=1' },
@@ -3847,28 +4544,126 @@ const certifications = ref([
     },
     {
       code: 'SCS-C02', name: 'Security Specialty', category: 'Specialty',
-      image: '/badges/scs-badge.png', color: 'bg-red-600', icon: '🛡️',
+      image: '/badges/scs-badge.png', color: 'bg-red-600', icon: 'ðŸ›¡ï¸',
       domains: [
-        { name: 'Threat Protection & IR', description: 'Implement threat detection, response, and remediation.', icon: '🎯', modules: [] },
-        { name: 'Security Monitoring', description: 'Design and implement advanced security logging and monitoring.', icon: '👁️', modules: [] },
-        { name: 'Identity & Access Management', description: 'Design complex, cross-account IAM and permission boundaries.', icon: '🔑', modules: [] },
-        { name: 'Data Protection', description: 'Implement advanced encryption, key management, and data privacy.', icon: '💎', modules: [] }
+        { name: 'Threat Protection & IR', description: 'Implement threat detection, response, and remediation.', icon: 'ðŸŽ¯', modules: [] },
+        { name: 'Security Monitoring', description: 'Design and implement advanced security logging and monitoring.', icon: 'ðŸ‘ï¸', modules: [] },
+        { name: 'Identity & Access Management', description: 'Design complex, cross-account IAM and permission boundaries.', icon: 'ðŸ”‘', modules: [] },
+        { name: 'Data Protection', description: 'Implement advanced encryption, key management, and data privacy.', icon: 'ðŸ’Ž', modules: [] }
       ]
     },
     {
       code: 'ANS-C01', name: 'Advanced Networking', category: 'Specialty',
-      image: '/badges/ans-badge.png', color: 'bg-purple-500', icon: '🌐',
+      image: '/badges/ans-badge.png', color: 'bg-purple-500', icon: 'ðŸŒ',
       domains: [
-        { name: 'Network Design', description: 'Design complex hybrid and cloud-native network architectures.', icon: '📐', modules: [] },
-        { name: 'Network Implementation', description: 'Implement routing, Direct Connect, and Transit Gateway solutions.', icon: '🔌', modules: [] },
-        { name: 'Network Management', description: 'Operate and maintain complex AWS network infrastructure.', icon: '🎛️', modules: [] },
-        { name: 'Security & Troubleshooting', description: 'Implement network security controls and troubleshoot connectivity.', icon: '🔍', modules: [] }
+        { name: 'Domain 1: Network Design', description: 'VPC architecture, CIDR planning, hybrid connectivity, multi-region topologies, and edge networking.', icon: 'ðŸ“', modules: [] },
+        { name: 'Domain 2: Network Implementation', description: 'Implement routing, Direct Connect, Transit Gateway, and VPN solutions.', icon: 'ðŸ”Œ', modules: [] },
+        { name: 'Domain 3: Network Management', description: 'Operate, maintain, and monitor complex AWS network infrastructure.', icon: 'ðŸŽ›ï¸', modules: [] },
+        { name: 'Domain 4: Network Security', description: 'Implement network security controls, firewalls, and encryption in transit.', icon: 'ðŸ”’', modules: [] }
       ]
     }
   ]);
 
-// 📚 The Central Data Dictionary for All Certifications
+// ðŸ“š The Central Data Dictionary for All Certifications
 const allCertDomains = {
+  'CLF-C02': [
+    {
+      title: "Domain 1: Cloud Concepts", weight: "24%",
+      topics: ["Six Advantages of Cloud", "Cloud Deployment Models (Public/Hybrid/Private)", "Well-Architected Framework (6 Pillars)", "Shared Responsibility Model", "Cloud Economics (CapEx vs OpEx)"],
+      keyFact: "The Shared Responsibility Model is the most tested concept: AWS secures the cloud infrastructure; you secure everything you put in it."
+    },
+    {
+      title: "Domain 2: Security & Compliance", weight: "30%",
+      topics: ["IAM (Users, Groups, Roles, Policies)", "MFA & Access Keys", "AWS Organizations & SCPs", "Security Services (GuardDuty, Inspector, Macie)", "Compliance Programs"],
+      keyFact: "IAM policies follow least privilege: grant only the minimum permissions needed to perform a task."
+    },
+    {
+      title: "Domain 3: Cloud Technology & Services", weight: "34%",
+      topics: ["EC2, Lambda, ECS", "S3, EBS, EFS", "VPC, CloudFront, Route 53", "RDS, DynamoDB, ElastiCache", "CloudFormation, CloudWatch, Trusted Advisor"],
+      keyFact: "This is the largest domain â€” know what each core service does and when to use it, not how to configure it."
+    },
+    {
+      title: "Domain 4: Billing & Pricing", weight: "12%",
+      topics: ["Pricing Models (On-Demand, Reserved, Spot, Savings Plans)", "AWS Free Tier", "AWS Budgets & Cost Explorer", "Support Plans", "AWS Organizations (consolidated billing)"],
+      keyFact: "Savings Plans and Reserved Instances offer up to 72% savings for steady-state workloads; Spot Instances save up to 90% for interruptible workloads."
+    }
+  ],
+  'SAA-C03': [
+    {
+      title: "Domain 1: Design Secure Architectures", weight: "30%",
+      topics: ["IAM (Roles, Policies, Federation)", "VPC (Subnets, NACLs, Security Groups)", "Encryption (KMS, ACM, S3)", "AWS Organizations & SCPs", "WAF, Shield, GuardDuty"],
+      keyFact: "Security Groups are stateful (return traffic auto-allowed). NACLs are stateless (must explicitly allow both inbound and outbound)."
+    },
+    {
+      title: "Domain 2: Design Resilient Architectures", weight: "26%",
+      topics: ["Multi-AZ & Multi-Region", "Auto Scaling & ELB", "Decoupling (SQS, SNS, EventBridge)", "Backup & DR Strategies", "Route 53 Failover"],
+      keyFact: "RTO = how fast you recover. RPO = how much data you can lose. Pilot Light < Warm Standby < Active-Active in cost and recovery speed."
+    },
+    {
+      title: "Domain 3: Design High-Performing Architectures", weight: "24%",
+      topics: ["EC2 Instance Types & Placement Groups", "EBS vs. EFS vs. S3", "CloudFront & Global Accelerator", "RDS vs. DynamoDB vs. ElastiCache", "Lambda & Serverless Patterns"],
+      keyFact: "CloudFront caches at edge locations for static content. Global Accelerator uses AWS backbone for dynamic content with static IPs."
+    },
+    {
+      title: "Domain 4: Design Cost-Optimized Architectures", weight: "20%",
+      topics: ["EC2 Pricing (On-Demand, Reserved, Spot, Savings Plans)", "S3 Storage Classes & Lifecycle", "Right-sizing & Compute Optimizer", "Data Transfer Costs", "Serverless vs. Provisioned"],
+      keyFact: "S3 Intelligent-Tiering automatically moves objects between access tiers with no retrieval fees - ideal when access patterns are unknown."
+    }
+  ],
+  'DVA-C02': [
+    {
+      title: "Domain 1: Development with AWS Services", weight: "32%",
+      topics: ["Lambda (invocation, concurrency, layers, aliases)", "API Gateway (REST/HTTP, proxy, stages, caching)", "DynamoDB (keys, RCU/WCU, GSI, Streams, TTL)", "S3 (pre-signed URLs, multipart, events)", "SQS/SNS (Standard/FIFO, DLQ, fan-out)"],
+      keyFact: "Lambda initialization code outside the handler runs once per cold start and is reused across warm invocations. Always put SDK clients and DB connections outside the handler."
+    },
+    {
+      title: "Domain 2: Security", weight: "26%",
+      topics: ["IAM (roles, policies, STS, cross-account)", "Cognito (User Pools, Identity Pools, triggers)", "KMS (envelope encryption, encryption context)", "Secrets Manager vs. Parameter Store", "API Gateway Authorization (IAM, Cognito, Lambda)"],
+      keyFact: "Cognito User Pools handle authentication (JWT tokens). Identity Pools handle authorization (temporary AWS credentials). They're often used together."
+    },
+    {
+      title: "Domain 3: Deployment", weight: "24%",
+      topics: ["Elastic Beanstalk (deployment policies, .ebextensions)", "CloudFormation (SAM, nested stacks, transforms)", "CodeDeploy (EC2/ECS/Lambda strategies)", "CodePipeline + CodeBuild", "Container Deployment (ECS, ECR, Fargate)"],
+      keyFact: "SAM (Serverless Application Model) is a CloudFormation extension that simplifies serverless deployments with shorthand syntax for Lambda, API Gateway, and DynamoDB."
+    },
+    {
+      title: "Domain 4: Troubleshooting & Optimization", weight: "18%",
+      topics: ["CloudWatch (metrics, logs, alarms, EMF, Agent)", "X-Ray (traces, annotations, sampling, service map)", "Lambda errors (timeout, OOM, throttling, cold starts)", "DynamoDB optimization (DAX, key design, capacity)", "Caching (CloudFront, API GW, ElastiCache, DAX)"],
+      keyFact: "X-Ray Annotations are indexed and searchable (filter traces by user_id). Metadata is NOT indexed. Use annotations for fields you'll filter on."
+    }
+  ],
+  'SOA-C02': [
+    {
+      title: "Domain 1: Monitoring, Logging & Remediation", weight: "20%",
+      topics: ["CloudWatch (Metrics, Logs, Alarms, Dashboards)", "EventBridge (Rules, Targets, Automation)", "CloudTrail (API Auditing)", "AWS Config (Compliance Rules)", "Auto-Remediation (SSM, Lambda)"],
+      keyFact: "CloudWatch Composite Alarms combine multiple alarms with AND/OR logic to reduce alarm noise and trigger only on correlated failures."
+    },
+    {
+      title: "Domain 2: Reliability & Business Continuity", weight: "15%",
+      topics: ["Multi-AZ & Multi-Region", "Auto Scaling (Policies, Lifecycle Hooks)", "Backup & Restore (AWS Backup)", "DR Strategies (Pilot Light, Warm Standby)", "Route 53 Health Checks & Failover"],
+      keyFact: "AWS Backup provides centralized, policy-based backup across services (EC2, RDS, EFS, DynamoDB, S3) with cross-region and cross-account copy."
+    },
+    {
+      title: "Domain 3: Deployment, Provisioning & Automation", weight: "18%",
+      topics: ["CloudFormation (Stacks, StackSets, Drift Detection)", "Systems Manager (Run Command, Patch Manager, State Manager)", "Elastic Beanstalk (Deployment Policies)", "AMI Management & EC2 Image Builder", "OpsWorks & Automation Documents"],
+      keyFact: "CloudFormation StackSets deploy infrastructure across multiple accounts and regions from a single template. Drift detection identifies manual changes."
+    },
+    {
+      title: "Domain 4: Security & Compliance", weight: "16%",
+      topics: ["IAM (Policies, Roles, Permission Boundaries)", "AWS Config Rules & Conformance Packs", "GuardDuty, Inspector, Macie", "KMS & Encryption", "AWS Organizations & SCPs"],
+      keyFact: "AWS Config continuously evaluates resource configurations against rules. Auto-remediation via SSM Automation documents can fix non-compliant resources automatically."
+    },
+    {
+      title: "Domain 5: Networking & Content Delivery", weight: "18%",
+      topics: ["VPC (Subnets, Route Tables, NAT, Peering)", "VPN & Direct Connect", "CloudFront & Route 53", "VPC Endpoints (Gateway vs Interface)", "Troubleshooting Connectivity"],
+      keyFact: "VPC Flow Logs capture metadata (not content) at ENI/subnet/VPC level. Use Reachability Analyzer for path analysis without sending traffic."
+    },
+    {
+      title: "Domain 6: Cost & Performance Optimization", weight: "13%",
+      topics: ["Cost Explorer & Budgets", "Trusted Advisor & Compute Optimizer", "S3 Storage Classes & Lifecycle", "EC2 Pricing (Reserved, Spot, Savings Plans)", "Performance Monitoring & Right-Sizing"],
+      keyFact: "AWS Compute Optimizer uses ML to analyze utilization and recommend optimal EC2 instance types, EBS volumes, and Lambda memory settings."
+    }
+  ],
   'AIF-C01': [
     {
       title: "Domain 1: Fundamentals of AI & ML", weight: "20%",
@@ -3891,31 +4686,183 @@ const allCertDomains = {
       keyFact: "Bedrock Guardrails allow you to implement safeguards across foundation models based on your specific use cases."
     }
   ],
+  'AIP-C01': [
+    {
+      title: "Domain 1: GenAI Fundamentals", weight: "31%",
+      topics: ["FM Selection & Configuration", "RAG Architecture", "Vector Stores & Retrieval", "Chunking Strategies", "Data Compliance"],
+      keyFact: "Bedrock Knowledge Bases handles chunking, embedding, indexing, and retrieval as a managed RAG solution."
+    },
+    {
+      title: "Domain 2: Implementation & Integration", weight: "26%",
+      topics: ["Bedrock Agents & Action Groups", "Multi-Agent Collaboration", "Step Functions Orchestration", "API Patterns (Sync/Stream/Async)", "Error Handling & Resilience"],
+      keyFact: "Agents use the ReAct pattern (Reasoning + Acting) to autonomously plan, execute tools, and adapt based on observations."
+    },
+    {
+      title: "Domain 3: AI Safety & Governance", weight: "20%",
+      topics: ["Bedrock Guardrails", "Prompt Injection Mitigation", "Shared Responsibility Model", "IAM for AI", "Compliance Frameworks"],
+      keyFact: "Bedrock guarantees your data is never used to train base models and is never shared with model providers."
+    },
+    {
+      title: "Domain 4: Operational Efficiency", weight: "12%",
+      topics: ["Cost Optimization", "Provisioned Throughput", "Monitoring & Observability", "Scaling Strategies", "Caching"],
+      keyFact: "Use smaller models for simple tasks and Provisioned Throughput for steady high-volume workloads to optimize cost."
+    },
+    {
+      title: "Domain 5: Testing & Troubleshooting", weight: "11%",
+      topics: ["Model Evaluation Metrics", "ROUGE & BLEU Scores", "Bedrock Evaluations", "Debugging RAG", "A/B Testing Models"],
+      keyFact: "Bedrock Evaluations lets you run automatic metrics, human evaluation, and custom criteria against your test dataset."
+    }
+  ],
+  'SAP-C02': [
+    {
+      title: "Domain 1: Design for Organizational Complexity", weight: "26%",
+      topics: ["Multi-Account Strategy (Organizations, Control Tower)", "Cross-Account Access (RAM, STS, Resource Policies)", "Complex Networking (Transit Gateway, Direct Connect, PrivateLink)", "Hybrid Architectures", "Identity Federation (SSO, SAML, OIDC)"],
+      keyFact: "AWS Control Tower automates multi-account setup with guardrails (preventive SCPs + detective Config rules) and an Account Factory for standardized provisioning."
+    },
+    {
+      title: "Domain 2: Design for New Solutions", weight: "29%",
+      topics: ["Serverless at Scale (Lambda, Step Functions, EventBridge)", "Container Orchestration (ECS, EKS, Fargate)", "Data Lakes & Analytics (Lake Formation, Athena, Redshift)", "ML Integration (SageMaker, Bedrock)", "IoT & Edge Computing"],
+      keyFact: "For massive scale, design with event-driven architectures: EventBridge for routing, SQS for buffering, Lambda for processing, and DynamoDB for state."
+    },
+    {
+      title: "Domain 3: Continuous Improvement for Existing Solutions", weight: "25%",
+      topics: ["Performance Optimization (Caching, CDN, DB Tuning)", "Cost Optimization (Savings Plans, Spot, Right-Sizing)", "Operational Excellence (Automation, IaC, Observability)", "Reliability Improvements (Multi-Region, Chaos Engineering)", "Security Hardening"],
+      keyFact: "Well-Architected Reviews identify improvement areas across all 6 pillars. Use AWS Well-Architected Tool for structured assessments."
+    },
+    {
+      title: "Domain 4: Accelerate Workload Migration", weight: "20%",
+      topics: ["Migration Strategies (7 Rs)", "AWS Migration Hub & MGN", "Database Migration (DMS, SCT)", "Large-Scale Data Transfer (Snow, DataSync)", "Modernization (Containers, Serverless, Microservices)"],
+      keyFact: "The 7 Rs: Retire, Retain, Rehost (lift-and-shift), Relocate, Repurchase, Replatform (lift-tinker-shift), Refactor (re-architect). Each has different effort and value."
+    }
+  ],
   'DOP-C02': [
     {
       title: "Domain 1: SDLC Automation", weight: "22%",
-      topics: ["CI/CD Pipelines", "AWS CodePipeline & CodeBuild", "Deployment Strategies"],
-      keyFact: "AWS CodeDeploy supports in-place and blue/green deployments for EC2, but Lambda only supports blue/green or canary."
+      topics: ["CodePipeline (V2, triggers, execution modes)", "CodeBuild (buildspec, caching, VPC)", "CodeDeploy (EC2/ECS/Lambda strategies)", "Deployment Strategies (Blue/Green, Canary, Linear)", "Automated Testing & Quality Gates"],
+      keyFact: "CodeDeploy deployment types vary by compute: EC2 supports In-Place and Blue/Green; ECS supports Blue/Green only; Lambda supports Canary, Linear, and AllAtOnce."
     },
     {
-      title: "Domain 2: Configuration Management and IaC", weight: "17%",
-      topics: ["AWS CloudFormation", "AWS CDK", "AWS Systems Manager"],
-      keyFact: "CloudFormation StackSets allow you to deploy infrastructure across multiple AWS accounts and regions simultaneously."
+      title: "Domain 2: Configuration & IaC", weight: "17%",
+      topics: ["CloudFormation (stacks, nested, StackSets, drift)", "AWS CDK (constructs, pipelines)", "Systems Manager (SSM, Parameter Store, Automation)", "AWS Config (rules, remediation)", "AMI Management & Patching"],
+      keyFact: "CloudFormation StackSets deploy infrastructure across multiple accounts and regions simultaneously from a single template."
     },
     {
-      title: "Domain 3: Monitoring and Logging", weight: "15%",
-      topics: ["Amazon CloudWatch", "AWS CloudTrail", "Amazon EventBridge"],
-      keyFact: "CloudWatch Logs Insights enables you to interactively search and analyze your log data using a purpose-built query language."
+      title: "Domain 3: Resilient Architectures", weight: "15%",
+      topics: ["Multi-AZ & Multi-Region", "Auto Scaling (predictive, scheduled, dynamic)", "Self-Healing (health checks, replacement)", "DR Strategies (Pilot Light, Warm Standby, Active-Active)", "Chaos Engineering"],
+      keyFact: "Auto Scaling lifecycle hooks let you perform custom actions (drain connections, deregister) before instances terminate."
     },
     {
-      title: "Domain 4: Policies and Standards Automation", weight: "14%",
-      topics: ["AWS Config", "AWS Security Hub", "IAM Best Practices"],
-      keyFact: "AWS Config continuously monitors and records your AWS resource configurations to automate the evaluation of recorded configurations against desired guidelines."
+      title: "Domain 4: Monitoring & Logging", weight: "15%",
+      topics: ["CloudWatch (metrics, logs, alarms, dashboards)", "X-Ray (distributed tracing)", "Centralized Logging (Kinesis, OpenSearch)", "CloudWatch Logs Insights", "Composite Alarms & Anomaly Detection"],
+      keyFact: "CloudWatch Logs Insights enables interactive search and analysis of log data using a purpose-built query language."
+    },
+    {
+      title: "Domain 5: Incident & Event Response", weight: "18%",
+      topics: ["EventBridge (rules, event-driven automation)", "Systems Manager Incident Manager", "Auto-Remediation (Lambda, SSM Automation)", "Runbooks & Playbooks", "ChatOps (AWS Chatbot)"],
+      keyFact: "EventBridge + Lambda is the standard pattern for automated incident response: detect event, trigger remediation, notify team."
+    },
+    {
+      title: "Domain 6: Security & Compliance", weight: "13%",
+      topics: ["Secrets Manager & Parameter Store", "IAM (roles, policies, cross-account)", "AWS Config (compliance rules)", "Security Automation (GuardDuty, Inspector)", "Compliance as Code (SCPs, Config)"],
+      keyFact: "AWS Config rules provide continuous compliance monitoring; auto-remediation via SSM Automation documents can fix non-compliant resources automatically."
+    }
+  ],
+  'ANS-C01': [
+    {
+      title: "Domain 1: Network Design", weight: "30%",
+      topics: ["VPC Architecture & CIDR Planning", "Transit Gateway & Multi-Account", "Direct Connect & VPN", "BGP Routing", "Route 53 & DNS"],
+      keyFact: "Transit Gateway is the default hub for multi-VPC connectivity at scale, supporting route table segmentation to isolate environments."
+    },
+    {
+      title: "Domain 2: Network Implementation", weight: "26%",
+      topics: ["Direct Connect Setup", "Transit Gateway Configuration", "VPN Tunnels & ECMP", "Route Table Management", "PrivateLink Deployment"],
+      keyFact: "Transit VIF connects DX to TGW (access many VPCs); Private VIF connects DX to a single VGW (access one VPC)."
+    },
+    {
+      title: "Domain 3: Network Management", weight: "20%",
+      topics: ["CloudWatch Network Monitoring", "VPC Flow Logs", "Traffic Mirroring", "Network Manager", "Reachability Analyzer"],
+      keyFact: "VPC Flow Logs capture IP traffic metadata (not packet content) at the ENI, subnet, or VPC level for troubleshooting and compliance."
+    },
+    {
+      title: "Domain 4: Network Security", weight: "24%",
+      topics: ["AWS Network Firewall", "Security Groups & NACLs", "WAF & Shield", "TLS/Encryption in Transit", "DDoS Mitigation"],
+      keyFact: "AWS Network Firewall provides stateful inspection with Suricata-compatible rules, deployed in dedicated subnets with TGW routing for centralized inspection."
+    }
+  ],
+  'DEA-C01': [
+    {
+      title: "Domain 1: Data Ingestion & Transformation", weight: "34%",
+      topics: ["Kinesis (Streams, Firehose, Analytics)", "AWS Glue (ETL, Catalog, Crawlers, Bookmarks)", "Amazon MSK", "DMS & CDC", "Data Formats (Parquet, ORC, Avro)"],
+      keyFact: "Glue is the #1 service in this domain. Know Data Catalog, Crawlers, ETL Jobs, Bookmarks, DynamicFrames, and Data Quality."
+    },
+    {
+      title: "Domain 2: Data Store Management", weight: "26%",
+      topics: ["S3 Data Lake Architecture", "Redshift (Distribution, Sort Keys)", "DynamoDB Design", "Lake Formation", "Data Lifecycle Management"],
+      keyFact: "Redshift distribution styles (KEY, EVEN, ALL) and sort keys are critical for query performance optimization."
+    },
+    {
+      title: "Domain 3: Data Operations & Support", weight: "22%",
+      topics: ["Pipeline Monitoring (CloudWatch)", "Data Quality Validation", "Troubleshooting ETL Failures", "Auto-scaling & Performance", "Cost Optimization"],
+      keyFact: "Glue job bookmarks track processed data to enable incremental ETL without reprocessing."
+    },
+    {
+      title: "Domain 4: Data Security & Governance", weight: "18%",
+      topics: ["Lake Formation Permissions", "Encryption (KMS, S3, Redshift)", "VPC & Network Security", "Data Classification (Macie)", "Compliance & Auditing"],
+      keyFact: "Lake Formation provides fine-grained column-level and row-level security on data lake resources."
+    }
+  ],
+  'MLS-C01': [
+    {
+      title: "Domain 1: Data Engineering", weight: "20%",
+      topics: ["S3 Data Lakes", "Kinesis (Streams, Firehose, Analytics)", "AWS Glue (ETL, Catalog, Crawlers)", "Data Formats (RecordIO, Parquet, CSV)", "Data Pipeline Orchestration"],
+      keyFact: "RecordIO (protobuf) is the fastest format for SageMaker Pipe mode training. Parquet is best for analytics. CSV is universal but slow."
+    },
+    {
+      title: "Domain 2: Exploratory Data Analysis", weight: "24%",
+      topics: ["Statistics & Distributions", "Feature Engineering (Scaling, Encoding)", "Missing Data & Outliers", "Dimensionality Reduction (PCA, t-SNE)", "Imbalanced Data (SMOTE)"],
+      keyFact: "PCA requires standardization (Z-score) before applying. t-SNE is for visualization ONLY. SMOTE only on training data."
+    },
+    {
+      title: "Domain 3: Modeling", weight: "36%",
+      topics: ["SageMaker Built-in Algorithms", "Hyperparameter Tuning", "Model Evaluation Metrics", "Regularization (L1/L2)", "Deep Learning Frameworks"],
+      keyFact: "XGBoost is the most tested algorithm. Know: objective, num_round, max_depth, eta, subsample, colsample_bytree, scale_pos_weight."
+    },
+    {
+      title: "Domain 4: ML Implementation & Operations", weight: "20%",
+      topics: ["SageMaker Endpoints (Real-time, Batch, Async)", "Model Monitor & Drift Detection", "A/B Testing & Multi-Model", "MLOps Pipelines", "Security & IAM for ML"],
+      keyFact: "Model Monitor detects data drift, model quality drift, bias drift, and feature attribution drift in production endpoints."
+    }
+  ],
+  'SCS-C02': [
+    {
+      title: "Domain 1: Threat Detection & Incident Response", weight: "14%",
+      topics: ["GuardDuty (Threat Detection, Finding Types)", "Security Hub (Aggregation, Compliance)", "Detective (Investigation)", "Incident Response Automation", "Forensics & Containment"],
+      keyFact: "GuardDuty uses ML to analyze VPC Flow Logs, DNS logs, CloudTrail, S3 data events, and EKS audit logs to detect threats like compromised instances and credential exfiltration."
+    },
+    {
+      title: "Domain 2: Security Logging & Monitoring", weight: "18%",
+      topics: ["CloudTrail (Management/Data Events, Insights)", "VPC Flow Logs", "CloudWatch (Logs, Metrics, Alarms)", "S3 Access Logs", "Centralized Logging Architecture"],
+      keyFact: "CloudTrail Organization Trail captures API calls across ALL accounts. Log file integrity validation detects tampering using SHA-256 hash chains."
+    },
+    {
+      title: "Domain 3: Infrastructure Security", weight: "20%",
+      topics: ["VPC Security (NACLs, Security Groups, Endpoints)", "AWS Network Firewall (Stateful/Stateless)", "WAF & Shield Advanced", "DDoS Mitigation", "Systems Manager & Patch Management"],
+      keyFact: "AWS Network Firewall provides stateful deep packet inspection with Suricata-compatible IPS rules, deployed in dedicated subnets with centralized TGW routing."
+    },
+    {
+      title: "Domain 4: Identity & Access Management", weight: "16%",
+      topics: ["Advanced IAM Policies (Conditions, Variables)", "Cross-Account Access (STS, Resource Policies)", "Federation (SAML, OIDC, Identity Center)", "Permission Boundaries & SCPs", "Cognito & API Authorization"],
+      keyFact: "IAM policy conditions enable fine-grained control: aws:SourceIp, aws:RequestedRegion, aws:PrincipalOrgID, kms:ViaService, s3:prefix for per-user access."
+    },
+    {
+      title: "Domain 5: Data Protection", weight: "32%",
+      topics: ["KMS (Key Policies, Grants, Envelope Encryption)", "S3 Encryption (SSE-S3/KMS/C, Client-side)", "Certificate Management (ACM, Private CA)", "Secrets Management (Secrets Manager, Parameter Store)", "Data Classification (Macie)"],
+      keyFact: "KMS key policies are the PRIMARY access control for CMKs. Without key policy access, even IAM admin policies cannot use the key. Always check key policy first."
     }
   ]
 };
 
-// 🚨 THE ROUTER: This automatically swaps the data when the cert changes!
+// ðŸš¨ THE ROUTER: This automatically swaps the data when the cert changes!
 const currentForgeDomains = computed(() => {
   if (!selectedCert.value) return [];
   // If we don't have data for the specific cert yet, fallback to an empty array or a default
@@ -3941,13 +4888,13 @@ const uploadCsv = async () => {
     uploadStatus.value = 'Injecting into mainframes...';
 
     try {
-      // 🚨 CRITICAL FIX: Grab the user's security token from the browser!
+      // ðŸš¨ CRITICAL FIX: Grab the user's security token from the browser!
       const token = localStorage.getItem('aws_jwt');
 
-      const response = await fetch('http://localhost:8080/api/questions/upload', {
+      const response = await fetch(${API_BASE_URL}/api/questions/upload, {
         method: 'POST',
         headers: {
-          // 🚨 Include the token so Spring Boot doesn't block the upload!
+          // ðŸš¨ Include the token so Spring Boot doesn't block the upload!
           'Authorization': `Bearer ${token}`,
           'X-Admin-Key': 'masterkey'
         },
@@ -3964,11 +4911,11 @@ const uploadCsv = async () => {
           fetchAdminQuestions();
         }
       } else {
-        uploadStatus.value = '❌ Upload failed. The CSV format might be invalid or server rejected it.';
+        uploadStatus.value = 'âŒ Upload failed. The CSV format might be invalid or server rejected it.';
       }
     } catch (error) {
       console.error('Upload error:', error);
-      uploadStatus.value = '❌ Server connection lost.';
+      uploadStatus.value = 'âŒ Server connection lost.';
     }
   };
 
@@ -3985,26 +4932,26 @@ const uploadFlashcardCsv = async () => {
 
   try {
     const token = localStorage.getItem('aws_jwt');
-    const response = await fetch('http://localhost:8080/api/questions/flashcards/upload', {
+    const response = await fetch(${API_BASE_URL}/api/questions/flashcards/upload, {
       method: 'POST',
-      headers: { 'Authorization': `Bearer ${token}` },
+      headers: {'X-Admin-Key': 'masterkey', 'Authorization': `Bearer ${token}` },
       body: formData,
     });
 
     if (response.ok) {
       const result = await response.json();
-      flashcardUploadStatus.value = `✅ ${result.message}`;
+      flashcardUploadStatus.value = `âœ… ${result.message}`;
       selectedFlashcardCsv.value = null;
       if (typeof fetchAdminFlashcards === 'function') fetchAdminFlashcards();
     } else {
-      // 🚨 THE UNMASKER: If Java rejects the file, catch the raw text so we can read it!
+      // ðŸš¨ THE UNMASKER: If Java rejects the file, catch the raw text so we can read it!
       const errorText = await response.text();
       console.error("RAW JAVA ERROR:", errorText);
-      flashcardUploadStatus.value = `❌ Upload Failed. Press F12 and check the Console.`;
+      flashcardUploadStatus.value = `âŒ Upload Failed. Press F12 and check the Console.`;
     }
   } catch (error) {
     console.error("Network Crash:", error);
-    flashcardUploadStatus.value = '❌ Server connection lost.';
+    flashcardUploadStatus.value = 'âŒ Server connection lost.';
   }
 };
 
@@ -4055,7 +5002,7 @@ const selectCertification = (cert) => {
 
 const fetchLeaderboard = async () => {
   try {
-    const response = await fetch('http://localhost:8080/api/questions/leaderboard');
+    const response = await fetch(${API_BASE_URL}/api/questions/leaderboard);
     if (response.ok) {
       leaderboardData.value = await response.json();
     }
@@ -4072,7 +5019,7 @@ const handleAuth = async () => {
   const endpoint = isSignup.value ? '/register' : '/login';
 
   try {
-    const response = await fetch(`http://localhost:8080/api/auth${endpoint}`, {
+    const response = await fetch(`${API_BASE_URL}/api/auth${endpoint}`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(authForm.value)
@@ -4110,31 +5057,19 @@ const toggleAnswer = (optionId) => {
     // Guard: If no question is loaded or explanation is showing, do nothing
     if (!question.value || showExplanation.value) return;
 
-    playSound('click');
-
-    // 1. First, try to count the answers from the database (checking BOTH naming conventions)
-    const correctOptions = question.value.options.filter(o =>
-        o.isCorrect === true || String(o.isCorrect).toLowerCase() === 'true' ||
-        o.correct === true || String(o.correct).toLowerCase() === 'true'
-    );
-
+    // Determine max allowed selections based on question text ONLY
     let maxAllowed = 1;
 
-    // 2. Set maxAllowed based on the database...
-    if (correctOptions.length > 1) {
-      maxAllowed = correctOptions.length;
-    }
-    // 3. THE FAILSAFE: If the database hid the answers, read the text just like the UI does!
-    else if (isMultipleAnswer(question.value)) {
+    if (isMultipleAnswer(question.value)) {
       const text = question.value.questionText;
-      if (text.includes("THREE") || text.includes("Choose 3") || text.includes("Select 3")) {
+      if (text.includes("THREE") || text.includes("Choose 3") || text.includes("Select 3") || text.includes("select three")) {
         maxAllowed = 3;
       } else {
         maxAllowed = 2; // Default for AWS multi-select is 2
       }
     }
 
-    // 4. The Selection Logic
+    // Selection Logic
     if (maxAllowed === 1) {
       // Single choice: just replace the array
       selectedAnswers.value = [optionId];
@@ -4142,32 +5077,29 @@ const toggleAnswer = (optionId) => {
       // Multi-choice: Toggle logic
       const index = selectedAnswers.value.indexOf(optionId);
       if (index > -1) {
-        // If they clicked it again, uncheck it!
         selectedAnswers.value.splice(index, 1);
       } else if (selectedAnswers.value.length < maxAllowed) {
-        // If they haven't hit the limit yet, check it!
         selectedAnswers.value.push(optionId);
       }
     }
   };
 
 const deleteAttempt = async (attemptId) => {
-  if (!confirm("Are you sure you want to remove this attempt from your history?")) return;
-
   try {
-    const response = await fetch(`http://localhost:8080/api/questions/history/${attemptId}`, {
-      method: 'DELETE'
+    const token = localStorage.getItem('aws_jwt');
+    const response = await fetch(`${API_BASE_URL}/api/questions/history/${attemptId}`, {
+      method: 'DELETE',
+      headers: { 'Authorization': token ? `Bearer ${token}` : '' }
     });
 
     if (response.ok) {
-      playSound('trash');
-      // Refresh the table locally so the row disappears immediately
-      examHistory.value = examHistory.value.filter(a => a.id !== attemptId);
-
+      showToast("Attempt purged from archives.", "success");
+      examHistory.value = examHistory.value.filter(a => String(a.id) !== String(attemptId));
     } else {
-      alert("Failed to delete. Check if the backend endpoint exists.");
+      showToast("Failed to delete. Server rejected the request.", "error");
     }
   } catch (error) {
+    showToast("Connection failed. Could not delete.", "error");
   }
 };
 
@@ -4203,20 +5135,29 @@ const togglePause = () => {
   }
 };
 
+// 1. Controls the visibility of the sleek Abort Modal
+const showAbortModal = ref(false);
+
+// 2. Triggered by your "Exit" button in the HTML
 const abortQuiz = () => {
-    const wantsToLeave = confirm("⚠️ ABORT SIMULATION?\n\nAre you sure you want to exit? Your progress will be wiped, and no score or XP will be recorded.");
+    // Instead of a browser alert, we just turn on our custom modal
+    showAbortModal.value = true;
+  };
 
-    if (wantsToLeave) {
-      // 1. Kill the clocks
-      stopTimer();
-      if (amrapInterval) clearInterval(amrapInterval);
+// 3. Triggered ONLY if they click "Yes, Abort" inside the custom modal
+const confirmAbort = () => {
+    // 1. Kill the clocks
+    stopTimer();
+    if (amrapInterval) clearInterval(amrapInterval);
 
-      // 2. Erase the auto-save memory so they don't resume it on refresh
-      localStorage.removeItem('aws_active_exam');
+    // 2. Erase the auto-save memory so they don't resume it on refresh
+    localStorage.removeItem('aws_active_exam');
 
-      // 3. Wipe the board and send them to the lobby
-      resetSession();
-    }
+    // 3. Wipe the board and send them to the lobby
+    resetSession();
+
+    // 4. Hide the modal
+    showAbortModal.value = false;
   };
 
 const handlePrint = async () => { // <-- NOTE THE 'async' HERE!
@@ -4336,7 +5277,7 @@ const handlePrint = async () => { // <-- NOTE THE 'async' HERE!
   doc.save(`AWS_Hub_Report_${candidateName.replace(/\s+/g, '_')}.pdf`);
 };
 
-// 📄 DOCUMENT EXPORT ENGINE
+// ðŸ“„ DOCUMENT EXPORT ENGINE
 const downloadDocumentPDF = () => {
     if (!activeModule.value || activeModule.value.type !== 'document') return;
 
@@ -4369,18 +5310,18 @@ const downloadDocumentPDF = () => {
   };
 
 // 1. The API Call (Defined first, so other functions can see it)
-  // 🚨 FIX 1: Added the VIP Pass to the Streak tracker
+  // ðŸš¨ FIX 1: Added the VIP Pass to the Streak tracker
 const recordStudySession = async () => {
     if (!currentUser.value) return;
 
     try {
       const token = localStorage.getItem('aws_jwt'); // Grab the token!
 
-      const response = await fetch(`http://localhost:8080/api/users/${currentUser.value.username}/record-study`, {
+      const response = await fetch(`${API_BASE_URL}/api/users/${currentUser.value.username}/record-study`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}` // 🚨 THIS WAS MISSING
+          'Authorization': `Bearer ${token}` // ðŸš¨ THIS WAS MISSING
         }
       });
 
@@ -4393,19 +5334,22 @@ const recordStudySession = async () => {
     }
   };
 
-// 2. THE EXECUTOR: Fires ONLY after they check the box and agree
+// 2. Fires ONLY after they check the box and agree
 const proceedToStripe = async () => {
-    if (!hasAcceptedTerms.value) return; // Failsafe
+    if (!hasAcceptedTerms.value) return; // Failsafe: Don't run if they didn't agree
 
     const token = localStorage.getItem('aws_jwt');
     showAgreementModal.value = false; // Hide the contract
 
-    // Optional: Show a loading state here if you have one
+    // Prevent double-clicks!
+    isCheckoutLoading.value = true;
 
     try {
       const response = await fetch(`${API_BASE_URL}/api/payment/checkout`, {
         method: 'POST',
-        headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' }
+        headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+        // ðŸš¨ Inject the plan they selected during the prepareCheckout phase!
+        body: JSON.stringify({ planType: pendingPlanType.value })
       });
 
       if (response.ok) {
@@ -4416,16 +5360,28 @@ const proceedToStripe = async () => {
           localStorage.setItem('aws_return_cert', JSON.stringify(selectedCert.value));
         }
         window.location.href = data.checkoutUrl; // Warp to Stripe!
+
+      } else if (response.status === 400) {
+        // Catch double-charges
+        const errorData = await response.json();
+        if (errorData.error === "User is already a Premium member.") {
+          showAlreadyPremiumModal.value = true;
+        } else {
+          showToast(errorData.error || "Payment error.", "error");
+        }
       } else {
         const errorData = await response.json();
-        alert(errorData.error || "Payment gateway error.");
+        showToast(errorData.error || "Payment gateway error.", "error");
       }
     } catch (error) {
       console.error("Payment pipeline severed:", error);
+      showToast("Secure connection failed. Check your network.", "error");
+    } finally {
+      isCheckoutLoading.value = false; // Unlock the UI
     }
   };
 
-// 🚨 FIX 2: Added the VIP Pass to the XP tracker
+// ðŸš¨ FIX 2: Added the VIP Pass to the XP tracker
 const awardExperiencePoints = async () => {
     if (!currentUser.value) return;
 
@@ -4434,11 +5390,11 @@ const awardExperiencePoints = async () => {
     try {
       const token = localStorage.getItem('aws_jwt'); // Grab the token!
 
-      const response = await fetch(`http://localhost:8080/api/users/${currentUser.value.username}/award-xp`, {
+      const response = await fetch(`${API_BASE_URL}/api/users/${currentUser.value.username}/award-xp`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}` // 🚨 THIS WAS MISSING
+          'Authorization': `Bearer ${token}` // ðŸš¨ THIS WAS MISSING
         },
         body: JSON.stringify({
           correctCount: correctCount,
@@ -4549,7 +5505,7 @@ const submitAuth = async () => {
     authValidationMessage.value = "";
     authError.value = '';
 
-    // 🚨 THE INTERCEPTOR: Block the request BEFORE it goes to Java!
+    // ðŸš¨ THE INTERCEPTOR: Block the request BEFORE it goes to Java!
     if (!isLoginMode.value) {
       if (authForm.value.email !== authForm.value.confirmEmail) {
         authValidationMessage.value = "Emails do not match. Please verify.";
@@ -4565,7 +5521,7 @@ const submitAuth = async () => {
       const endpoint = isLoginMode.value ? '/api/auth/login' : '/api/users/register';
       console.log(`Initiating ${isLoginMode.value ? 'Login' : 'Registration'} Protocol...`);
 
-      const response = await fetch(`http://localhost:8080${endpoint}`, {
+      const response = await fetch(`${API_BASE_URL}${endpoint}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(authForm.value)
@@ -4573,7 +5529,7 @@ const submitAuth = async () => {
 
       if (response.ok) {
         if (!isLoginMode.value) {
-          // 🚨 REGISTRATION SUCCESS: Trigger the Welcome Modal
+          // ðŸš¨ REGISTRATION SUCCESS: Trigger the Welcome Modal
           showAuthModal.value = false;
           showWelcomeModal.value = true;
 
@@ -4581,7 +5537,7 @@ const submitAuth = async () => {
           setTimeout(async () => {
             showWelcomeModal.value = false;
 
-            const autoLoginResponse = await fetch('http://localhost:8080/api/auth/login', {
+            const autoLoginResponse = await fetch(${API_BASE_URL}/api/auth/login, {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
               body: JSON.stringify({
@@ -4642,7 +5598,7 @@ const upgradeToPremium = async () => {
     try {
       const token = localStorage.getItem('aws_jwt');
 
-      // 🚨 1. THE GUEST TRAPDOOR FIX: Tell them to log in first!
+      // ðŸš¨ 1. THE GUEST TRAPDOOR FIX: Tell them to log in first!
       if (!token) {
 
         // Auto-open the signup modal for them!
@@ -4667,17 +5623,17 @@ const upgradeToPremium = async () => {
         window.location.href = data.checkoutUrl;
 
       } else if (response.status === 400) {
-        // 🚨 THE INTERCEPTOR: Java caught a double-charge!
+        // ðŸš¨ THE INTERCEPTOR: Java caught a double-charge!
         const errorData = await response.json();
         if (errorData.error === "User is already a Premium member.") {
           showAlreadyPremiumModal.value = true;
         } else {
-          alert(errorData.error);
+          showToast(errorData.error || "Payment error.", "error");
         }
       } else {
        }
     } catch (error) {
-      // 🚨 2. THE OFFLINE FIX: Actually alert the user if the server is down!
+      // ðŸš¨ 2. THE OFFLINE FIX: Actually alert the user if the server is down!
       console.error("Payment pipeline severed:", error);
 
     }
@@ -4695,7 +5651,7 @@ const handleSignUpClick = async () => {
     try {
       const token = localStorage.getItem('aws_jwt');
 
-      // 🚨 THE GUEST TRAPDOOR: If no token, slide open the Auth modal
+      // ðŸš¨ THE GUEST TRAPDOOR: If no token, slide open the Auth modal
       if (!token) {
         localStorage.setItem('aws_pending_checkout', 'true');
         showAuthModal.value = true;
@@ -4703,7 +5659,7 @@ const handleSignUpClick = async () => {
         return;
       }
 
-      // 🚨 THE FIX: Route them to the Legal Agreement instead of directly to Stripe!
+      // ðŸš¨ THE FIX: Route them to the Legal Agreement instead of directly to Stripe!
       pendingPlanType.value = 'monthly'; // Or whatever default plan you want them to buy
       hasAcceptedTerms.value = false;    // Force them to check the box
       showAgreementModal.value = true;   // Show the legal terminal
@@ -4713,43 +5669,22 @@ const handleSignUpClick = async () => {
     }
   };
 
-// 3. Fires when they pick a plan inside the Paywall
-const initiateCheckout = async (planType) => {
+// 3. Catches the pricing button click and routes to the Legal Terminal
+const prepareCheckout = (planType) => {
     const token = localStorage.getItem('aws_jwt');
 
-    // 🚨 The Seamless Guest Handoff
+    // ðŸš¨ The Seamless Guest Handoff
     if (!token) {
-      showPremiumModal.value = false; // Hide the pricing
-      showAuthModal.value = true;     // Show the signup
-      isLoginMode.value = false;      // Force it to the "Register" tab
+      showPremiumModal.value = false;
+      showAuthModal.value = true;
+      isLoginMode.value = false;
       return;
     }
 
-    // NOTE: If you want to support both a $1 Trial AND a $10.99 Monthly plan,
-    // you will eventually need to pass `planType` to your Java backend here
-    // so it knows which Stripe Price ID to use. For now, we will route to your existing checkout.
-
-    try {
-      const response = await fetch(`${API_BASE_URL}/api/payment/checkout`, {
-        method: 'POST',
-        headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' }
-      });
-
-      if (response.ok) {
-        const data = await response.json();
-        localStorage.setItem('aws_awaiting_stripe_return', 'true');
-        localStorage.setItem('aws_return_view', currentView.value);
-        if (selectedCert.value) {
-          localStorage.setItem('aws_return_cert', JSON.stringify(selectedCert.value));
-        }
-        window.location.href = data.checkoutUrl; // Warp to Stripe!
-      } else {
-        const errorData = await response.json();
-        alert(errorData.error || "Payment gateway error.");
-      }
-    } catch (error) {
-      console.error("Payment pipeline severed:", error);
-    }
+    // ðŸš¨ THE FIX: Route to the Legal Agreement instead of Stripe!
+    pendingPlanType.value = planType;  // Save which button they clicked
+    hasAcceptedTerms.value = false;    // Force them to check the box
+    showAgreementModal.value = true;   // Pop the legal terminal
   };
 
 const logout = () => {
@@ -4767,7 +5702,7 @@ const processCancellation = async () => {
     }
 
     try {
-      const response = await fetch('http://localhost:8080/api/users/cancel-premium', {
+      const response = await fetch(${API_BASE_URL}/api/users/cancel-premium, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('token')}`
@@ -4776,28 +5711,28 @@ const processCancellation = async () => {
 
       const data = await response.json();
       if (response.ok) {
-        cancelFeedback.value = `✅ Successfully scheduled. Your premium access remains active until ${data.expirationDate}.`;
+        cancelFeedback.value = `âœ… Successfully scheduled. Your premium access remains active until ${data.expirationDate}.`;
         // Optionally hide the form and just show the success message
         setTimeout(() => { showCancelModal.value = false; }, 4000);
       } else {
-        cancelFeedback.value = "❌ " + data.error;
+        cancelFeedback.value = "âŒ " + data.error;
       }
     } catch (error) {
-      cancelFeedback.value = "❌ Critical Error: Could not reach the Matrix.";
+      cancelFeedback.value = "âŒ Critical Error: Could not reach the Matrix.";
     }
   };
 
 clearInterval(amrapInterval);
 
 // --- 1. THE WATCHER ---
-  // 🛠️ THE MASTER CERTIFICATE WATCHER
-  // 🛠️ THE MASTER CERTIFICATE WATCHER (Memory Bank)
-  // 🛠️ THE MASTER CERTIFICATE WATCHER (Memory Bank - FIXED)
+  // ðŸ› ï¸ THE MASTER CERTIFICATE WATCHER
+  // ðŸ› ï¸ THE MASTER CERTIFICATE WATCHER (Memory Bank)
+  // ðŸ› ï¸ THE MASTER CERTIFICATE WATCHER (Memory Bank - FIXED)
 watch(selectedCert, (newCert, oldCert) => {
 
     // 1. If the selected cert becomes empty...
     if (!newCert) {
-      // 🚨 THE FIX: Only delete memory if they actually had a cert selected a second ago.
+      // ðŸš¨ THE FIX: Only delete memory if they actually had a cert selected a second ago.
       // If 'oldCert' is undefined, it means the page just booted up. DO NOT self-destruct!
       if (oldCert) {
         localStorage.removeItem('aws_active_cert');
@@ -4825,14 +5760,14 @@ watch(selectedCert, (newCert, oldCert) => {
     }
   }, { immediate: true });
 
-// 💾 LMS MEMORY BANK: Auto-save the user's place in the curriculum
+// ðŸ’¾ LMS MEMORY BANK: Auto-save the user's place in the curriculum
 watch(activeDomain, (newDomain) => {
     if (newDomain) localStorage.setItem('aws_active_domain', newDomain.name);
     else localStorage.removeItem('aws_active_domain');
   });
 
 watch(activeModule, (newModule) => {
-    // 🚨 THE FIX: Reset the player back to the thumbnail whenever they click a new lesson!
+    // ðŸš¨ THE FIX: Reset the player back to the thumbnail whenever they click a new lesson!
     isPlaying.value = false;
 
     if (newModule) localStorage.setItem('aws_active_module', newModule.id);
@@ -4844,8 +5779,7 @@ const handleDomainClick = (domain, index) => {
 
     // Domain 1 (index 0) is always free. Everything else requires Premium.
     if (index > 0 && !isPremiumUser) {
-      if (typeof playSound === 'function') playSound('wrong');
-      const wantsToUpgrade = confirm(`🔒 PREMIUM ACCESS REQUIRED\n\nDomain ${index + 1}: ${domain.name} is locked.\n\nWould you like to upgrade your account to unlock the full Knowledge Forge?`);
+      const wantsToUpgrade = confirm(`ðŸ”’ PREMIUM ACCESS REQUIRED\n\nDomain ${index + 1}: ${domain.name} is locked.\n\nWould you like to upgrade your account to unlock the full Knowledge Forge?`);
 
       if (wantsToUpgrade && typeof upgradeToPremium === 'function') {
         upgradeToPremium();
@@ -4857,9 +5791,8 @@ const handleDomainClick = (domain, index) => {
     openDomainTraining(domain);
   };
 
-// 3. 🛠️ THE ROUTER: Opens the viewer and auto-loads the first lesson
+// 3. ðŸ› ï¸ THE ROUTER: Opens the viewer and auto-loads the first lesson
 const openDomainTraining = (domain) => {
-    if (typeof playSound === 'function') playSound('click');
 
     activeDomain.value = domain; // Save which domain they clicked
 
@@ -4879,149 +5812,158 @@ const isPlaying = ref(false); // Controls the video player state
 // --- 2. THE BOOT SEQUENCE ---
 onMounted(async () => {
 
-  // 🚨 1. THE STRIPE INTERCEPTOR (Must run first!)
-  const urlParams = new URLSearchParams(window.location.search);
+    // ðŸš¨ 1. THE STRIPE INTERCEPTOR (Must run first!)
+    const urlParams = new URLSearchParams(window.location.search);
 
-  if (urlParams.get('success') === 'true') {
-    const returnView = localStorage.getItem('aws_return_view');
-    const returnCertStr = localStorage.getItem('aws_return_cert');
+    if (urlParams.get('success') === 'true') {
+      const returnView = localStorage.getItem('aws_return_view');
+      const returnCertStr = localStorage.getItem('aws_return_cert');
 
-    if (returnView && returnView !== 'undefined') currentView.value = returnView;
+      if (returnView && returnView !== 'undefined') currentView.value = returnView;
 
-    // SAFETY SHIELD: Safely parse the returning cert
-    if (returnCertStr && returnCertStr !== 'undefined') {
-      try { selectedCert.value = JSON.parse(returnCertStr); } catch(e) {}
-    }
-
-    welcomeMessage.value = "Payment Secured! Premium Databanks Unlocked.";
-    showSuccessHologram.value = true;
-    setTimeout(() => { showSuccessHologram.value = false; }, 4500);
-
-    const actualToken = localStorage.getItem('aws_jwt');
-    const savedUserStr = localStorage.getItem('aws_user');
-
-    // SAFETY SHIELD: Safely parse the user
-    if (savedUserStr && savedUserStr !== 'undefined' && actualToken) {
-      try {
-        const savedUser = JSON.parse(savedUserStr);
-        savedUser.isPremium = true;
-        currentUser.value = savedUser;
-        localStorage.setItem('aws_user', JSON.stringify(savedUser));
-
-        fetch(`http://localhost:8080/api/users/${savedUser.username}`, {
-          headers: { 'Authorization': `Bearer ${actualToken}` }
-        })
-            .then(res => res.ok ? res.json() : null)
-            .then(updatedUser => {
-              if (updatedUser) {
-                currentUser.value = updatedUser;
-                localStorage.setItem('aws_user', JSON.stringify(updatedUser));
-              }
-            })
-            .catch(err => console.warn("Local Premium Override Active."));
-
-        const intendedProtocol = localStorage.getItem('aws_intended_protocol');
-        if (intendedProtocol && intendedProtocol !== 'undefined') {
-          setTimeout(() => {
-            bootQuizEngine(intendedProtocol);
-            localStorage.removeItem('aws_intended_protocol');
-          }, 4500);
-        } else if (returnView && returnView !== 'undefined') {
-          currentView.value = returnView;
-        }
-      } catch (error) {
-        console.error("Corrupted Stripe user memory wiped.", error);
-        localStorage.removeItem('aws_user');
+      // SAFETY SHIELD: Safely parse the returning cert
+      if (returnCertStr && returnCertStr !== 'undefined') {
+        try { selectedCert.value = JSON.parse(returnCertStr); } catch(e) {}
       }
+
+      welcomeMessage.value = "Payment Secured! Premium Databanks Unlocked.";
+      showSuccessHologram.value = true;
+      setTimeout(() => { showSuccessHologram.value = false; }, 4500);
+
+      const actualToken = localStorage.getItem('aws_jwt');
+      const savedUserStr = localStorage.getItem('aws_user');
+
+      // SAFETY SHIELD: Safely parse the user
+      if (savedUserStr && savedUserStr !== 'undefined' && actualToken) {
+        try {
+          const savedUser = JSON.parse(savedUserStr);
+          savedUser.isPremium = true;
+          currentUser.value = savedUser;
+          localStorage.setItem('aws_user', JSON.stringify(savedUser));
+
+          fetch(`${API_BASE_URL}/api/users/${savedUser.username}`, {
+            headers: { 'Authorization': `Bearer ${actualToken}` }
+          })
+              .then(res => res.ok ? res.json() : null)
+              .then(updatedUser => {
+                if (updatedUser) {
+                  // ðŸ›¡ï¸ RACE CONDITION SHIELD 1: Webhook is probably lagging. Force it!
+                  updatedUser.isPremium = true;
+
+                  currentUser.value = updatedUser;
+                  localStorage.setItem('aws_user', JSON.stringify(updatedUser));
+                }
+              })
+              .catch(err => console.warn("Local Premium Override Active."));
+
+          const intendedProtocol = localStorage.getItem('aws_intended_protocol');
+          if (intendedProtocol && intendedProtocol !== 'undefined') {
+            setTimeout(() => {
+              bootQuizEngine(intendedProtocol);
+              localStorage.removeItem('aws_intended_protocol');
+            }, 4500);
+          } else if (returnView && returnView !== 'undefined') {
+            currentView.value = returnView;
+          }
+        } catch (error) {
+          console.error("Corrupted Stripe user memory wiped.", error);
+          localStorage.removeItem('aws_user');
+        }
+      }
+
+      window.history.replaceState({}, document.title, window.location.pathname);
+      localStorage.removeItem('aws_awaiting_stripe_return');
+      localStorage.removeItem('aws_return_view');
+      localStorage.removeItem('aws_return_cert');
+
+    } else if (urlParams.get('canceled') === 'true') {
+      showToast("Payment canceled. You have not been charged.", "info");
+      window.history.replaceState({}, document.title, window.location.pathname);
+    } else if (localStorage.getItem('aws_awaiting_stripe_return') === 'true') {
+      const savedView = localStorage.getItem('aws_return_view');
+      if (savedView && savedView !== 'undefined') currentView.value = savedView;
     }
 
-    window.history.replaceState({}, document.title, window.location.pathname);
-    localStorage.removeItem('aws_awaiting_stripe_return');
-    localStorage.removeItem('aws_return_view');
-    localStorage.removeItem('aws_return_cert');
+    history.replaceState({ view: currentView.value }, '', `#${currentView.value}`);
 
-  } else if (urlParams.get('canceled') === 'true') {
-    alert("Payment was canceled. You have not been charged.");
-    window.history.replaceState({}, document.title, window.location.pathname);
-  } else if (localStorage.getItem('aws_awaiting_stripe_return') === 'true') {
-    const savedView = localStorage.getItem('aws_return_view');
-    if (savedView && savedView !== 'undefined') currentView.value = savedView;
-  }
-
-  history.replaceState({ view: currentView.value }, '', `#${currentView.value}`);
-
-  // 🚨 3. THE MEMORY RESTORE
-  const savedCertCode = localStorage.getItem('aws_active_cert');
-  if (savedCertCode && savedCertCode !== 'undefined' && certifications.value) {
-    const foundCert = certifications.value.find(c => c.code === savedCertCode);
-    if (foundCert) {
-      selectedCert.value = foundCert;
-      const savedDomainName = localStorage.getItem('aws_active_domain');
-      if (savedDomainName && savedDomainName !== 'undefined' && foundCert.domains) {
-        const foundDomain = foundCert.domains.find(d => d.name === savedDomainName);
-        if (foundDomain) {
-          activeDomain.value = foundDomain;
-          const savedModuleId = localStorage.getItem('aws_active_module');
-          if (savedModuleId && savedModuleId !== 'undefined' && foundDomain.modules) {
-            const foundModule = foundDomain.modules.find(m => m.id === savedModuleId);
-            if (foundModule) activeModule.value = foundModule;
+    // ðŸš¨ 3. THE MEMORY RESTORE
+    const savedCertCode = localStorage.getItem('aws_active_cert');
+    if (savedCertCode && savedCertCode !== 'undefined' && certifications.value) {
+      const foundCert = certifications.value.find(c => c.code === savedCertCode);
+      if (foundCert) {
+        selectedCert.value = foundCert;
+        const savedDomainName = localStorage.getItem('aws_active_domain');
+        if (savedDomainName && savedDomainName !== 'undefined' && foundCert.domains) {
+          const foundDomain = foundCert.domains.find(d => d.name === savedDomainName);
+          if (foundDomain) {
+            activeDomain.value = foundDomain;
+            const savedModuleId = localStorage.getItem('aws_active_module');
+            if (savedModuleId && savedModuleId !== 'undefined' && foundDomain.modules) {
+              const foundModule = foundDomain.modules.find(m => m.id === savedModuleId);
+              if (foundModule) activeModule.value = foundModule;
+            }
           }
         }
       }
     }
-  }
 
-  if (typeof fetchHallOfFame === 'function') fetchHallOfFame();
-  if (typeof fetchLeaderboard === 'function') fetchLeaderboard();
+    if (typeof fetchHallOfFame === 'function') fetchHallOfFame();
+    if (typeof fetchLeaderboard === 'function') fetchLeaderboard();
 
-  // 🚨 5. THE CRASH ZONE FIX: Check the browser's permanent memory
-  const returningUserStr = localStorage.getItem('aws_user');
+    // ðŸš¨ 5. THE CRASH ZONE FIX: Check the browser's permanent memory
+    const returningUserStr = localStorage.getItem('aws_user');
 
-  if (returningUserStr && returningUserStr !== 'undefined') {
-    try {
-      // 1. Load what we have immediately for a fast UI
-      const localUser = JSON.parse(returningUserStr);
-      currentUser.value = localUser;
-      showAuthModal.value = false;
+    if (returningUserStr && returningUserStr !== 'undefined') {
+      try {
+        // 1. Load what we have immediately for a fast UI
+        const localUser = JSON.parse(returningUserStr);
+        currentUser.value = localUser;
+        showAuthModal.value = false;
 
-      // 🚨 THE MASTER SYNC: Ask Java for your true database profile (which contains your official ID!)
-      const actualToken = localStorage.getItem('aws_jwt');
-      if (actualToken && localUser.username) {
-        fetch(`http://localhost:8080/api/users/${localUser.username}`, {
-          headers: { 'Authorization': `Bearer ${actualToken}` }
-        })
-            .then(res => res.ok ? res.json() : null)
-            .then(dbUser => {
-              if (dbUser) {
-                // 2. Save the true profile (with the ID) to Vue and Local Storage
-                currentUser.value = dbUser;
-                localStorage.setItem('aws_user', JSON.stringify(dbUser));
+        // ðŸš¨ THE MASTER SYNC: Ask Java for your true database profile (which contains your official ID!)
+        const actualToken = localStorage.getItem('aws_jwt');
+        if (actualToken && localUser.username) {
+          fetch(`${API_BASE_URL}/api/users/${localUser.username}`, {
+            headers: { 'Authorization': `Bearer ${actualToken}` }
+          })
+              .then(res => res.ok ? res.json() : null)
+              .then(dbUser => {
+                if (dbUser) {
+                  // ðŸ›¡ï¸ RACE CONDITION SHIELD 2: Never let a lagging backend downgrade a Premium user!
+                  if (localUser.isPremium === true) {
+                    dbUser.isPremium = true;
+                  }
 
-                console.log("✅ Identity Synced with Mainframe. User ID:", dbUser.id);
+                  // 2. Save the true profile (with the ID) to Vue and Local Storage
+                  currentUser.value = dbUser;
+                  localStorage.setItem('aws_user', JSON.stringify(dbUser));
 
-                // 3. NOW that we have the official ID, fire the data bridges!
-                if (typeof fetchHistory === 'function') fetchHistory();
-                if (typeof fetchRadarStats === 'function') fetchRadarStats();
-               }
-            })
-            .catch(err => console.error("Mainframe sync failed:", err));
+                  console.log("âœ… Identity Synced with Mainframe. User ID:", dbUser.id);
+
+                  // 3. NOW that we have the official ID, fire the data bridges!
+                  if (typeof fetchHistory === 'function') fetchHistory();
+                  if (typeof fetchRadarStats === 'function') fetchRadarStats();
+                }
+              })
+              .catch(err => console.error("Mainframe sync failed:", err));
+        }
+
+        // Load the public data
+        if (typeof fetchAdminQuestions === 'function') fetchAdminQuestions();
+        if (typeof fetchAdminFlashcards === 'function') fetchAdminFlashcards();
+        if (typeof fetchAdminPipelines === 'function') fetchAdminPipelines();
+        if (selectedCert.value && typeof fetchQuestion === 'function') fetchQuestion();
+
+      } catch (error) {
+        console.error("Corrupt user memory detected. Wiping local storage.");
+        localStorage.removeItem('aws_user');
       }
-
-      // Load the public data
-      if (typeof fetchAdminQuestions === 'function') fetchAdminQuestions();
-      if (typeof fetchAdminFlashcards === 'function') fetchAdminFlashcards();
-      if (selectedCert.value && typeof fetchQuestion === 'function') fetchQuestion();
-
-    } catch (error) {
-      console.error("Corrupt user memory detected. Wiping local storage.");
-      localStorage.removeItem('aws_user');
+    } else {
+      if (returningUserStr === 'undefined') {
+        localStorage.removeItem('aws_user');
+      }
     }
-  } else {
-    if (returningUserStr === 'undefined') {
-      localStorage.removeItem('aws_user');
-    }
-  }
-});
+  });
 
 watch(currentView, (newView) => {
   // Only push to history if it's actually a new screen
@@ -5045,6 +5987,18 @@ onUnmounted(() => stopTimer());
 </script>
 
 <style scoped>
+/* Toast notification transitions */
+.toast-slide-enter-active { transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1); }
+.toast-slide-leave-active { transition: all 0.3s ease-in; }
+.toast-slide-enter-from { opacity: 0; transform: translate(-50%, -20px) scale(0.95); }
+.toast-slide-leave-to { opacity: 0; transform: translate(-50%, -10px) scale(0.98); }
+
+@keyframes pulse-once {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.4); }
+  50% { box-shadow: 0 0 20px 4px rgba(239, 68, 68, 0.2); }
+}
+.animate-pulse-once { animation: pulse-once 1s ease-in-out; }
+
 @media print {
   /* 1. Reset: Hide the entire app root and its scrolling containers */
   #app, .min-h-screen, nav, .fixed, .modal-backdrop {
@@ -5251,7 +6205,7 @@ onUnmounted(() => stopTimer());
 }
 
 /* ========================================== */
-/* 🛡️ ADMIN COMMAND CENTER STYLES 🛡️          */
+/* ðŸ›¡ï¸ ADMIN COMMAND CENTER STYLES ðŸ›¡ï¸          */
 /* ========================================== */
 
 .admin-header {
@@ -5445,7 +6399,7 @@ onUnmounted(() => stopTimer());
 }
 .btn-save:hover { background: #059669; }
 
-/* ⚖️ LEGAL TERMINAL SCROLLBAR */
+/* âš–ï¸ LEGAL TERMINAL SCROLLBAR */
 .custom-scrollbar {
   scrollbar-width: thin; /* Firefox */
   scrollbar-color: #334155 #0f172a; /* Firefox thumb and track */
@@ -5470,3 +6424,6 @@ onUnmounted(() => stopTimer());
 }
 
 </style>
+
+
+

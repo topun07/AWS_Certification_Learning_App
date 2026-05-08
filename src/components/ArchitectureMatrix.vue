@@ -141,7 +141,7 @@ const fetchScenario = async () => {
     // Reset the board immediately when fetching a new mission
     currentScenario.value = null;
 
-    const response = await fetch('http://localhost:8080/api/questions/pipeline/random?examCode=AIF-C01');
+    const response = await fetch(`${import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080'}/api/questions/pipeline/random?examCode=AIF-C01`);
     if (response.ok) {
       const data = await response.json();
       currentScenario.value = {

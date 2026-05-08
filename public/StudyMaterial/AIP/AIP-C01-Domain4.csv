@@ -1,0 +1,359 @@
+certCode,domain,title,content
+"AIP-C01","Domain 4: Operational Efficiency","Operational Efficiency and Optimization","## AIP-C01 Domain 4: Operational Efficiency and Optimization
+
+**Weight:** ~12% of scored exam content
+**Exam Level:** Professional
+**Target Audience:** Developers preparing for the AWS Certified Generative AI Developer - Professional exam
+
+This domain is about the economics and performance engineering of GenAI. You're expected to optimize cost, latency, and throughput - often simultaneously - while maintaining output quality. Think of it as the ""make it work in production without bankrupting the company"" domain.
+
+---
+
+## Objective 4.1: Cost Optimization for GenAI Workloads
+
+### Understanding GenAI Cost Drivers
+
+| Cost Driver | What Drives It | How to Reduce It |
+|------------|---------------|-----------------|
+| **Input tokens** | Length of prompts (system + user + context) | Prompt compression, caching, shorter system prompts |
+| **Output tokens** | Length of model responses | maxTokens limits, concise instructions, structured output |
+| **Model size** | Larger models cost more per token | Right-size model to task complexity |
+| **Invocation volume** | Number of API calls | Caching, batching, deduplication |
+| **Provisioned capacity** | Reserved throughput (hourly billing) | Right-size commitment; use on-demand for variable loads |
+| **Storage** | Vector stores, training data, logs | Lifecycle policies, compression, tiered storage |
+| **Compute** | Lambda, ECS, SageMaker instances | Right-size instances, spot instances, auto-scaling |
+
+### Amazon Bedrock Pricing Models
+
+| Pricing Option | How It Works | Best For |
+|---------------|-------------|----------|
+| **On-demand** | Pay per input/output token | Variable, unpredictable workloads |
+| **Batch inference** | Process large datasets asynchronously | Bulk processing (summarize 10K documents) |
+| **Provisioned Throughput** | Reserve model units (hourly billing) | Steady, high-volume production |
+| **Cross-region inference** | Route to available capacity across regions | Burst handling; high availability |
+
+*Real-world example:* A company processes 50,000 customer reviews nightly for sentiment analysis. Using batch inference instead of on-demand saves 50% - that's the difference between $2,000/month and $1,000/month for the same workload.
+
+### Amazon Bedrock Cost Optimization Features
+
+#### 1. Intelligent Prompt Routing
+
+Routes prompts to different models within a model family based on complexity:
+
+- Simple queries -> smaller, cheaper model (e.g., Haiku)
+- Complex queries -> larger, more capable model (e.g., Sonnet)
+- Reduces costs by up to 30% without compromising accuracy.
+- You configure a ""router"" that evaluates prompt complexity and routes accordingly.
+
+```
+User prompt -> [Intelligent Router] -> Simple? -> Haiku ($0.25/M input tokens)
+                                    -> Complex? -> Sonnet ($3.00/M input tokens)
+```
+
+#### 2. Prompt Caching
+
+Caches the processed representation of frequently reused prompt prefixes:
+
+- System prompts, few-shot examples, and static context are cached.
+- Subsequent calls with the same prefix skip re-processing.
+- Reduces latency (faster time-to-first-token) and reduces cost (cached tokens billed at reduced rate).
+- Especially powerful for long system prompts or RAG contexts that repeat across calls.
+
+*Real-world example:* A customer support bot uses a 4,000-token system prompt with company policies. With prompt caching, that prefix is processed once and reused across thousands of conversations - saving up to 90% on those input tokens.
+
+#### 3. Model Distillation
+
+Train a smaller, cheaper model to mimic a larger model's behavior:
+
+- Use a large model (e.g., Claude Sonnet) to generate high-quality training data.
+- Fine-tune a smaller model (e.g., Amazon Nova Lite) on that data.
+- Deploy the smaller model at a fraction of the cost.
+- Reduces inference cost by 95%+ and latency by 50%+ for specific tasks.
+
+**When to use:** You have a narrow, well-defined task where the large model consistently produces good outputs. Distill that expertise into a smaller, specialized model.
+
+#### 4. Batch Inference
+
+- Submit large jobs (thousands of prompts) as a batch.
+- Results delivered asynchronously (within 24 hours).
+- 50% cost reduction vs. on-demand.
+- No real-time latency requirements.
+- Use cases: Nightly report generation, bulk document classification, dataset labeling, content migration.
+
+### Token Optimization Strategies
+
+**Reduce Input Tokens:**
+
+| Strategy | How | Savings |
+|----------|-----|---------|
+| **Concise system prompts** | Remove redundant instructions; use bullet points over paragraphs | 20-50% |
+| **Prompt caching** | Cache static prefix (system prompt + few-shot examples) | Up to 90% on cached portion |
+| **Context compression** | Summarize retrieved RAG chunks before passing to FM | 30-60% |
+| **Selective retrieval** | Retrieve fewer, more relevant chunks (top-3 instead of top-10) | 50-70% |
+| **Conversation summarization** | Summarize older turns instead of passing full history | 40-80% for long conversations |
+| **Remove boilerplate** | Strip headers, footers, navigation from retrieved documents | 10-30% |
+
+**Reduce Output Tokens:**
+
+| Strategy | How | Savings |
+|----------|-----|---------|
+| **Structured output** | Request JSON/XML with specific fields (no prose) | 50-80% |
+| **maxTokens limit** | Set appropriate ceiling for the task | Prevents runaway generation |
+| **Concise instructions** | ""Answer in one sentence"" vs. open-ended | 60-90% |
+| **Stop sequences** | Define tokens that halt generation early | Variable |
+
+### Right-Sizing Model Selection
+
+The most impactful cost optimization is choosing the right model for the task:
+
+```
+TASK COMPLEXITY SPECTRUM
+
+Simple                    Medium                  Complex
+--------------------------------------------------------------
+Classification            Summarization          Multi-step
+Extraction                Q&A with context       reasoning
+Formatting                Creative writing       Analysis
+Yes/No answers            Code generation        Planning
+
+     |                         |                      |
+Small/Fast model          Mid-tier model         Large model
+(Haiku, Nova Micro)       (Sonnet, Nova Lite)    (Opus)
+$0.25/M tokens            $3/M tokens            $15/M
+```
+
+**Exam pattern:** ""A company uses Claude Opus for all tasks including simple classification. How can they reduce costs?"" -> Intelligent Prompt Routing or use a smaller model for simple tasks.
+
+---
+
+## Objective 4.2: Latency Optimization
+
+### Understanding GenAI Latency Components
+
+```
+Total Latency = Network + Queue Wait + Time-to-First-Token (TTFT) + Token Generation
+                                          (prompt processing)         (output streaming)
+```
+
+| Component | What Affects It | How to Optimize |
+|-----------|----------------|----------------|
+| **Network latency** | Distance to AWS region; internet vs. PrivateLink | Deploy in nearest region; use VPC endpoints |
+| **Queue wait** | Throttling; insufficient capacity | Provisioned Throughput; cross-region inference |
+| **TTFT** | Input prompt length; model size | Prompt caching; shorter prompts; smaller models |
+| **Token generation** | Output length; model size | Streaming; maxTokens; smaller models |
+
+### Latency Optimization Techniques
+
+**1. Streaming Responses**
+- Don't wait for full generation - stream tokens as they're produced.
+- User perceives near-instant response (sees first token in <1 second).
+- Total generation time is the same, but perceived latency drops dramatically.
+
+**2. Prompt Caching**
+- Cached prefixes skip re-computation -> faster TTFT.
+- Especially impactful for long system prompts (4K+ tokens).
+
+**3. Provisioned Throughput**
+- Eliminates queue wait time (guaranteed capacity).
+- Consistent, predictable latency under load.
+
+**4. Smaller Models**
+- Smaller models generate tokens faster.
+- If task quality is acceptable with Haiku, don't use Sonnet.
+
+**5. Parallel Processing**
+- For multi-part tasks, invoke multiple models simultaneously.
+- Example: Summarize 5 documents in parallel instead of sequentially.
+
+**6. Caching Responses (Application-Level)**
+- Cache frequent prompt-response pairs in ElastiCache (Redis).
+- Identical questions get instant responses without model invocation.
+- Use case: FAQ-style queries where the same questions repeat.
+
+**7. Edge Deployment**
+- Use CloudFront for static assets and API caching.
+- Reduce network hops between user and API Gateway.
+
+### Latency vs. Cost Trade-offs
+
+| Optimization | Latency Impact | Cost Impact |
+|-------------|---------------|-------------|
+| Smaller model | Much lower | Much lower |
+| Prompt caching | Lower TTFT | Lower |
+| Provisioned Throughput | Eliminates queue wait | Higher (commitment) |
+| Streaming | Much lower perceived | Same |
+| Batch inference | Much higher | 50% cheaper |
+| Response caching | Near-zero | No model call |
+
+---
+
+## Objective 4.3: Throughput Optimization
+
+### Scaling Strategies
+
+**Horizontal Scaling (More Capacity):**
+- **Provisioned Throughput** - Reserve additional model units for guaranteed capacity.
+- **Cross-region inference** - Distribute load across multiple AWS regions.
+- **Multiple endpoints** - For SageMaker-hosted models, add more instances behind a load balancer.
+
+**Vertical Scaling (Better Utilization):**
+- **Request batching** - Group multiple prompts into a single API call (where supported).
+- **Async processing** - Decouple request intake from processing with SQS queues.
+- **Concurrency management** - Lambda reserved concurrency to prevent cold starts.
+
+### Auto-Scaling Patterns
+
+**Lambda-Based GenAI Backend:**
+- Lambda scales automatically (up to account concurrency limit).
+- Set reserved concurrency for critical GenAI functions.
+- Use provisioned concurrency to eliminate cold starts for latency-sensitive paths.
+
+**ECS/Fargate-Based GenAI Backend:**
+- Scale based on CPU/memory utilization or custom CloudWatch metrics.
+- Scale on queue depth (SQS messages waiting) for async workloads.
+- Target tracking: maintain average response time below threshold.
+
+**SageMaker Endpoints:**
+- Auto-scale based on InvocationsPerInstance metric.
+- Scale-to-zero for dev/test environments (Serverless Inference).
+- Use multi-model endpoints to serve multiple models from one instance.
+
+---
+
+## Objective 4.4: Optimization Decision Framework
+
+### When to Fine-Tune vs. Prompt Engineer vs. Distill
+
+| Approach | When to Use | Cost Profile |
+|----------|-------------|-------------|
+| **Prompt engineering** | Quick iteration; broad tasks; limited data | Lowest upfront; higher per-call (longer prompts) |
+| **Few-shot prompting** | Need consistent format; have good examples | Medium per-call (examples add tokens) |
+| **Fine-tuning** | Domain-specific language; consistent style; have labeled data | High upfront (training); lower per-call (shorter prompts) |
+| **Model distillation** | Narrow task; need low cost at scale; have a ""teacher"" model | Medium upfront; lowest per-call |
+| **RAG** | Need current/private data; can't retrain | Medium (vector store + retrieval) |
+
+### The Optimization Decision Tree
+
+```
+START: Is the current solution too expensive?
+  |
+  +-- YES -> Are you using the right-sized model?
+  |         +-- NO -> Switch to smaller model or Intelligent Prompt Routing
+  |         +-- YES -> Are prompts optimized (concise, cached)?
+  |                   +-- NO -> Optimize prompts; enable caching
+  |                   +-- YES -> Is the task narrow and repetitive?
+  |                             +-- YES -> Consider distillation or fine-tuning
+  |                             +-- NO -> Consider batch inference for non-real-time tasks
+  |
+  +-- NO -> Is latency too high?
+           +-- YES -> Enable streaming; use prompt caching; consider Provisioned Throughput
+           +-- NO -> Is throughput insufficient?
+                    +-- YES -> Provisioned Throughput; cross-region inference; async patterns
+                    +-- NO -> System is optimized
+```
+
+---
+
+## Objective 4.5: Monitoring and Continuous Optimization
+
+### Key Metrics to Track
+
+| Metric | What It Tells You | Action Threshold |
+|--------|------------------|-----------------|
+| **Cost per invocation** | Average spend per API call | Trending upward -> investigate prompt length |
+| **Input tokens per request** | Prompt efficiency | >4K average -> optimize context/system prompt |
+| **Output tokens per request** | Response verbosity | Higher than needed -> tighten maxTokens/instructions |
+| **TTFT (Time to First Token)** | Prompt processing speed | >2s -> enable caching; consider smaller model |
+| **Total latency** | End-to-end response time | >10s -> streaming; parallel processing |
+| **Throttle rate** | Capacity saturation | >1% -> Provisioned Throughput or cross-region |
+| **Cache hit rate** | Caching effectiveness | <50% -> review cache key strategy |
+| **Guardrail intervention rate** | Safety filter triggers | Sudden spike -> investigate attack or prompt issue |
+
+### CloudWatch Dashboard for GenAI Operations
+
+Essential widgets for a Bedrock operations dashboard:
+
+- **Invocation count (by model)** - volume trends
+- **Latency percentiles (p50, p90, p99)** - performance distribution
+- **Token consumption (input vs. output)** - cost drivers
+- **Error rates (4xx vs. 5xx)** - reliability
+- **Throttle count** - capacity planning signal
+- **Cost estimate (tokens x price)** - budget tracking
+
+### Cost Allocation and Tagging
+
+- Tag Bedrock resources (agents, knowledge bases, guardrails) with cost center, team, project.
+- **AWS Cost Explorer** - Analyze GenAI spend by service, region, and tag.
+- **AWS Budgets** - Set alerts when GenAI spend exceeds thresholds.
+- **Per-model tracking** - Monitor which models consume the most budget.
+
+---
+
+## Key Exam Patterns for AIP-C01 Domain 4
+
+- **""Reduce costs without sacrificing quality""** - Intelligent Prompt Routing (routes simple queries to cheaper models)
+- **""Same system prompt repeated across thousands of calls""** - Prompt caching (cache the static prefix)
+- **""Need to process 100K documents cheaply""** - Batch inference (50% cheaper, async)
+- **""Latency is too high for chat application""** - Streaming + prompt caching + consider smaller model
+- **""Getting throttled during peak hours""** - Provisioned Throughput or cross-region inference
+- **""Using Opus for simple classification tasks""** - Right-size to smaller model (Haiku/Nova Micro)
+- **""Want to reduce per-call cost for a narrow, repetitive task""** - Model distillation (train small model to mimic large one)
+- **""Conversation history growing too long""** - Summarize older turns instead of passing full history
+- **""RAG retrieving too many irrelevant chunks""** - Reduce top-K; improve chunking; add re-ranking
+- **""Need guaranteed low latency in production""** - Provisioned Throughput (eliminates queue wait)
+- **""Cold starts causing latency spikes""** - Lambda provisioned concurrency or ECS/Fargate (always warm)
+- **""Track GenAI spend by team""** - Resource tagging + AWS Cost Explorer
+- **""Fine-tuning vs. longer prompts?""** - Fine-tuning = higher upfront cost, lower per-call cost; prompting = zero upfront, higher per-call. Choose based on volume.
+- **""Optimize agent that makes too many tool calls""** - Improve agent instructions; reduce unnecessary reasoning loops; cache intermediate results
+
+---
+
+## Quick Exam Tips for Domain 4
+
+- **Intelligent Prompt Routing** is the newest and most exam-relevant cost feature. It's the answer whenever a scenario describes ""mixed complexity"" workloads going to a single expensive model.
+- **Prompt caching** saves both cost AND latency. If the scenario mentions a long, repeated system prompt - caching is the answer.
+- **Batch inference = 50% savings** is a key number to remember. It's always the answer for non-real-time bulk processing.
+- **Model distillation** is the answer when: (1) the task is narrow, (2) a large model does it well, and (3) you need to scale cheaply. It's NOT the answer for broad, varied tasks.
+- **Streaming doesn't reduce total generation time** - it reduces perceived latency. The exam may try to trick you into thinking streaming is faster overall.
+- **Provisioned Throughput** solves throttling AND latency (no queue wait), but costs more. It's justified only for steady, high-volume production workloads.
+- **Cross-region inference** improves availability and burst handling but doesn't reduce cost. Don't confuse it with a cost optimization.
+- The exam loves **trade-off questions**: ""Which approach optimizes for cost while maintaining acceptable latency?"" You need to evaluate multiple factors simultaneously.
+- **Token math matters.** If a question gives you token counts and pricing, you may need to calculate which option is cheaper. Example: ""4K-token system prompt x 10K calls/day x $3/M tokens = $120/day in system prompt costs alone -> caching saves most of this.""
+
+---
+
+## Cost Optimization Quick Reference Card
+
+```
+IMMEDIATE WINS (no code changes):
++-- Enable prompt caching
++-- Enable Intelligent Prompt Routing
++-- Switch bulk jobs to batch inference
++-- Set appropriate maxTokens limits
+
+MEDIUM EFFORT (prompt/config changes):
++-- Shorten system prompts
++-- Reduce RAG top-K retrieval count
++-- Summarize conversation history
++-- Add response caching (ElastiCache)
++-- Use structured output formats
+
+HIGH EFFORT (architecture changes):
++-- Model distillation for narrow tasks
++-- Fine-tuning for domain specialization
++-- Async processing with queues
++-- Multi-model routing architecture
++-- Provisioned Throughput for steady workloads
+```
+
+---
+
+## Summary
+
+This covers all objectives in AIP-C01 Domain 4:
+
+- **Cost optimization** - pricing models, Intelligent Prompt Routing, caching, distillation, batch inference
+- **Latency optimization** - streaming, caching, model sizing, parallel processing
+- **Throughput optimization** - scaling strategies, Provisioned Throughput, cross-region inference
+- **Decision frameworks** - when to fine-tune vs. prompt vs. distill vs. RAG
+- **Monitoring** - CloudWatch metrics, cost tracking, continuous optimization"

@@ -1,0 +1,235 @@
+certCode,domain,title,content
+"SOA-C02","Domain 2: Reliability & Business Continuity","Reliability & Business Continuity","## SOA-C02 Domain 2: Reliability & Business Continuity
+
+**Weight:** ~15% of scored exam content
+**Exam Level:** Associate
+
+This domain covers implementing scalable, highly available environments and disaster recovery strategies.
+
+---
+
+## High Availability Architecture
+
+### Multi-AZ Deployments
+
+| Service | Multi-AZ Behavior |
+|---------|------------------|
+| **RDS** | Synchronous standby, automatic failover (DNS flip) |
+| **Aurora** | 6 copies across 3 AZs, < 30s failover |
+| **ElastiCache Redis** | Multi-AZ with automatic failover |
+| **EFS** | Automatically multi-AZ |
+| **S3** | Automatically across 3+ AZs (11 9s durability) |
+| **DynamoDB** | Automatically across 3 AZs |
+| **ALB/NLB** | Cross-zone load balancing |
+
+### Auto Scaling
+
+**Scaling Policy Types:**
+
+| Type | Description | Best For |
+|------|-------------|----------|
+| **Target Tracking** | Maintain metric at target | CPU at 50%, ALB requests |
+| **Step Scaling** | Scale by amount per alarm threshold | Graduated response |
+| **Simple Scaling** | Fixed amount on alarm | Basic scaling |
+| **Scheduled** | Scale at specific times | Predictable patterns |
+| **Predictive** | ML-based forecasting | Recurring patterns |
+
+**Lifecycle Hooks:**
+- **Pending:Wait** -> Install software, register with service discovery
+- **Terminating:Wait** -> Drain connections, deregister, save logs
+- Timeout: Default 1 hour (configurable)
+- Complete action: CONTINUE or ABANDON
+
+**Scaling Cooldown:**
+- Default: 300 seconds
+- Prevents rapid oscillation
+- Target Tracking has built-in intelligent cooldown
+- Tip: Shorter cooldown for scale-out, longer for scale-in
+
+### Health Checks
+
+| Source | Checks | Action |
+|--------|--------|--------|
+| **EC2 Status Checks** | System/Instance status | Auto-recover or terminate |
+| **ELB Health Checks** | HTTP response from target | Remove from target group |
+| **ASG Health Checks** | EC2 + ELB combined | Replace unhealthy instance |
+| **Route 53** | Endpoint health (HTTP, TCP, HTTPS) | DNS failover |
+| **Custom** | Application-level checks | Custom remediation |
+
+---
+
+## AWS Backup
+
+### Centralized Backup
+
+| Feature | Description |
+|---------|-------------|
+| **Backup Plan** | Schedule, retention, lifecycle rules |
+| **Backup Vault** | Storage container (encrypted with KMS) |
+| **Recovery Point** | Individual backup (snapshot) |
+| **Cross-Region Copy** | Replicate backups to another region |
+| **Cross-Account Copy** | Replicate to another AWS account |
+| **Vault Lock** | WORM (Write Once Read Many) - compliance |
+
+### Supported Services
+
+- EC2 (AMI-based), EBS (snapshots)
+- RDS, Aurora, DynamoDB
+- EFS, FSx
+- S3 (new)
+- Storage Gateway volumes
+- DocumentDB, Neptune
+
+### Backup Strategies
+
+| Strategy | RPO | RTO | Cost |
+|----------|-----|-----|------|
+| **Continuous Backup** | Seconds | Minutes | $$$ |
+| **Hourly Snapshots** | 1 hour | Minutes-Hours | $$ |
+| **Daily Snapshots** | 24 hours | Hours | $ |
+| **Weekly + Cross-Region** | 7 days | Hours | $ |
+
+---
+
+## Disaster Recovery
+
+### DR Strategies
+
+| Strategy | RTO | RPO | Cost | Description |
+|----------|-----|-----|------|-------------|
+| **Backup & Restore** | Hours | Hours | $ | Restore from backups on demand |
+| **Pilot Light** | 10s min | Minutes | $$ | Core systems always running (DB replicated) |
+| **Warm Standby** | Minutes | Seconds | $$$ | Scaled-down full environment |
+| **Active-Active** | Near zero | Near zero | $$$$ | Full capacity in both regions |
+
+### DR Implementation
+
+**Backup & Restore:**
+- S3 Cross-Region Replication for data
+- EBS/RDS snapshots copied cross-region
+- CloudFormation templates ready to deploy
+- Longest RTO but cheapest
+
+**Pilot Light:**
+- Database replicated (RDS Read Replica cross-region, Aurora Global)
+- Core infrastructure running (minimal)
+- Scale up on failover (ASG, add instances)
+- Route 53 failover routing
+
+**Warm Standby:**
+- Full environment running at reduced capacity
+- Scale up on failover (change ASG desired count)
+- Route 53 weighted or failover routing
+- Faster than Pilot Light, more expensive
+
+**Active-Active:**
+- Full capacity in multiple regions
+- DynamoDB Global Tables or Aurora Global Database
+- Route 53 latency or weighted routing
+- Near-zero RTO/RPO, highest cost
+
+### Route 53 for DR
+
+| Routing Policy | DR Use Case |
+|---------------|-------------|
+| **Failover** | Active-passive (primary/secondary) |
+| **Weighted** | Gradual traffic shift during migration |
+| **Latency** | Active-active (route to closest healthy region) |
+| **Health Checks** | Detect endpoint failure, trigger failover |
+
+---
+
+## EBS Resilience
+
+### EBS Snapshots
+
+- Point-in-time backup to S3 (incremental)
+- Can copy cross-region and cross-account
+- Fast Snapshot Restore (FSR): Eliminate latency on first read
+- Data Lifecycle Manager (DLM): Automate snapshot creation/deletion
+- Recycle Bin: Protect against accidental deletion (retention rules)
+
+### EBS Multi-Attach
+
+- io2 volumes only
+- Attach to up to 16 Nitro instances in same AZ
+- Use case: Clustered applications (shared storage)
+- Application must manage concurrent writes
+
+---
+
+## S3 Resilience
+
+### Versioning
+
+- Protect against accidental deletion
+- MFA Delete: Require MFA to permanently delete versions
+- Lifecycle rules can expire old versions
+- Undelete: Remove delete marker to restore
+
+### Replication
+
+| Type | Use Case |
+|------|----------|
+| **CRR (Cross-Region)** | DR, compliance, latency reduction |
+| **SRR (Same-Region)** | Log aggregation, live replication between accounts |
+
+- Requires versioning on both buckets
+- Not retroactive (new objects only)
+- Can replicate to different account
+- Replication Time Control (RTC): 99.99% within 15 minutes
+
+### Object Lock
+
+- WORM compliance (SEC, FINRA)
+- Governance mode: Special permissions can override
+- Compliance mode: Nobody can delete (not even root)
+- Retention period: Fixed time lock
+- Legal hold: Indefinite lock (until removed)
+
+---
+
+## Key Exam Patterns
+
+**High Availability:**
+- **""Auto-recover failed EC2""** -> EC2 Auto Recovery (CloudWatch alarm) or ASG
+- **""Zero-downtime database failover""** -> RDS Multi-AZ (automatic DNS flip)
+- **""Scale based on custom metric""** -> Custom CloudWatch metric + Target Tracking
+- **""Run script before instance terminates""** -> ASG Lifecycle Hook (Terminating:Wait)
+- **""Distribute traffic across AZs""** -> ALB with cross-zone load balancing
+
+**Backup:**
+- **""Centralized backup across services""** -> AWS Backup
+- **""Immutable backups (compliance)""** -> Backup Vault Lock (WORM)
+- **""Cross-region backup""** -> AWS Backup cross-region copy rule
+- **""Automate EBS snapshot lifecycle""** -> Data Lifecycle Manager (DLM)
+- **""Protect against accidental snapshot deletion""** -> Recycle Bin
+
+**DR:**
+- **""Cheapest DR""** -> Backup & Restore
+- **""Near-zero RTO""** -> Active-Active (multi-region)
+- **""Database DR cross-region""** -> Aurora Global Database or RDS Read Replica
+- **""Automatic DNS failover""** -> Route 53 failover routing + health checks
+- **""Multi-region active-active database""** -> DynamoDB Global Tables
+
+**S3:**
+- **""Protect against accidental deletion""** -> Versioning + MFA Delete
+- **""Compliance - cannot delete for 7 years""** -> Object Lock (Compliance mode)
+- **""Replicate to DR region""** -> Cross-Region Replication (CRR)
+
+---
+
+## Quick Exam Tips
+
+- **RDS Multi-AZ** = HA (auto-failover). Read Replicas = scaling (manual promotion).
+- **ASG Lifecycle Hooks** let you run custom actions before launch/terminate completes.
+- **AWS Backup** is the centralized backup service. Know Vault Lock for WORM compliance.
+- **DLM (Data Lifecycle Manager)** automates EBS snapshot creation and deletion.
+- **Recycle Bin** protects EBS snapshots and AMIs from accidental deletion.
+- **Route 53 failover** routing requires health checks on the primary endpoint.
+- **Aurora Global Database** provides < 1 second cross-region replication.
+- **DynamoDB Global Tables** = active-active multi-region (read/write in any region).
+- **S3 Object Lock Compliance mode** = nobody can delete, not even root account.
+- **Fast Snapshot Restore** eliminates first-read latency on EBS volumes from snapshots.
+- **Predictive Scaling** uses ML to forecast traffic and pre-scale before demand hits.
+- **Cross-zone load balancing** ensures even distribution across all AZs."

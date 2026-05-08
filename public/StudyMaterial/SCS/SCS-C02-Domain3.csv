@@ -1,0 +1,301 @@
+certCode,domain,title,content
+"SCS-C02","Domain 3: Infrastructure Security","Infrastructure Security","## SCS-C02 Domain 3: Infrastructure Security
+
+**Weight:** ~20% of scored exam content
+**Exam Level:** Specialty
+
+This domain covers network security, edge protection, DDoS mitigation, and infrastructure hardening.
+
+---
+
+## VPC Security Architecture
+
+### Defense in Depth (Network Layers)
+
+```
+Internet
+    |
+CloudFront + WAF + Shield (Edge Protection)
+    |
+Internet Gateway
+    |
+Public Subnet: ALB + NAT Gateway
+    |  (NACLs - stateless, allow+deny)
+    |
+Private Subnet: Application Servers
+    |  (Security Groups - stateful, allow only)
+    |
+Data Subnet: RDS, ElastiCache
+    |  (No internet route, VPC endpoints only)
+    |
+AWS Network Firewall (Inspection VPC via TGW)
+```
+
+### Security Groups (Advanced)
+
+| Feature | Detail |
+|---------|--------|
+| **Stateful** | Return traffic automatically allowed |
+| **Self-referencing** | SG can reference itself (intra-group communication) |
+| **Cross-account** | Reference SGs in peered VPCs |
+| **Prefix Lists** | Reference managed prefix lists (AWS services) |
+| **No deny rules** | Can only allow (use NACLs to deny) |
+| **Per-ENI** | Up to 5 SGs per ENI (configurable) |
+
+### NACLs (Advanced)
+
+| Feature | Detail |
+|---------|--------|
+| **Stateless** | Must allow both inbound AND outbound |
+| **Ephemeral ports** | Must allow 1024-65535 for return traffic |
+| **Rule evaluation** | Lowest number first, first match wins |
+| **Default NACL** | Allows all (custom NACLs deny all by default) |
+| **Deny specific IPs** | Primary use case (SGs cannot deny) |
+| **Subnet-level** | One NACL per subnet |
+
+---
+
+## AWS Network Firewall
+
+### Architecture
+
+```
+Internet -> IGW -> Firewall Subnet (Network Firewall) -> Application Subnet
+                         |
+                   Inspection via TGW (centralized)
+```
+
+### Rule Types
+
+| Type | Layer | Use Case |
+|------|-------|----------|
+| **Stateless** | 3/4 | Fast pass/drop by IP, port, protocol |
+| **Stateful (5-tuple)** | 3/4 | Connection tracking |
+| **Stateful (Domain)** | 7 | Allow/deny specific domains |
+| **Stateful (Suricata)** | 7 | IPS/IDS rules (deep packet inspection) |
+
+### Key Features
+
+- Managed, scalable, HA (deployed per AZ)
+- Suricata-compatible IPS rules
+- TLS inspection (decrypt, inspect, re-encrypt)
+- Domain filtering (allow only approved domains)
+- Centralized deployment via Transit Gateway
+- Logging to S3, CloudWatch, Kinesis Firehose
+- Managed rule groups (AWS + marketplace)
+
+### Centralized Inspection Pattern
+
+```
+Spoke VPCs -> Transit Gateway -> Inspection VPC (Network Firewall) -> Internet
+                                        |
+                                  Return route via TGW
+```
+
+- All egress/ingress flows through inspection VPC
+- TGW route tables direct traffic to firewall endpoints
+- Appliance mode on TGW (symmetric routing)
+
+---
+
+## WAF (Web Application Firewall)
+
+### WAF Components
+
+| Component | Purpose |
+|-----------|---------|
+| **Web ACL** | Container for rules (allow/block/count) |
+| **Rules** | Match conditions + action |
+| **Rule Groups** | Reusable collection of rules |
+| **Managed Rules** | Pre-built by AWS or marketplace |
+| **IP Sets** | Lists of IPs to allow/block |
+| **Regex Pattern Sets** | Pattern matching |
+
+### Rule Types
+
+| Rule Type | Protects Against |
+|-----------|-----------------|
+| **Rate-based** | DDoS, brute force (threshold per 5 min) |
+| **IP match** | Known bad IPs, geo-blocking |
+| **SQL injection** | SQLi attacks |
+| **XSS** | Cross-site scripting |
+| **Size constraint** | Oversized requests |
+| **Geo match** | Country-based blocking |
+| **Regex** | Custom patterns |
+| **Managed (AWS)** | OWASP Top 10, known bad inputs, bots |
+
+### WAF Deployment
+
+| Attaches To | Use Case |
+|-------------|----------|
+| **CloudFront** | Global edge protection |
+| **ALB** | Regional application protection |
+| **API Gateway** | API protection |
+| **AppSync** | GraphQL protection |
+| **Cognito User Pool** | Authentication protection |
+
+### WAF Logging & Monitoring
+
+- Full request logs to S3, CloudWatch Logs, or Kinesis Firehose
+- CloudWatch metrics: AllowedRequests, BlockedRequests, CountedRequests
+- Sampled requests: View recent requests that matched rules
+- Use for: Tuning rules, identifying false positives
+
+---
+
+## DDoS Protection
+
+### Shield Standard (Free)
+
+- Automatic protection for all AWS customers
+- Layer 3/4 protection (SYN floods, UDP reflection, etc.)
+- Always-on detection and inline mitigation
+- No configuration needed
+
+### Shield Advanced ($3,000/month)
+
+| Feature | Description |
+|---------|-------------|
+| **Enhanced Detection** | Application-layer (Layer 7) DDoS detection |
+| **DRT (DDoS Response Team)** | 24/7 expert assistance during attacks |
+| **Cost Protection** | Credits for scaling charges during attack |
+| **Health-based Detection** | Route 53 health checks improve detection |
+| **Proactive Engagement** | DRT contacts you during detected events |
+| **WAF Integration** | Free WAF for Shield Advanced resources |
+| **Visibility** | Real-time metrics and attack forensics |
+
+### DDoS Resilient Architecture
+
+```
+Route 53 (DNS-level protection, health checks)
+    |
+CloudFront (absorb at edge, 400+ locations)
+    |
+WAF (rate limiting, IP blocking, managed rules)
+    |
+Shield Advanced (Layer 7 detection, DRT)
+    |
+ALB (Auto Scaling behind it)
+    |
+Auto Scaling Group (absorb remaining load)
+```
+
+---
+
+## Systems Manager Security
+
+### Patch Management
+
+| Component | Purpose |
+|-----------|---------|
+| **Patch Baseline** | Define approved/rejected patches |
+| **Patch Group** | Tag-based instance grouping |
+| **Maintenance Window** | Schedule patching |
+| **Compliance** | Report patch status |
+| **Scan vs. Install** | Audit-only or apply patches |
+
+### Session Manager (Replace Bastion)
+
+- Shell access without SSH/RDP
+- No open inbound ports needed
+- No bastion hosts needed
+- Full audit trail (CloudTrail + S3/CloudWatch)
+- IAM-based access control
+- Encryption in transit (TLS) and at rest (KMS)
+- Port forwarding supported
+
+### Hardening
+
+| Feature | Purpose |
+|---------|---------|
+| **State Manager** | Ensure desired configuration state |
+| **Inventory** | Track installed software, patches, config |
+| **Compliance** | Report on patch and configuration compliance |
+| **Automation** | Remediate non-compliant instances |
+
+---
+
+## VPC Endpoints Security
+
+### Gateway Endpoints (S3, DynamoDB)
+
+- Route table entry (prefix list)
+- Endpoint policy controls access
+- Cannot be accessed from on-premises
+- Free
+
+### Interface Endpoints (PrivateLink)
+
+- ENI with private IP in your subnet
+- Security group controls access
+- Endpoint policy controls access
+- Private DNS (resolves public service URL to private IP)
+- Can be accessed from on-premises (via DX/VPN)
+- Per-hour + per-GB cost
+
+### Endpoint Policies
+
+```json
+{
+  ""Statement"": [{
+    ""Effect"": ""Allow"",
+    ""Principal"": ""*"",
+    ""Action"": ""s3:GetObject"",
+    ""Resource"": ""arn:aws:s3:::my-bucket/*""
+  }]
+}
+```
+
+- Restrict which actions/resources are accessible via endpoint
+- Does NOT replace IAM policies (both must allow)
+- Use for: Limit data exfiltration (only allow specific buckets)
+
+---
+
+## Key Exam Patterns
+
+**Network Firewall:**
+- **""Deep packet inspection""** -> AWS Network Firewall (Suricata rules)
+- **""Domain filtering (allow only approved)""** -> Network Firewall stateful domain rules
+- **""Centralized inspection for all VPCs""** -> TGW + Inspection VPC + Network Firewall
+- **""IPS/IDS""** -> Network Firewall with Suricata-compatible rules
+- **""TLS inspection""** -> Network Firewall TLS decryption
+
+**WAF:**
+- **""Block SQL injection""** -> WAF SQL injection rule
+- **""Rate limiting""** -> WAF rate-based rule
+- **""Block by country""** -> WAF geo match rule
+- **""OWASP Top 10 protection""** -> WAF AWS Managed Rules
+- **""Bot protection""** -> WAF Bot Control managed rule group
+
+**DDoS:**
+- **""Layer 3/4 DDoS protection""** -> Shield Standard (automatic, free)
+- **""Layer 7 DDoS + expert help""** -> Shield Advanced + DRT
+- **""Cost protection during attack""** -> Shield Advanced
+- **""DDoS resilient architecture""** -> CloudFront + WAF + Shield + Auto Scaling
+
+**VPC:**
+- **""Block specific IP""** -> NACL deny rule
+- **""Prevent data exfiltration via S3""** -> VPC Endpoint policy (restrict to specific buckets)
+- **""Private access to AWS services""** -> VPC Endpoints (Gateway or Interface)
+- **""Replace bastion host""** -> Systems Manager Session Manager
+- **""Automated patching""** -> SSM Patch Manager + Maintenance Windows
+
+---
+
+## Quick Exam Tips
+
+- **Network Firewall** = managed IPS/IDS with Suricata rules. Deploy in dedicated subnet.
+- **WAF** attaches to CloudFront, ALB, API Gateway, AppSync - NOT directly to EC2.
+- **Shield Standard** is free and automatic. Shield Advanced adds Layer 7 + DRT + cost protection.
+- **Rate-based WAF rules** count requests per 5-minute window per IP.
+- **NACLs** are the only way to explicitly DENY traffic (Security Groups can only allow).
+- **VPC Endpoint policies** restrict what's accessible through the endpoint (anti-exfiltration).
+- **Session Manager** replaces bastion hosts - no SSH keys, no open ports, full audit trail.
+- **Centralized inspection** = Transit Gateway routes all traffic through Network Firewall VPC.
+- **Appliance mode** on TGW ensures symmetric routing through firewall (required for stateful).
+- **CloudFront + WAF** is the standard edge protection pattern (absorb + filter).
+- **Managed Rule Groups** provide pre-built protection (AWS, marketplace vendors).
+- **Network Firewall logging** goes to S3, CloudWatch Logs, or Kinesis Firehose.
+- **Endpoint policies** work WITH IAM policies (both must allow). They don't replace IAM.
+- **DDoS resilient** = Route 53 + CloudFront + WAF + Shield + ALB + Auto Scaling."

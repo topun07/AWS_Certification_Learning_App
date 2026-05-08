@@ -1,0 +1,287 @@
+certCode,domain,title,content
+"MLS-C01","Domain 1: Data Engineering","Data Engineering","## MLS-C01 Domain 1: Data Engineering
+
+**Weight:** ~20% of scored exam content
+**Exam Level:** Specialty
+
+This domain covers data ingestion (batch/streaming), transformation, feature engineering, and storage for ML pipelines.
+
+---
+
+## Data Storage for ML
+
+| Service | Use Case | ML Relevance |
+|---------|----------|-------------|
+| **S3** | Primary data lake | All formats; integrates with everything |
+| **FSx for Lustre** | High-performance training | Sub-ms latency; linked to S3 |
+| **EFS** | Shared file system | Mount to multiple training instances |
+| **Redshift** | Data warehouse | SQL aggregations for features |
+| **DynamoDB** | Real-time feature store | Low-latency feature serving |
+| **Timestream** | Time-series data | IoT, forecasting input |
+| **Neptune** | Graph data | Fraud detection, recommendations |
+
+### Data Lake Zones
+
+```
+RAW: s3://lake/raw/ (original, as-is, all formats)
+PROCESSED: s3://lake/processed/ (cleaned, Parquet, partitioned)
+FEATURES: s3://lake/features/ (ML-ready, train/val/test splits)
+```
+
+### Data Formats for ML
+
+| Format | Type | Best For |
+|--------|------|----------|
+| **Parquet** | Columnar | Analytics, Athena, Glue (default choice) |
+| **RecordIO-Protobuf** | Binary | SageMaker Pipe mode (fastest) |
+| **CSV** | Row | Simple, small datasets |
+| **JSON/JSONL** | Row | Semi-structured data |
+| **LibSVM** | Text | Sparse data (XGBoost) |
+| **Image (PNG/JPEG)** | Binary | Computer vision |
+
+### SageMaker Input Modes
+
+| Mode | Behavior | Best For |
+|------|----------|----------|
+| **File** | Download all to /opt/ml/input/ | Small-medium, random access |
+| **Pipe** | Stream from S3 (no download wait) | Large, sequential access |
+| **Fast File** | Lazy load (POSIX file system) | Large, random access |
+| **FSx for Lustre** | High-performance parallel FS | Massive datasets, HPC |
+
+---
+
+## Data Ingestion
+
+### Batch Ingestion
+
+| Service | Use Case |
+|---------|----------|
+| **AWS Glue** | Serverless ETL (crawlers + Spark jobs + Data Catalog) |
+| **Amazon EMR** | Petabyte-scale Spark/Hadoop processing |
+| **AWS DMS** | Database migration + CDC (continuous replication to S3) |
+| **Amazon Athena** | Serverless SQL on S3 (ad-hoc analysis) |
+| **Snow Family** | Massive offline transfer (petabytes) |
+| **Transfer Family** | SFTP/FTP to S3 |
+
+### Streaming Ingestion
+
+| Service | Latency | Use Case |
+|---------|---------|----------|
+| **Kinesis Data Streams** | ~200ms | Real-time, custom consumers, ordering |
+| **Kinesis Data Firehose** | 60+ sec | Managed delivery to S3/Redshift (no code) |
+| **Kinesis Data Analytics** | ~1 sec | SQL/Flink on streams (anomaly detection) |
+| **Amazon MSK** | Variable | Existing Kafka workloads |
+| **IoT Core** | Variable | Device data -> Rules Engine -> S3/Kinesis |
+
+### Kinesis Decision Framework
+
+```
+Real-time + custom processing + replay -> Kinesis Data Streams
+Load to S3/Redshift automatically -> Kinesis Data Firehose
+SQL on streaming data -> Kinesis Data Analytics
+Existing Kafka -> Amazon MSK
+
+Common ML Pattern:
+IoT -> Kinesis Streams -> Kinesis Analytics (anomaly detection)
+                       -> Kinesis Firehose -> S3 (for training)
+```
+
+### Kinesis Analytics - RANDOM_CUT_FOREST
+
+- Built-in anomaly detection algorithm
+- Unsupervised; scores each data point
+- Real-time anomaly detection on streaming data
+- Most tested streaming ML concept on exam
+
+---
+
+## Data Transformation
+
+### AWS Glue ETL
+
+| Component | Purpose |
+|-----------|---------|
+| **Crawlers** | Auto-discover schema, populate Data Catalog |
+| **Spark ETL** | Large-scale distributed processing |
+| **Python Shell** | Small datasets, simple transforms |
+| **DataBrew** | Visual, no-code, 250+ transforms |
+| **FindMatches** | ML-based deduplication |
+| **Job Bookmarks** | Track processed data (avoid reprocessing) |
+| **Data Quality** | DQDL rules (completeness, uniqueness) |
+
+### ML Data Transformation Patterns
+
+**Missing Data:**
+- Drop (small % missing, MCAR)
+- Impute: Mean/Median (numerical), Mode (categorical)
+- KNN Imputation, MICE (advanced)
+- XGBoost handles missing natively
+
+**Outliers:**
+- Detection: Z-Score (> 3 SD), IQR, Isolation Forest, Random Cut Forest
+- Treatment: Remove, Cap/Floor (Winsorize), Log transform, Keep (if meaningful)
+
+**Feature Scaling:**
+- Normalization (Min-Max [0,1]): Neural networks, distance-based
+- Standardization (Z-Score, mean=0, std=1): SVM, Linear Regression
+- NOT needed: Tree-based models (XGBoost, Random Forest)
+
+**Encoding Categorical:**
+- One-Hot: Nominal, low cardinality
+- Label Encoding: Ordinal, tree-based models
+- Target Encoding: High cardinality (risk of overfitting)
+- Embedding: Very high cardinality (deep learning)
+
+**Text Processing:**
+- Tokenization -> Stop words -> Stemming/Lemmatization
+- TF-IDF, Bag of Words, Word2Vec, N-grams
+- BlazingText (AWS): Word2Vec + text classification
+
+**Time Series:**
+- Lag features, rolling statistics, date features
+- Differencing (stationarity), Fourier features
+- NEVER random split (temporal ordering)
+
+---
+
+## Feature Engineering with SageMaker
+
+### SageMaker Data Wrangler
+
+- Visual data preparation in Studio
+- 300+ built-in transforms
+- Import from S3, Redshift, Athena
+- Export to Processing job, Pipeline, Feature Store
+
+### SageMaker Processing
+
+- Run preprocessing workloads (scikit-learn, Spark, custom)
+- Input: S3 -> Container -> Output: S3
+- Use case: Feature engineering at scale in pipeline
+
+### SageMaker Feature Store
+
+| Feature | Description |
+|---------|-------------|
+| **Online Store** | Low-latency reads (real-time inference) |
+| **Offline Store** | S3-based (batch training, exploration) |
+| **Feature Groups** | Collection of related features |
+| **Event Time** | Point-in-time queries (prevent leakage) |
+| **Benefits** | Reuse, consistency (train=serve), discovery |
+
+---
+
+## Data Splitting and Sampling
+
+### Standard Split
+
+- Training: 70-80% (model learns)
+- Validation: 10-15% (tune hyperparameters)
+- Test: 10-15% (final evaluation, never seen)
+
+### Key Concepts
+
+- **Stratified Split:** Maintain class distribution (imbalanced data)
+- **Time Series:** NEVER random - use temporal ordering
+- **Cross-Validation:** K-Fold, Stratified K-Fold
+- **Data Leakage:** Split BEFORE transformation; fit scaler on train only
+
+### Handling Imbalanced Data
+
+| Technique | Description |
+|-----------|-------------|
+| **SMOTE** | Synthetic minority oversampling (most common answer) |
+| **Random Oversampling** | Duplicate minority samples |
+| **Random Undersampling** | Remove majority samples |
+| **Class Weights** | Penalize misclassification of minority |
+| **Threshold Tuning** | Adjust decision threshold |
+
+---
+
+## Pipeline Orchestration
+
+| Service | Best For |
+|---------|----------|
+| **SageMaker Pipelines** | ML-specific (caching, lineage, model registry) |
+| **Step Functions** | General orchestration (any AWS service) |
+| **MWAA (Airflow)** | Complex DAGs, existing Airflow expertise |
+| **Glue Workflows** | ETL-specific orchestration |
+
+### SageMaker Pipelines Steps
+
+ProcessingStep -> TrainingStep -> EvaluateStep -> ConditionStep -> RegisterModel -> Deploy
+
+---
+
+## Data Security
+
+| Concern | Solution |
+|---------|----------|
+| **Encrypt training data** | KMS key on SageMaker training job |
+| **Encrypt between containers** | Inter-container encryption (adds overhead) |
+| **Isolate ML workloads** | VPC + private subnets + VPC endpoints |
+| **Detect PII** | Comprehend (NLP) or Macie (S3) |
+| **Fine-grained access** | Lake Formation (column/row-level) |
+
+---
+
+## Key Exam Patterns
+
+**Storage:**
+- **""Central ML data storage""** -> S3 (data lake)
+- **""High-performance training""** -> FSx for Lustre
+- **""Fastest SageMaker format""** -> RecordIO-Protobuf (Pipe mode)
+- **""Large dataset, start training immediately""** -> Pipe Mode or Fast File Mode
+
+**Ingestion:**
+- **""Real-time + custom consumers""** -> Kinesis Data Streams
+- **""Load streaming to S3 (managed)""** -> Kinesis Firehose
+- **""Real-time anomaly detection""** -> Kinesis Analytics (RANDOM_CUT_FOREST)
+- **""JSON to Parquet during ingestion""** -> Firehose format conversion
+- **""Continuous DB replication""** -> DMS with CDC
+
+**Transformation:**
+- **""Visual no-code prep""** -> Glue DataBrew or Data Wrangler
+- **""ML deduplication""** -> Glue FindMatches
+- **""Feature store""** -> SageMaker Feature Store (online + offline)
+- **""Consistent train/serve features""** -> Feature Store
+
+**Preparation:**
+- **""Handle missing values""** -> Impute (mean/median) or XGBoost (handles natively)
+- **""Imbalanced classes""** -> SMOTE
+- **""Scale for neural network""** -> Normalization (Min-Max)
+- **""Scale for SVM""** -> Standardization (Z-score)
+- **""Time series split""** -> Temporal ordering (never random)
+- **""Prevent data leakage""** -> Split before transform; fit on train only
+
+---
+
+## Quick Exam Tips
+
+- **Parquet** is default for ML data in S3. Columnar, compressed, splittable.
+- **Firehose** = easiest streaming to S3. No code, format conversion, managed.
+- **RANDOM_CUT_FOREST** = real-time anomaly detection (Kinesis Analytics).
+- **Feature Store** solves training-serving skew. Online (real-time) + Offline (batch).
+- **Data leakage:** Split BEFORE transformation. Fit on train only.
+- **SMOTE** = most common answer for imbalanced data.
+- **Glue Bookmarks** prevent reprocessing already-processed data.
+- **FSx for Lustre** = high-throughput training with massive datasets.
+- **Pipe Mode** = stream from S3 (no download wait). Fast File = lazy load + random access.
+- **DMS + CDC** = continuous database replication to S3 for ML.
+- **Inter-container encryption** adds overhead but required for compliance.
+- **Normalization** for neural networks. **Standardization** for SVM/LR. **Neither** for trees.
+
+---
+
+## Summary
+
+This covers all objectives in MLS-C01 Domain 1:
+
+- **Storage** - S3, FSx for Lustre, EFS, input modes (File/Pipe/Fast File)
+- **Batch Ingestion** - Glue, EMR, DMS, Athena, Snow Family
+- **Streaming** - Kinesis (Streams/Firehose/Analytics), RANDOM_CUT_FOREST
+- **Transformation** - Glue ETL, DataBrew, SageMaker Processing
+- **Feature Engineering** - Data Wrangler, Feature Store, scaling, encoding
+- **Splitting** - Train/val/test, stratified, time series, SMOTE
+- **Orchestration** - SageMaker Pipelines, Step Functions, MWAA
+- **Security** - KMS, VPC, inter-container encryption, Lake Formation"

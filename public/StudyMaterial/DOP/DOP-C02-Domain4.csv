@@ -1,0 +1,534 @@
+certCode,domain,title,content
+"DOP-C02","Domain 4: Monitoring & Logging","Monitoring and Logging","## DOP-C02 Domain 4: Monitoring and Logging
+
+**Weight:** ~15% of scored exam content
+**Exam Level:** Professional
+
+This domain covers log/metric collection, auditing, analysis, and automated event management. Expect cross-account aggregation, metric math, distributed tracing, and automated remediation.
+
+---
+
+## Amazon CloudWatch
+
+### CloudWatch Metrics
+
+| Concept | Description |
+|---------|-------------|
+| **Namespace** | Container for metrics (AWS/EC2, Custom/MyApp) |
+| **Metric** | Time-ordered data points (CPUUtilization) |
+| **Dimension** | Name/value pair identifying metric (InstanceId) |
+| **Statistic** | Aggregation (Average, Sum, Min, Max, SampleCount) |
+| **Period** | Aggregation length (60s, 300s, 3600s) |
+| **Resolution** | Standard (60s) or High-resolution (1s) |
+
+**What EC2 Basic Monitoring does NOT include:** Memory, disk space, processes, swap (requires CloudWatch Agent).
+
+### CloudWatch Agent
+
+- Collects OS metrics (memory, disk, swap, processes)
+- Collects application logs
+- Configuration stored in SSM Parameter Store
+- IAM Role: CloudWatchAgentServerPolicy + AmazonSSMManagedInstanceCore
+
+### Custom Metrics & Embedded Metric Format (EMF)
+
+| Feature | EMF | PutMetricData API |
+|---------|-----|------------------|
+| **Mechanism** | Write structured JSON to stdout/logs | API call |
+| **Cost** | Log ingestion + metric cost | Metric + API call cost |
+| **High cardinality** | Better (dimensions in logs) | Limited (10 dimensions) |
+| **Best for** | Lambda, containers, high-volume | EC2, custom apps |
+
+EMF: Write JSON with `_aws` metadata -> CloudWatch auto-extracts metrics. No API calls needed.
+
+---
+
+## CloudWatch Alarms
+
+### Alarm Types
+
+| Type | What It Monitors | Use Case |
+|------|-----------------|----------|
+| **Metric alarm** | Single metric threshold | CPU > 80%; Errors > 10 |
+| **Composite alarm** | Combination of alarms (AND/OR/NOT) | Alert only when multiple signals confirm |
+| **Anomaly detection** | Metric deviates from ML-learned band | Unusual patterns without fixed thresholds |
+
+### Alarm Configuration
+
+- **EvaluationPeriods:** How many periods to evaluate
+- **DatapointsToAlarm:** M out of N must breach (reduces noise)
+- **TreatMissingData:** missing, breaching, notBreaching, ignore
+- **Actions:** SNS, Auto Scaling, EC2 (stop/terminate/recover), Lambda
+
+### Composite Alarms
+
+```
+ALARM(HighCPU) AND ALARM(HighErrorRate)  -> Only page when both confirm
+ALARM(AppDown) AND NOT ALARM(Maintenance) -> Suppress during maintenance
+```
+
+Reduces alert noise. Only alert when multiple signals confirm an issue.
+
+### Metric Math
+
+```yaml
+Metrics:
+  - Id: errors
+    MetricStat: {Metric: 5XXError, Stat: Sum}
+  - Id: requests
+    MetricStat: {Metric: RequestCount, Stat: Sum}
+  - Id: error_rate
+    Expression: ""(errors / requests) * 100""
+    ReturnData: true  # Alarm evaluates this
+```
+
+Common expressions: error rate %, rate per second, SUM/AVG across dimensions, ANOMALY_DETECTION_BAND, FILL for missing data.
+
+---
+
+## CloudWatch Logs
+
+### Architecture
+
+```
+Log Group (/app/production/api)
+  +-- Retention: 30 days
+  +-- Encryption: KMS
+  +-- Subscription Filter -> Kinesis/Lambda/Firehose
+  +-- Log Stream: i-0abc123 (instance 1)
+  +-- Log Stream: i-0def456 (instance 2)
+  +-- Metric Filter: Count ""ERROR"" -> Custom Metric -> Alarm -> SNS
+```
+
+### Metric Filters
+
+```
+Simple: ""ERROR""
+JSON: { $.statusCode >= 500 }
+Multiple: { $.level = ""ERROR"" && $.service = ""payment"" }
+Space-delimited: [ip, id, user, timestamp, request, status_code = 5*, size]
+```
+
+Metric Filter -> Custom Metric -> Alarm -> Action (SNS/Scale/Lambda)
+
+### Logs Insights Queries
+
+```sql
+-- Error rate over time
+filter @message like /ERROR/
+| stats count(*) as errorCount by bin(5m)
+
+-- P99 latency by endpoint
+stats percentile(latency, 99) as p99 by endpoint | sort p99 desc
+
+-- Lambda cold starts
+filter @message like /Init Duration/
+| parse @message ""Init Duration: * ms"" as initDuration
+| stats count(*) as coldStarts, avg(initDuration) by bin(1h)
+```
+
+### Log Subscriptions
+
+- **Destinations:** Lambda, Kinesis Data Streams, Kinesis Data Firehose, OpenSearch
+- **Limit:** 2 subscription filters per log group
+- **Cross-account:** Destination policy allows source account
+
+### Cross-Account Log Aggregation
+
+| Method | How It Works |
+|--------|-------------|
+| **Cross-Account Observability (OAM)** | Query in place; no data movement |
+| **Subscription Filters -> central Kinesis/S3** | Stream to central account |
+| **CloudWatch Logs cross-account** | Monitoring account views source logs |
+
+### Log Retention Options
+
+| Option | Use Case | Cost |
+|--------|----------|------|
+| **1 day - 10 years** | Active analysis | CloudWatch pricing |
+| **Export to S3** | Long-term archive | S3 pricing (cheaper) |
+| **Infrequent Access class** | Reduced features; lower cost | 50% cheaper ingestion |
+
+---
+
+## AWS CloudTrail
+
+### What It Records
+
+| Event Type | What It Captures | Examples |
+|-----------|-----------------|---------|
+| **Management events (Read)** | Read-only API calls | Describe*, List*, Get* |
+| **Management events (Write)** | Modify API calls | Create*, Delete*, Put* |
+| **Data events** | Resource-level operations | S3 GetObject, Lambda Invoke |
+| **Insights events** | Unusual API patterns | Spike in API calls |
+
+### CloudTrail + CloudWatch Logs (Security Monitoring)
+
+```
+CloudTrail -> CloudWatch Logs -> Metric Filter -> Alarm -> SNS
+
+Common Filters:
+- Root account login: { $.userIdentity.type = ""Root"" }
+- Unauthorized calls: { $.errorCode = ""*UnauthorizedOperation"" }
+- Console login without MFA
+- Security group changes
+- IAM policy changes
+- CloudTrail config changes
+```
+
+### CloudTrail Lake
+
+- SQL-based queries across events
+- Up to 7 years retention
+- Cross-account (Organization)
+- Use case: Long-term audit; compliance investigations
+
+---
+
+## AWS X-Ray (Distributed Tracing)
+
+### Key Concepts
+
+| Concept | Description | Use Case |
+|---------|-------------|----------|
+| **Trace** | End-to-end request path | See full journey |
+| **Segment** | Work by one service | Identify slow service |
+| **Subsegment** | Downstream call within segment | Identify slow dependency |
+| **Annotation** | Indexed key-value (searchable) | Filter by user_id, order_id |
+| **Metadata** | Non-indexed (not searchable) | Store debug info |
+| **Service Map** | Visual architecture | Identify bottlenecks |
+| **Sampling** | Control trace volume | Reduce cost |
+
+### Sampling Rules
+
+- **Default:** 1 request/second + 5% additional
+- **Custom:** 100% of errors; 100% of /payment; 1% of /health
+- **Priority:** Lower number = higher priority
+
+### X-Ray Integration
+
+| Service | How to Enable |
+|---------|--------------|
+| **Lambda** | Enable Active Tracing (checkbox) |
+| **API Gateway** | Enable X-Ray on stage |
+| **ECS/Fargate** | X-Ray daemon sidecar |
+| **EC2** | X-Ray daemon + SDK |
+| **SNS/SQS** | Automatic trace propagation |
+| **Step Functions** | Enable X-Ray tracing |
+
+---
+
+## Amazon EventBridge
+
+### Architecture
+
+```
+Event Sources (200+ AWS services, custom apps, SaaS)
+    |
+Event Bus (default, custom, partner)
+    |
+Rules (pattern matching)
+    |
+Targets (Lambda, Step Functions, SQS, SNS, SSM, CodePipeline, etc.)
+```
+
+### Common DevOps Patterns
+
+| Event Source | Event | Automated Response |
+|-------------|-------|-------------------|
+| **EC2** | Instance terminated | Lambda -> investigate -> notify |
+| **CodePipeline** | Pipeline failed | SNS -> team notification |
+| **Config** | Resource non-compliant | SSM Automation -> remediate |
+| **GuardDuty** | High-severity finding | Step Functions -> isolate |
+| **Auto Scaling** | Launch failed | Lambda -> investigate capacity |
+| **CloudTrail** | Root login | SNS -> security team |
+
+### EventBridge Scheduler
+
+- Invoke targets on schedule (cron, rate, one-time)
+- 270+ AWS service targets
+- Timezone-aware; flexible time window
+- Retry policy + Dead letter queue
+- More scalable than EventBridge Rules for scheduling
+
+---
+
+## CloudWatch Dashboards
+
+### Best Practices
+
+```
+ROW 1: Key Business Metrics (orders/min, revenue, error rate, P99 latency)
+ROW 2: Infrastructure Health (CPU, memory across instances)
+ROW 3: Application Metrics (requests by endpoint, errors by type)
+ROW 4: Dependencies (DB connections, queue depth)
+ROW 5: Deployment Status (annotations marking deployments)
+```
+
+### Features
+
+| Feature | Description |
+|---------|-------------|
+| **Cross-account** | Metrics from multiple accounts (OAM) |
+| **Cross-region** | Metrics from multiple regions |
+| **Variables** | Dynamic (select instance, environment) |
+| **Logs widgets** | Embed Logs Insights results |
+| **Explorer widget** | Auto-discovers resources by tag |
+
+---
+
+## Additional Observability Services
+
+### CloudWatch Synthetics (Canaries)
+
+| Feature | Description |
+|---------|-------------|
+| **What it does** | Automated scripts testing endpoints on schedule |
+| **Blueprints** | Heartbeat, API, broken link, visual, GUI workflow |
+| **Schedule** | Every 1-60 minutes |
+| **Artifacts** | Screenshots, HAR files, logs in S3 |
+| **VPC** | Can test internal endpoints |
+
+### Contributor Insights
+
+- Identify top-N contributors (top talkers, heaviest users, most errors)
+- Data source: CloudWatch Logs or VPC Flow Logs
+- Output: Time series of top contributors
+
+### AWS Distro for OpenTelemetry (ADOT)
+
+- AWS-supported OpenTelemetry distribution
+- Collects metrics, traces, logs (vendor-neutral)
+- Sends to X-Ray, CloudWatch, Prometheus, third-party
+- Deploy as sidecar (ECS/EKS), Lambda layer, or EC2 agent
+
+### Amazon Managed Grafana
+
+- Managed Grafana for visualization
+- Data sources: CloudWatch, X-Ray, Prometheus, Timestream, OpenSearch
+- Use case: Unified dashboards across multiple data sources
+
+### Amazon Managed Prometheus
+
+- Managed Prometheus-compatible monitoring
+- Use case: Container metrics (EKS/ECS); Kubernetes-native
+- Query: PromQL; Visualize: Managed Grafana
+
+---
+
+## Incident Manager
+
+| Feature | Description |
+|---------|-------------|
+| **Response plans** | Pre-defined actions for incident types |
+| **Escalation** | Automatic if not acknowledged |
+| **Runbooks** | SSM Automation for remediation |
+| **Engagement** | SMS, voice, email to on-call |
+| **Timeline** | Automatic incident timeline |
+| **Post-incident** | Structured review; action items |
+
+---
+
+## VPC Flow Logs
+
+| Feature | Description |
+|---------|-------------|
+| **Scope** | VPC, Subnet, or ENI level |
+| **Destination** | CloudWatch Logs, S3, Kinesis Data Firehose |
+| **Traffic type** | ALL, ACCEPT, or REJECT |
+| **Custom format** | Choose fields (vpc-id, tcp-flags, flow-direction) |
+| **Analysis** | Athena (S3), Logs Insights (CloudWatch) |
+
+---
+
+## Key Exam Patterns for Domain 4
+
+**Metrics & Alarms:**
+- **""Monitor memory on EC2""** -> CloudWatch Agent
+- **""Alert on error rate > 5%""** -> Metric Math alarm
+- **""Reduce alert noise""** -> Composite Alarms (AND logic)
+- **""Detect unusual patterns""** -> Anomaly Detection
+- **""Create metrics from logs""** -> Metric Filters
+- **""High-cardinality metrics from Lambda""** -> EMF
+- **""Top contributors to errors""** -> Contributor Insights
+- **""Proactive availability monitoring""** -> Synthetics canaries
+
+**Logs:**
+- **""Centralize logs from multiple accounts""** -> Cross-Account Observability or Subscription Filters
+- **""Real-time log processing""** -> Subscription Filter -> Lambda
+- **""Long-term archive cheaply""** -> Export to S3 or Firehose -> S3
+- **""Query logs interactively""** -> Logs Insights
+- **""Reduce log costs""** -> Infrequent Access log class
+- **""Detect root login""** -> CloudTrail -> Logs -> Metric Filter -> Alarm
+
+**Tracing:**
+- **""Identify bottleneck in microservices""** -> X-Ray Service Map
+- **""Search traces by customer ID""** -> X-Ray Annotations
+- **""Reduce X-Ray costs""** -> Custom sampling rules
+- **""Vendor-neutral instrumentation""** -> ADOT (OpenTelemetry)
+
+**Events & Automation:**
+- **""Auto-respond to instance termination""** -> EventBridge -> Lambda
+- **""Remediate Config non-compliance""** -> EventBridge -> SSM Automation
+- **""Notify on pipeline failure""** -> EventBridge -> SNS
+- **""Structured incident response""** -> Incident Manager
+
+**Audit:**
+- **""Track all API calls""** -> CloudTrail (Organization trail)
+- **""Detect unusual API activity""** -> CloudTrail Insights
+- **""Prove logs not tampered""** -> CloudTrail log file validation
+- **""Query audit events with SQL""** -> CloudTrail Lake
+
+---
+
+## Quick Exam Tips for Domain 4
+
+- **CloudWatch Agent** = memory + disk metrics. Basic monitoring doesn't include them.
+- **EMF** creates metrics from structured logs automatically. No PutMetricData needed.
+- **Metric Filters** extract metrics from unstructured logs. Pattern -> Metric -> Alarm.
+- **Composite Alarms** reduce noise. AND logic: only alert when multiple signals confirm.
+- **Anomaly Detection** uses ML. No fixed thresholds needed. Adapts to patterns.
+- **Metric Math** enables calculated alarms. error_rate = (errors/requests)*100.
+- **Logs Insights** = ad-hoc log analysis. Know syntax: fields, filter, stats, sort, parse.
+- **Subscription Filters** stream logs real-time. Max 2 per log group.
+- **CloudTrail + CloudWatch Logs** = real-time security alerting pattern.
+- **CloudTrail Insights** = unusual API activity (spikes, error rates).
+- **X-Ray Annotations** = indexed, searchable. Metadata = not searchable.
+- **X-Ray Sampling** controls cost. Custom rules: 100% errors, 5% normal.
+- **EventBridge** = central nervous system for automation. 200+ AWS service sources.
+- **Cross-Account Observability (OAM)** = view metrics/logs/traces across accounts without moving data.
+- **Synthetics canaries** = proactive monitoring. Test endpoints on schedule.
+- **Contributor Insights** = top-N analysis (top talkers, heaviest users).
+- **Incident Manager** = structured response with escalation and runbooks.
+- **VPC Flow Logs** = network metadata (not payload). Use Traffic Mirroring for packets.
+- **ADOT** = vendor-neutral OpenTelemetry. Single instrumentation, multiple backends.
+- **Managed Grafana** = unified dashboards across CloudWatch, X-Ray, Prometheus.
+
+---
+
+## Summary
+
+This covers all objectives in DOP-C02 Domain 4:
+
+- **CloudWatch Metrics** - Agent, custom metrics, EMF, resolution, retention
+- **CloudWatch Alarms** - Metric, composite, anomaly detection, metric math
+- **CloudWatch Logs** - Groups, streams, metric filters, Insights, subscriptions
+- **CloudTrail** - Management/data events, Insights, Lake, security monitoring
+- **X-Ray** - Traces, segments, annotations, sampling, service map
+- **EventBridge** - Rules, patterns, targets, scheduler, automation
+- **Dashboards** - Cross-account, cross-region, variables, widgets
+- **Synthetics** - Canaries, blueprints, proactive monitoring
+- **Centralized Observability** - OAM, ADOT, Managed Grafana, Managed Prometheus
+- **Incident Management** - Response plans, escalation, runbooks, post-incident
+
+---
+
+## Additional Exam Tips (Continued)
+
+- **Cross-Account Observability (OAM)** is the modern approach. Monitoring account views metrics/logs/traces from source accounts without moving data. Set up via Organizations for automatic linking.
+- **Synthetics canaries** proactively test endpoints before users report issues. Heartbeat = availability; GUI workflow = multi-step flows. Failed canaries trigger alarms automatically.
+- **Contributor Insights** answers ""who is causing this?"" Top IPs by error count, heaviest API consumers. Real-time top-N rankings.
+- **VPC Flow Logs** = network metadata (not content). S3 + Athena for large volumes (cheapest). CloudWatch Logs for real-time metric filters.
+- **Incident Manager** provides structured response. Response plans + escalation + runbooks + chat channels. Auto-escalate if no acknowledgment.
+- **Managed Grafana** = ""unified dashboard across multiple data sources."" Connects to CloudWatch, Prometheus, X-Ray, Timestream, third-party.
+- **ADOT** = vendor-neutral OpenTelemetry. Single instrumentation, multiple backends. Preferred for containers and multi-cloud.
+- **Log retention strategy:** Active (CloudWatch, 30-90 days) -> Archive (S3 Standard, 1 year) -> Compliance (S3 Glacier, 7+ years).
+- **TreatMissingData:** For scaling alarms use ""missing"" (maintain state). For health alarms use ""breaching"" (assume worst).
+- **EventBridge Scheduler vs. Rules:** Scheduler = millions of schedules, one-time, timezone-aware. Rules = event-pattern matching.
+
+---
+
+## Domain 4 Concept Map
+
+```
+MONITORING AND LOGGING
+|
++-- CLOUDWATCH METRICS
+|   +-- Standard Metrics: AWS service metrics (free, 5-min)
+|   +-- Detailed Monitoring: 1-minute resolution (paid)
+|   +-- Custom Metrics: PutMetricData or EMF (1-sec to 5-min)
+|   +-- CloudWatch Agent: OS-level (memory, disk, processes)
+|   +-- Embedded Metric Format: Metrics from structured logs
+|   +-- Metric Math: Calculated metrics (error rate, ratios)
+|   +-- High Resolution: 1-second granularity
+|
++-- CLOUDWATCH ALARMS
+|   +-- Metric Alarms: Single threshold (M out of N)
+|   +-- Composite Alarms: AND/OR/NOT across multiple alarms
+|   +-- Anomaly Detection: ML-based band; no fixed threshold
+|   +-- Actions: SNS, Auto Scaling, EC2, Lambda
+|   +-- TreatMissingData: missing, breaching, notBreaching, ignore
+|   +-- States: OK, ALARM, INSUFFICIENT_DATA
+|
++-- CLOUDWATCH LOGS
+|   +-- Collection: Agent, awslogs driver, SDK, service integration
+|   +-- Metric Filters: Extract metrics from log patterns
+|   +-- Logs Insights: Interactive SQL-like queries
+|   +-- Subscription Filters: Stream to Lambda/Kinesis/Firehose/OpenSearch
+|   +-- Cross-Account: OAM or subscriptions to central account
+|   +-- Retention: 1 day to never; export to S3 for archive
+|   +-- Log Classes: Standard vs. Infrequent Access (50% cheaper)
+|   +-- Contributor Insights: Top-N analysis from logs
+|
++-- AWS CLOUDTRAIL
+|   +-- Management Events: API calls managing resources (default ON)
+|   +-- Data Events: Resource-level (S3, Lambda, DynamoDB)
+|   +-- Insights Events: Unusual API activity detection
+|   +-- Organization Trail: All accounts, all regions
+|   +-- Log File Validation: SHA-256 digest (tamper detection)
+|   +-- CloudTrail Lake: SQL queries (up to 7 years)
+|   +-- Integration: CloudWatch Logs (real-time alerting)
+|
++-- AWS X-RAY
+|   +-- Traces: End-to-end request path
+|   +-- Segments/Subsegments: Service and call-level detail
+|   +-- Annotations: Indexed, searchable (filter traces)
+|   +-- Metadata: Non-indexed debug data
+|   +-- Service Map: Visual architecture with latency/errors
+|   +-- Sampling Rules: Control volume (cost optimization)
+|   +-- ADOT: Vendor-neutral OpenTelemetry alternative
+|
++-- AMAZON EVENTBRIDGE
+|   +-- Event Buses: Default (AWS), Custom (app), Partner (SaaS)
+|   +-- Rules: Event pattern matching -> targets
+|   +-- Scheduler: Cron/rate/one-time (millions of schedules)
+|   +-- Targets: Lambda, Step Functions, SQS, SNS, SSM, API Destinations
+|   +-- Cross-Account: Forward events between accounts
+|   +-- Archive & Replay: Store events; replay for debugging
+|   +-- Schema Registry: Discover event schemas
+|
++-- DASHBOARDS & VISUALIZATION
+|   +-- CloudWatch Dashboards: Native; cross-account; cross-region
+|   +-- Managed Grafana: Multi-source; rich visualization
+|   +-- Managed Prometheus: Container metrics; PromQL
+|   +-- Synthetics: Proactive endpoint monitoring (canaries)
+|   +-- Application Signals: SLO-based service health
+|
++-- INCIDENT MANAGEMENT
+|   +-- Incident Manager: Response plans, escalation, runbooks
+|   +-- OpsCenter: Operational issues (OpsItems)
+|   +-- Post-Incident: Structured review; action items
+|   +-- Flow: Alarm -> Incident -> Engage -> Remediate -> Review
+|
++-- NETWORK MONITORING
+    +-- VPC Flow Logs: Traffic metadata (accept/reject)
+    +-- Traffic Mirroring: Full packet capture
+    +-- Reachability Analyzer: Path analysis
+    +-- Network Monitor: Hybrid network health
+```
+
+---
+
+## Summary Table
+
+| Topic | Key Services | Critical Concepts |
+|-------|-------------|------------------|
+| **Metrics** | CloudWatch, Agent, EMF | Custom metrics, high-resolution, agent config, metric math |
+| **Alarms** | CloudWatch Alarms | Composite, anomaly detection, metric math, TreatMissingData |
+| **Logs** | CloudWatch Logs, Insights | Metric filters, subscriptions, cross-account, retention |
+| **Audit** | CloudTrail, Lake | Management/data events, Insights, log validation, Org trail |
+| **Tracing** | X-Ray, ADOT | Annotations vs. metadata, sampling, service map |
+| **Events** | EventBridge, Scheduler | Event patterns, targets, cross-account, automation |
+| **Dashboards** | CloudWatch, Grafana, Prometheus | Cross-account observability, multi-source, canaries |
+| **Incidents** | Incident Manager, OpsCenter | Response plans, escalation, runbooks, post-incident |
+| **Network** | VPC Flow Logs, Traffic Mirroring | Accept/reject, Athena analysis, custom format |"

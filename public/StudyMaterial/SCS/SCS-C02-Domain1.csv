@@ -1,0 +1,179 @@
+certCode,domain,title,content
+"SCS-C02","Domain 1: Threat Detection & Incident Response","Threat Detection & Incident Response","## SCS-C02 Domain 1: Threat Detection & Incident Response
+
+**Weight:** ~14% of scored exam content
+**Exam Level:** Specialty
+
+This domain covers detecting threats, responding to security incidents, and automating remediation at scale.
+
+---
+
+## Threat Detection Services
+
+### Amazon GuardDuty
+
+| Feature | Description |
+|---------|-------------|
+| **Data Sources** | VPC Flow Logs, DNS Logs, CloudTrail, S3 Data Events, EKS Audit, RDS Login |
+| **Detection** | ML-based anomaly detection + threat intelligence feeds |
+| **Finding Types** | Recon, UnauthorizedAccess, Trojan, CryptoCurrency, Stealth, Persistence |
+| **Severity** | Low (1-3.9), Medium (4-6.9), High (7-8.9) |
+| **Multi-Account** | Delegated administrator in Organizations |
+| **Malware Protection** | Scan EBS volumes on EC2/ECS when finding triggered |
+
+**Key Finding Types:**
+
+| Finding | Meaning |
+|---------|---------|
+| **UnauthorizedAccess:EC2/MaliciousIPCaller** | EC2 communicating with known malicious IP |
+| **Recon:EC2/PortProbeUnprotectedPort** | Port scan detected on unprotected port |
+| **CryptoCurrency:EC2/BitcoinTool** | EC2 mining cryptocurrency |
+| **UnauthorizedAccess:IAMUser/InstanceCredentialExfiltration** | Instance credentials used from external IP |
+| **Trojan:EC2/DNSDataExfiltration** | Data exfiltration via DNS queries |
+| **Stealth:S3/ServerAccessLoggingDisabled** | S3 logging intentionally disabled |
+
+### Amazon Detective
+
+- Root cause analysis for security findings
+- Automatically collects: VPC Flow Logs, CloudTrail, GuardDuty findings, EKS audit
+- Builds behavior graph (relationships between entities)
+- Visualize: IP traffic, API calls, user activity over time
+- Integration: One-click pivot from GuardDuty/Security Hub findings
+
+### AWS Security Hub
+
+| Feature | Purpose |
+|---------|---------|
+| **Findings Aggregation** | Central view from GuardDuty, Inspector, Macie, Firewall Manager, IAM AA |
+| **Compliance Standards** | CIS Benchmarks, PCI DSS, AWS Foundational Security Best Practices |
+| **Custom Actions** | Trigger EventBridge for automated response |
+| **Cross-Region** | Aggregate findings from multiple regions |
+| **ASFF** | AWS Security Finding Format (standardized) |
+
+### Amazon Inspector
+
+- Automated vulnerability scanning
+- Targets: EC2, ECR container images, Lambda functions
+- Scans for: CVEs, network reachability, CIS benchmarks
+- Continuous scanning (triggered by new deployments, new CVEs)
+- Risk score: CVSS + network exposure + exploitability
+
+---
+
+## Incident Response
+
+### Incident Response Framework
+
+```
+1. PREPARATION
+   - Runbooks (SSM Automation documents)
+   - Pre-provisioned forensics account
+   - IR roles with break-glass access
+   - Automated alerting pipeline
+
+2. DETECTION & ANALYSIS
+   - GuardDuty findings -> EventBridge -> SNS/PagerDuty
+   - Security Hub aggregation
+   - CloudTrail log analysis
+   - VPC Flow Log analysis
+
+3. CONTAINMENT
+   - Isolate instance (restrictive security group)
+   - Revoke compromised credentials (STS)
+   - Block malicious IPs (WAF, NACL)
+   - Disable access keys
+
+4. ERADICATION
+   - Terminate compromised instances
+   - Rotate all credentials
+   - Patch vulnerabilities
+   - Remove unauthorized resources
+
+5. RECOVERY
+   - Restore from clean backups/AMIs
+   - Verify integrity
+   - Monitor closely
+   - Gradual traffic restoration
+
+6. POST-INCIDENT
+   - Root cause analysis (Detective)
+   - Update runbooks
+   - Improve detection rules
+   - Document lessons learned
+```
+
+### Automated Containment Patterns
+
+| Trigger | Automation | Action |
+|---------|-----------|--------|
+| **GuardDuty: Compromised EC2** | EventBridge -> Lambda | Replace SG with isolation SG (deny all) |
+| **GuardDuty: Credential exfiltration** | EventBridge -> Lambda | Revoke IAM role sessions (STS) |
+| **GuardDuty: Malicious IP** | EventBridge -> Lambda | Add IP to WAF block list + NACL deny |
+| **Config: Public S3 bucket** | Config -> SSM Automation | Block public access |
+| **CloudTrail: Root login** | EventBridge -> SNS | Alert security team immediately |
+
+### Forensics Best Practices
+
+- **Isolate, don't terminate** (preserve evidence)
+- **Snapshot EBS volumes** before any changes
+- **Enable termination protection** on compromised instance
+- **Tag instance** as under investigation
+- **Capture memory dump** if possible (SSM Run Command)
+- **Copy instance to forensics account** (share AMI/snapshot)
+- **Preserve CloudTrail logs** (S3 Object Lock)
+- **Document timeline** of all actions taken
+
+### Credential Compromise Response
+
+```
+1. Identify compromised credentials (CloudTrail: unusual API calls)
+2. Disable/delete access keys (IAM)
+3. Revoke active sessions: aws sts revoke-role-sessions (for roles)
+4. Attach explicit deny policy to user/role (immediate)
+5. Review CloudTrail for unauthorized actions
+6. Undo unauthorized changes
+7. Rotate all potentially exposed secrets
+8. Enable MFA if not already enabled
+```
+
+---
+
+## Key Exam Patterns
+
+**Detection:**
+- **""Detect compromised EC2""** -> GuardDuty
+- **""Detect cryptocurrency mining""** -> GuardDuty (CryptoCurrency finding type)
+- **""Credential used from external IP""** -> GuardDuty (InstanceCredentialExfiltration)
+- **""Central security findings""** -> Security Hub
+- **""Root cause investigation""** -> Detective
+- **""Vulnerability scanning""** -> Inspector
+
+**Response:**
+- **""Isolate compromised instance""** -> Lambda: Replace SG with deny-all SG
+- **""Revoke compromised role sessions""** -> STS: Revoke sessions + deny policy
+- **""Block malicious IP""** -> WAF IP set + NACL deny rule
+- **""Preserve evidence""** -> Snapshot EBS, don't terminate, tag for investigation
+- **""Automated incident response""** -> EventBridge + Lambda + SSM Automation
+
+**Architecture:**
+- **""Organization-wide threat detection""** -> GuardDuty delegated admin
+- **""Compliance dashboard""** -> Security Hub (CIS, PCI DSS standards)
+- **""Automated remediation pipeline""** -> GuardDuty -> EventBridge -> Lambda/SSM
+- **""Forensics isolation""** -> Separate forensics account, copy snapshots/AMIs
+
+---
+
+## Quick Exam Tips
+
+- **GuardDuty** is always the first answer for threat detection questions.
+- **GuardDuty does NOT prevent** attacks - it only detects. Use WAF/NACLs/SGs to prevent.
+- **Security Hub** aggregates findings AND runs compliance checks (CIS, PCI DSS).
+- **Detective** is for investigation AFTER a finding (root cause analysis, behavior graphs).
+- **Inspector** scans for vulnerabilities (CVEs). GuardDuty detects active threats.
+- **Isolate, don't terminate** compromised instances (preserve forensic evidence).
+- **Revoke sessions** for compromised roles using `aws iam put-role-policy` with explicit deny.
+- **EventBridge** is the glue for automated incident response (GuardDuty -> Lambda).
+- **S3 Object Lock** preserves CloudTrail logs from tampering during investigation.
+- **Break-glass IAM roles** provide emergency access during incidents (pre-provisioned).
+- **ASFF** (AWS Security Finding Format) standardizes findings across all security services.
+- **GuardDuty Malware Protection** scans EBS volumes when suspicious activity detected."

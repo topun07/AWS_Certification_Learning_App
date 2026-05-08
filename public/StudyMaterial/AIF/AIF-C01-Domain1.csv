@@ -1,0 +1,121 @@
+certCode,domain,title,content
+"AIF-C01","Domain 1: Fundamentals of AI & ML","Fundamentals of AI and ML","## Overview
+
+**Domain 1: Fundamentals of AI and ML** accounts for approximately **20% of the AIF-C01 exam**. This domain tests your ability to define core AI/ML terminology, understand the ML development lifecycle, and identify which AWS services map to each stage of that lifecycle. Think of this domain as your ""vocabulary and roadmap"" for everything else on the exam.
+
+---
+
+## Core AI and ML Terminology
+
+Before diving into services, you need to speak the language. Here are the key terms the exam expects you to know:
+
+- **Artificial Intelligence (AI)** - The broad discipline of making machines perform tasks that normally require human intelligence (e.g., recognizing images, understanding speech).
+- **Machine Learning (ML)** - A subset of AI where systems learn patterns from data rather than being explicitly programmed. *Example:* A spam filter that improves over time as it sees more emails.
+- **Deep Learning** - A subset of ML that uses **neural networks** with many layers to learn complex patterns. *Example:* Self-driving car vision systems.
+- **Neural Network** - A computing architecture inspired by the human brain, composed of layers of interconnected nodes (neurons).
+- **Algorithm** - The mathematical recipe an ML model follows to learn from data (e.g., linear regression, decision trees, transformers).
+- **Training** - The process of feeding data into an algorithm so it can learn patterns.
+- **Inferencing** - Using a trained model to make predictions on new, unseen data.
+- **Large Language Model (LLM)** - A deep learning model trained on massive text datasets that can generate and understand human language. *Example:* The models behind Amazon Bedrock.
+- **Generative AI (GenAI)** - AI that creates new content (text, images, code) rather than simply classifying or predicting.
+
+---
+
+## Types of Machine Learning
+
+The exam expects you to distinguish between three learning paradigms:
+
+- **Supervised Learning** - The model trains on labeled data (input + correct answer). *Use case:* Predicting house prices from historical sales data.
+- **Unsupervised Learning** - The model finds hidden patterns in unlabeled data. *Use case:* Customer segmentation for marketing campaigns.
+- **Reinforcement Learning** - The model learns by trial and error, receiving rewards or penalties. *Use case:* Training a robot to navigate a warehouse.
+
+---
+
+## The ML Development Lifecycle
+
+Understanding the end-to-end workflow is critical. Each stage maps to specific AWS services:
+
+### Data Collection and Storage
+
+You need quality data before anything else. **Amazon S3** is the default landing zone for raw datasets - structured CSVs, images, logs, or text files. S3 is durable, scalable, and integrates natively with nearly every AWS ML service.
+
+*Real-world example:* A retail company dumps daily transaction logs into an S3 bucket, which later feeds model training.
+
+### Data Preparation and Labeling
+
+Raw data is rarely clean. **Amazon SageMaker Data Wrangler** helps you visually transform, clean, and join datasets without writing boilerplate code. For labeling (e.g., tagging images), **Amazon SageMaker Ground Truth** coordinates human labelers at scale.
+
+*How they connect:* Data sits in **S3** then **Data Wrangler** pulls it in for cleaning then cleaned data writes back to **S3** then **Ground Truth** adds labels.
+
+### Model Training
+
+**Amazon SageMaker** is the central hub for building, training, and tuning ML models. It offers:
+
+- **Built-in algorithms** (XGBoost, BlazingText, Image Classification) so you don't start from scratch.
+- **Managed training infrastructure** - SageMaker spins up compute, trains your model, and tears it down automatically.
+- **SageMaker Autopilot** - An AutoML feature that automatically selects the best algorithm and hyperparameters for tabular data.
+
+*Real-world example:* A fintech startup trains a fraud-detection model using SageMaker's XGBoost algorithm on transaction data stored in S3.
+
+### Model Evaluation
+
+Before deploying, you evaluate performance using metrics like **accuracy**, **precision**, **recall**, and **F1 score**. Key concepts:
+
+- **Overfitting** - The model memorizes training data but fails on new data (high training accuracy, low test accuracy).
+- **Underfitting** - The model is too simple to capture patterns (low accuracy everywhere).
+- **Bias and Fairness** - Ensuring the model doesn't discriminate against protected groups. **Amazon SageMaker Clarify** detects bias in data and model predictions.
+
+### Model Deployment and Inferencing
+
+Once satisfied, you deploy the model to a **SageMaker Endpoint** for real-time predictions or use **Batch Transform** for bulk scoring. The model receives new data and returns predictions (inferencing).
+
+*How it connects:* Trained model artifact stored in **S3** then deployed to a **SageMaker Endpoint** then application sends requests then endpoint returns predictions.
+
+---
+
+## Key AWS AI/ML Services at a Glance
+
+Beyond SageMaker, the exam tests your knowledge of purpose-built AI services that require no ML expertise:
+
+- **Amazon Bedrock** - Managed service to access and customize **foundation models** (LLMs) from providers like Anthropic, Meta, and Amazon. Use it for generative AI applications without managing infrastructure.
+- **Amazon Rekognition** - Pre-trained computer vision for image/video analysis. *Use case:* Detecting unsafe content in user-uploaded photos.
+- **Amazon Comprehend** - NLP service for sentiment analysis, entity extraction, and topic modeling. *Use case:* Analyzing customer support tickets to identify trending complaints.
+- **Amazon Transcribe** - Automatic speech-to-text. *Use case:* Generating meeting transcripts.
+- **Amazon Polly** - Text-to-speech. *Use case:* Adding voice narration to an e-learning platform.
+- **Amazon Translate** - Real-time language translation. *Use case:* Localizing a website for global audiences.
+- **Amazon Textract** - Extracts text and structured data from scanned documents. *Use case:* Automating invoice processing.
+- **Amazon Kendra** - Intelligent enterprise search powered by ML. *Use case:* Employees searching internal knowledge bases with natural language.
+
+---
+
+## How Services Connect - The Big Picture
+
+A common exam pattern is understanding the data flow:
+
+1. **Collect** - Raw data lands in **Amazon S3**.
+2. **Prepare** - **SageMaker Data Wrangler** cleans it; **Ground Truth** labels it.
+3. **Build** - **SageMaker** trains a custom model, OR you use a pre-trained service (Rekognition, Comprehend) if it fits your use case.
+4. **Evaluate** - **SageMaker Clarify** checks for bias; you review metrics.
+5. **Deploy** - **SageMaker Endpoints** serve real-time predictions; **Bedrock** serves generative AI responses.
+6. **Monitor** - **Amazon CloudWatch** tracks endpoint performance and drift.
+
+---
+
+## Responsible AI Concepts
+
+The exam emphasizes ethical AI. Key principles to know:
+
+- **Fairness** - Models should not produce biased outcomes for different demographic groups.
+- **Explainability** - Stakeholders should understand *why* a model made a specific prediction (SageMaker Clarify provides feature attributions).
+- **Transparency** - Document model limitations and intended use cases.
+- **Privacy** - Protect sensitive data throughout the pipeline (encryption in S3, VPC configurations for SageMaker).
+
+---
+
+## Quick Exam Tips for Domain 1
+
+- If the question asks about **building custom models** - think **Amazon SageMaker**.
+- If the question asks about **using AI without ML expertise** - think pre-built services (Rekognition, Comprehend, Textract).
+- If the question asks about **generative AI or foundation models** - think **Amazon Bedrock**.
+- If the question asks about **where data lives** - think **Amazon S3**.
+- If the question asks about **bias detection** - think **SageMaker Clarify**."

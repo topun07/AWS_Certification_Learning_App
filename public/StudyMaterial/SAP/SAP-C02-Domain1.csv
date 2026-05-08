@@ -1,0 +1,256 @@
+certCode,domain,title,content
+"SAP-C02","Domain 1: Design for Organizational Complexity","Design for Organizational Complexity","## SAP-C02 Domain 1: Design for Organizational Complexity
+
+**Weight:** ~26% of scored exam content
+**Exam Level:** Professional
+
+This domain covers multi-account strategies, complex networking, hybrid architectures, and identity federation at enterprise scale.
+
+---
+
+## Multi-Account Strategy
+
+### AWS Organizations
+
+| Feature | Purpose |
+|---------|---------|
+| **OUs (Organizational Units)** | Group accounts by function (Prod, Dev, Security) |
+| **SCPs** | Guardrails - restrict maximum permissions |
+| **Tag Policies** | Enforce consistent tagging |
+| **Backup Policies** | Centralized backup rules |
+| **Delegated Admin** | Assign service management to non-management accounts |
+| **Consolidated Billing** | Single payer, volume discounts, RI/SP sharing |
+
+### AWS Control Tower
+
+| Component | Purpose |
+|-----------|---------|
+| **Landing Zone** | Pre-configured multi-account environment |
+| **Account Factory** | Standardized account provisioning (Service Catalog) |
+| **Guardrails** | Preventive (SCPs) + Detective (Config rules) |
+| **Dashboard** | Compliance visibility across all accounts |
+| **Customizations** | Lifecycle hooks for custom setup on new accounts |
+
+### Account Structure Patterns
+
+```
+Management Account (billing only, no workloads)
+|
++-- Security OU
+|   +-- Log Archive Account (centralized CloudTrail, Config, VPC Flow Logs)
+|   +-- Security Tooling Account (GuardDuty admin, Security Hub, Inspector)
+|
++-- Infrastructure OU
+|   +-- Network Account (Transit Gateway, Direct Connect, DNS)
+|   +-- Shared Services Account (Active Directory, CI/CD tools)
+|
++-- Workload OU
+|   +-- Production OU
+|   |   +-- App A Prod Account
+|   |   +-- App B Prod Account
+|   +-- Non-Production OU
+|       +-- Dev Account
+|       +-- Staging Account
+|
++-- Sandbox OU
+    +-- Developer Sandbox Accounts (restricted budget)
+```
+
+### Cross-Account Access Patterns
+
+| Pattern | Use Case | Mechanism |
+|---------|----------|-----------|
+| **AssumeRole** | Service/user in Account A accesses Account B | STS + Trust Policy |
+| **Resource Policy** | Share specific resource (S3, KMS, SQS) | Resource-based policy |
+| **RAM (Resource Access Manager)** | Share subnets, Transit GW, License Manager | Managed sharing |
+| **Organizations Trust** | Automatic trust within org | Org-level policies |
+| **SSO/Identity Center** | Human access across accounts | Centralized identity |
+
+### Resource Access Manager (RAM)
+
+Shareable resources:
+- VPC Subnets (share with other accounts in same org)
+- Transit Gateway
+- Route 53 Resolver rules
+- License Manager configurations
+- Aurora DB clusters
+- CodeBuild projects
+- Outposts
+
+---
+
+## Complex Networking
+
+### Transit Gateway Architecture
+
+```
+On-Premises Data Center
+    |
+    +-- Direct Connect / VPN
+    |
+Transit Gateway (Hub)
+    |
+    +-- Production VPC (Route Table: Prod)
+    +-- Development VPC (Route Table: Dev)
+    +-- Shared Services VPC (Route Table: Shared)
+    +-- Security VPC (Inspection - Network Firewall)
+    |
+    +-- Peering to other region's Transit Gateway
+```
+
+**Route Table Segmentation:**
+- Isolate environments (Prod can't reach Dev)
+- Force traffic through inspection VPC
+- Blackhole routes to block specific traffic
+- Shared services accessible from all
+
+### Direct Connect Architecture
+
+| Component | Purpose |
+|-----------|---------|
+| **Dedicated Connection** | Physical port (1/10/100 Gbps) |
+| **Hosted Connection** | Via partner (50 Mbps - 10 Gbps) |
+| **Private VIF** | Access VPC resources (private IPs) |
+| **Public VIF** | Access AWS public services (S3, DynamoDB) |
+| **Transit VIF** | Access multiple VPCs via Transit Gateway |
+| **LAG** | Link Aggregation Group (bundle connections) |
+| **MACsec** | Layer 2 encryption on DX |
+
+**Resiliency Models:**
+- **Maximum:** 2 locations, 2 connections each (4 total)
+- **High:** 2 locations, 1 connection each (2 total)
+- **Development:** 1 location, 1 connection (+ VPN backup)
+
+### AWS PrivateLink
+
+- Expose services privately across VPCs/accounts
+- No VPC peering, no Transit Gateway needed
+- Provider creates NLB + VPC Endpoint Service
+- Consumer creates Interface VPC Endpoint
+- Traffic stays on AWS backbone
+- Use case: SaaS providers, shared microservices
+
+### Global Accelerator vs. CloudFront
+
+| Feature | Global Accelerator | CloudFront |
+|---------|-------------------|-----------|
+| **IPs** | 2 static Anycast | Dynamic (DNS) |
+| **Caching** | No | Yes |
+| **Protocol** | TCP/UDP | HTTP/HTTPS |
+| **Use Case** | Gaming, VoIP, non-HTTP | Web content |
+| **Routing** | AWS backbone | Edge locations |
+| **Failover** | < 30 seconds | DNS TTL dependent |
+
+---
+
+## Identity Federation
+
+### AWS IAM Identity Center (SSO)
+
+| Feature | Description |
+|---------|-------------|
+| **Identity Source** | Built-in, Active Directory, External IdP (Okta, Azure AD) |
+| **Permission Sets** | Reusable permission templates |
+| **Multi-Account** | Single sign-on across all org accounts |
+| **ABAC** | Attribute-based access control |
+| **Session Duration** | Configurable (1-12 hours) |
+
+### Federation Options
+
+| Method | Use Case | Protocol |
+|--------|----------|----------|
+| **IAM Identity Center** | Workforce access to AWS accounts | SAML 2.0 |
+| **Cognito User Pools** | Customer-facing apps | OIDC, SAML |
+| **Cognito Identity Pools** | Temporary AWS credentials for app users | STS |
+| **SAML 2.0 Federation** | Enterprise IdP to IAM roles | SAML |
+| **Web Identity Federation** | Social login (Google, Facebook) | OIDC |
+| **Custom Broker** | Legacy systems | STS AssumeRole |
+
+### Active Directory Integration
+
+| Option | Description | Use Case |
+|--------|-------------|----------|
+| **AWS Managed Microsoft AD** | Full AD in AWS (trust with on-prem) | Enterprise, multi-account |
+| **AD Connector** | Proxy to on-prem AD (no data in AWS) | Simple redirect |
+| **Simple AD** | Standalone (Samba-based, limited) | Small, standalone |
+
+---
+
+## Hybrid Architecture
+
+### Connectivity Options
+
+| Option | Bandwidth | Latency | Encryption | Cost |
+|--------|-----------|---------|-----------|------|
+| **Site-to-Site VPN** | Up to 1.25 Gbps/tunnel | Variable (internet) | IPsec | Low |
+| **Direct Connect** | 1-100 Gbps | Consistent, low | Optional (MACsec/VPN) | High |
+| **DX + VPN** | DX bandwidth | Low + encrypted | IPsec over DX | High |
+| **Transit Gateway + VPN** | Aggregate tunnels (ECMP) | Variable | IPsec | Medium |
+
+### DNS Resolution (Route 53 Resolver)
+
+| Component | Direction | Use Case |
+|-----------|-----------|----------|
+| **Inbound Endpoint** | On-prem -> AWS | Resolve AWS private zones from on-prem |
+| **Outbound Endpoint** | AWS -> On-prem | Resolve on-prem domains from AWS |
+| **Resolver Rules** | Conditional forwarding | Route specific domains to specific DNS |
+
+### Storage Gateway
+
+| Type | Protocol | Use Case |
+|------|----------|----------|
+| **S3 File Gateway** | NFS/SMB | File shares backed by S3 |
+| **FSx File Gateway** | SMB | Low-latency access to FSx for Windows |
+| **Volume Gateway (Cached)** | iSCSI | Primary data in S3, cache locally |
+| **Volume Gateway (Stored)** | iSCSI | Primary data local, async backup to S3 |
+| **Tape Gateway** | iSCSI/VTL | Backup to S3 Glacier (replace tape) |
+
+---
+
+## Key Exam Patterns
+
+**Multi-Account:**
+- **""Standardized account provisioning""** -> Control Tower Account Factory
+- **""Restrict regions across all accounts""** -> SCP with region deny
+- **""Share VPC subnets across accounts""** -> RAM (Resource Access Manager)
+- **""Centralized logging""** -> Log Archive account + Organization CloudTrail
+- **""Delegate security management""** -> Delegated admin (GuardDuty, Security Hub)
+
+**Networking:**
+- **""Connect 100+ VPCs""** -> Transit Gateway (not peering mesh)
+- **""Inspect all traffic centrally""** -> TGW + Network Firewall in inspection VPC
+- **""Expose service to other accounts privately""** -> PrivateLink (NLB + Endpoint Service)
+- **""Consistent low-latency to AWS""** -> Direct Connect
+- **""Encrypt Direct Connect""** -> VPN over DX or MACsec
+- **""Aggregate VPN bandwidth""** -> Transit Gateway + ECMP (multiple tunnels)
+
+**Identity:**
+- **""Single sign-on across 50 accounts""** -> IAM Identity Center
+- **""Enterprise AD integration""** -> AWS Managed Microsoft AD + trust
+- **""Customer-facing authentication""** -> Cognito User Pools
+- **""Temporary AWS credentials for mobile app""** -> Cognito Identity Pools
+
+**Hybrid:**
+- **""On-prem resolve AWS private DNS""** -> Route 53 Resolver Inbound Endpoint
+- **""File shares backed by S3""** -> Storage Gateway (S3 File Gateway)
+- **""Replace tape backup""** -> Tape Gateway (to S3 Glacier)
+- **""Low-latency cache for S3 data""** -> Storage Gateway Cached Volume
+
+---
+
+## Quick Exam Tips
+
+- **Control Tower** = automated multi-account setup. Account Factory = standardized provisioning.
+- **SCPs** restrict but never grant. Management account is always exempt.
+- **RAM** shares resources (subnets, TGW) across accounts without cross-account roles.
+- **Transit Gateway** is the hub for complex networking. Route tables segment traffic.
+- **PrivateLink** exposes services privately without peering or TGW (NLB + Endpoint Service).
+- **Direct Connect** is NOT encrypted. Add VPN over DX or use MACsec for encryption.
+- **Transit VIF** connects DX to Transit Gateway (access many VPCs). Private VIF = one VPC.
+- **IAM Identity Center** (formerly SSO) is the answer for workforce multi-account access.
+- **Cognito** is for customer-facing apps. Identity Center is for internal workforce.
+- **Route 53 Resolver** endpoints enable bidirectional DNS resolution between on-prem and AWS.
+- **Storage Gateway** bridges on-premises to AWS storage (S3, FSx, Glacier).
+- **ECMP** (Equal-Cost Multi-Path) on Transit Gateway aggregates multiple VPN tunnel bandwidth.
+- **Delegated Administrator** lets you manage org-wide services from a non-management account.
+- **Log Archive account** should be separate, restricted, and receive all centralized logs."

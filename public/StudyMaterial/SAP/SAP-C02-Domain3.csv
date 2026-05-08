@@ -1,0 +1,277 @@
+certCode,domain,title,content
+"SAP-C02","Domain 3: Continuous Improvement for Existing Solutions","Continuous Improvement for Existing Solutions","## SAP-C02 Domain 3: Continuous Improvement for Existing Solutions
+
+**Weight:** ~25% of scored exam content
+**Exam Level:** Professional
+
+This domain covers optimizing existing architectures for performance, cost, reliability, operational excellence, and security.
+
+---
+
+## Performance Optimization
+
+### Caching Strategy
+
+| Layer | Service | Latency | Use Case |
+|-------|---------|---------|----------|
+| **Edge** | CloudFront | < 10ms | Static content, API responses |
+| **Application** | ElastiCache Redis | Sub-ms | Session, leaderboards, real-time |
+| **Application** | ElastiCache Memcached | Sub-ms | Simple caching, multi-threaded |
+| **Database** | DAX | Microseconds | DynamoDB read acceleration |
+| **Database** | RDS Proxy | N/A | Connection pooling (not caching) |
+| **API** | API Gateway Cache | Configurable | API response caching |
+
+### Caching Patterns
+
+| Pattern | Description | Use Case |
+|---------|-------------|----------|
+| **Lazy Loading** | Load into cache on miss | Read-heavy, tolerates stale |
+| **Write-Through** | Write to cache + DB simultaneously | Always fresh, write penalty |
+| **Write-Behind** | Write to cache, async to DB | Fast writes, risk of data loss |
+| **TTL** | Expire after time period | Balance freshness vs. performance |
+| **Cache Invalidation** | Explicitly remove stale entries | When data changes are known |
+
+### Database Performance
+
+| Optimization | Service | Effect |
+|-------------|---------|--------|
+| **Read Replicas** | RDS/Aurora | Scale reads horizontally |
+| **Connection Pooling** | RDS Proxy | Reduce connection overhead |
+| **DAX** | DynamoDB | Microsecond reads |
+| **Global Tables** | DynamoDB | Multi-region read/write |
+| **Aurora Serverless** | Aurora | Auto-scale capacity |
+| **Provisioned IOPS** | RDS (io2) | Consistent I/O performance |
+| **Query Optimization** | All | Indexes, partitioning, explain plans |
+
+### Compute Performance
+
+| Bottleneck | Solution |
+|-----------|----------|
+| **CPU-bound** | C-family instances, scale out |
+| **Memory-bound** | R-family instances, ElastiCache |
+| **I/O-bound** | io2 EBS, Instance Store, FSx Lustre |
+| **Network-bound** | Enhanced Networking, ENA, Placement Groups |
+| **Cold starts** | Provisioned Concurrency (Lambda), pre-warming |
+| **Global latency** | CloudFront, Global Accelerator, multi-region |
+
+---
+
+## Cost Optimization
+
+### Compute Cost
+
+| Strategy | Savings | Applies To |
+|----------|---------|-----------|
+| **Savings Plans (Compute)** | Up to 66% | EC2, Fargate, Lambda |
+| **Savings Plans (EC2)** | Up to 72% | Specific family + region |
+| **Reserved Instances** | Up to 72% | EC2, RDS, ElastiCache, Redshift |
+| **Spot Instances** | Up to 90% | Fault-tolerant workloads |
+| **Graviton (ARM)** | 20-40% better price-performance | Most workloads |
+| **Right-Sizing** | Variable | Over-provisioned instances |
+| **Scheduling** | 50-70% | Dev/test (stop at night) |
+
+### Storage Cost
+
+| Strategy | Service | Savings |
+|----------|---------|---------|
+| **Lifecycle Policies** | S3 | Auto-transition to cheaper tiers |
+| **Intelligent-Tiering** | S3 | Auto-optimize (no retrieval fees) |
+| **Compression** | S3, Redshift | Reduce stored bytes |
+| **Columnar Format** | S3 (Parquet/ORC) | Reduce Athena scan cost |
+| **gp3 over gp2** | EBS | 20% cheaper, same performance |
+| **Snapshot Archive** | EBS | 75% cheaper (slow restore) |
+| **Delete Unattached** | EBS | Eliminate waste |
+
+### Network Cost
+
+| Strategy | Savings |
+|----------|---------|
+| **VPC Endpoints** | Avoid NAT Gateway data processing |
+| **CloudFront** | Cheaper egress + reduced origin load |
+| **Same-AZ communication** | Free (private IPs) |
+| **S3 same-region** | Free transfer to same-region services |
+| **Direct Connect** | Lower per-GB for high volume |
+| **Compression** | Less data transferred |
+
+### Cost Governance
+
+| Tool | Purpose |
+|------|---------|
+| **Cost Explorer** | Visualize, forecast, right-size |
+| **Budgets** | Alerts + automated actions |
+| **Compute Optimizer** | ML-based instance recommendations |
+| **Trusted Advisor** | Identify idle/waste |
+| **Cost Anomaly Detection** | ML-based unusual spending alerts |
+| **CUR (Cost & Usage Report)** | Detailed billing data to S3 |
+
+---
+
+## Reliability Improvements
+
+### Multi-Region Patterns
+
+| Pattern | RTO | RPO | Complexity |
+|---------|-----|-----|-----------|
+| **Backup & Restore** | Hours | Hours | Low |
+| **Pilot Light** | Minutes | Minutes | Medium |
+| **Warm Standby** | Minutes | Seconds | High |
+| **Active-Active** | Near zero | Near zero | Highest |
+
+### Multi-Region Data
+
+| Service | Multi-Region Feature |
+|---------|---------------------|
+| **S3** | Cross-Region Replication (CRR) |
+| **DynamoDB** | Global Tables (active-active) |
+| **Aurora** | Global Database (< 1s replication) |
+| **RDS** | Cross-region Read Replicas |
+| **ElastiCache** | Global Datastore (Redis) |
+| **EBS** | Cross-region snapshot copy |
+
+### Chaos Engineering
+
+| Tool | Purpose |
+|------|---------|
+| **AWS Fault Injection Simulator (FIS)** | Managed chaos experiments |
+| **Experiments** | EC2 stop, network disruption, AZ failure |
+| **Targets** | EC2, ECS, EKS, RDS |
+| **Safety** | Stop conditions, rollback |
+| **Integration** | CloudWatch alarms as stop conditions |
+
+### Well-Architected Framework (6 Pillars)
+
+| Pillar | Focus |
+|--------|-------|
+| **Operational Excellence** | Automation, IaC, observability, runbooks |
+| **Security** | IAM, encryption, detection, incident response |
+| **Reliability** | Recovery, scaling, change management |
+| **Performance Efficiency** | Right resources, monitoring, trade-offs |
+| **Cost Optimization** | Expenditure awareness, right-sizing |
+| **Sustainability** | Environmental impact, efficiency |
+
+---
+
+## Operational Excellence
+
+### Infrastructure as Code
+
+| Tool | Use Case | Level |
+|------|----------|-------|
+| **CloudFormation** | AWS-native IaC | Declarative |
+| **CDK** | IaC with programming languages | Imperative -> CF |
+| **Terraform** | Multi-cloud IaC | Declarative |
+| **SAM** | Serverless-specific IaC | CF extension |
+| **Pulumi** | Multi-cloud, programming languages | Imperative |
+
+### Observability Stack
+
+```
+Metrics: CloudWatch Metrics + Custom Metrics + Contributor Insights
+Logs: CloudWatch Logs + Logs Insights + Subscription Filters
+Traces: X-Ray (distributed tracing, service map)
+Dashboards: CloudWatch Dashboards (cross-account, cross-region)
+Alerts: CloudWatch Alarms + Composite Alarms + EventBridge
+```
+
+### Automation Patterns
+
+| Pattern | Tools | Use Case |
+|---------|-------|----------|
+| **Self-healing** | ASG + Health Checks | Replace failed instances |
+| **Auto-remediation** | Config + SSM Automation | Fix non-compliant resources |
+| **Event-driven ops** | EventBridge + Lambda/SSM | React to infrastructure events |
+| **Scheduled ops** | EventBridge + Lambda | Maintenance, cleanup |
+| **Runbooks** | SSM Automation Documents | Standardized procedures |
+| **ChatOps** | AWS Chatbot + SNS | Notifications in Slack/Teams |
+
+---
+
+## Security Hardening
+
+### Defense in Depth
+
+```
+Edge: CloudFront + WAF + Shield
+Network: VPC + NACLs + Security Groups + Network Firewall
+Application: ALB + WAF rules + API Gateway throttling
+Data: KMS encryption + Macie + Access controls
+Identity: IAM + MFA + Identity Center + Permission Boundaries
+Detection: GuardDuty + Inspector + Security Hub
+Response: EventBridge + Lambda + SSM Automation
+```
+
+### Security Automation
+
+| Trigger | Response |
+|---------|----------|
+| **GuardDuty finding (high)** | Isolate instance (remove SG, add restrictive) |
+| **Public S3 bucket** | Config rule -> auto-block public access |
+| **Unencrypted EBS** | Config rule -> auto-encrypt |
+| **Root login** | CloudTrail -> EventBridge -> SNS alert |
+| **IAM key > 90 days** | Config rule -> disable key |
+| **Security group 0.0.0.0/0** | Config rule -> remove rule |
+
+### Secrets Rotation
+
+| Service | Rotation |
+|---------|----------|
+| **Secrets Manager** | Automatic (Lambda-based, configurable schedule) |
+| **Parameter Store** | Manual (use Lambda + EventBridge for automation) |
+| **IAM Access Keys** | Manual (credential report + automation) |
+| **KMS Keys** | Automatic annual rotation (CMK) |
+| **ACM Certificates** | Automatic renewal (DNS validation) |
+
+---
+
+## Key Exam Patterns
+
+**Performance:**
+- **""Reduce database read latency""** -> ElastiCache (Redis) or DAX (DynamoDB)
+- **""Global low latency""** -> CloudFront + multi-region + Route 53 Latency
+- **""Connection pooling for Lambda + RDS""** -> RDS Proxy
+- **""Cache API responses""** -> API Gateway Cache or CloudFront
+- **""HPC networking""** -> EFA + Cluster Placement Group
+
+**Cost:**
+- **""Flexible compute commitment""** -> Compute Savings Plans
+- **""Fault-tolerant batch processing""** -> Spot Instances
+- **""Better price-performance""** -> Graviton (ARM) instances
+- **""Reduce Athena cost""** -> Parquet format + partitioning
+- **""Eliminate NAT Gateway fees""** -> VPC Gateway Endpoints (S3/DDB)
+
+**Reliability:**
+- **""Near-zero RTO database""** -> Aurora Global Database or DynamoDB Global Tables
+- **""Test resilience""** -> Fault Injection Simulator (FIS)
+- **""Self-healing infrastructure""** -> ASG + health checks + lifecycle hooks
+- **""Structured architecture review""** -> Well-Architected Tool
+
+**Operations:**
+- **""Auto-fix non-compliant resources""** -> Config + SSM Automation
+- **""Distributed tracing""** -> X-Ray
+- **""Cross-account observability""** -> CloudWatch cross-account dashboards
+- **""Standardized incident response""** -> SSM Automation runbooks
+
+**Security:**
+- **""Auto-rotate database credentials""** -> Secrets Manager
+- **""Isolate compromised instance""** -> Lambda (triggered by GuardDuty via EventBridge)
+- **""Continuous compliance""** -> Config rules + auto-remediation
+- **""Layer 7 protection""** -> WAF on ALB/CloudFront/API Gateway
+
+---
+
+## Quick Exam Tips
+
+- **Graviton instances** offer 20-40% better price-performance for most workloads.
+- **RDS Proxy** is essential for Lambda + RDS (connection pooling, faster failover).
+- **DAX** = microsecond DynamoDB reads. ElastiCache = sub-ms for any data source.
+- **Compute Savings Plans** are more flexible than EC2 SP or RIs (any instance/region/OS).
+- **Parquet + partitioning** dramatically reduces Athena costs (scan less data).
+- **Aurora Global Database** = < 1 second cross-region replication + fast failover.
+- **DynamoDB Global Tables** = active-active multi-region (read/write anywhere).
+- **Fault Injection Simulator** is AWS's managed chaos engineering service.
+- **Well-Architected Tool** provides structured reviews against all 6 pillars.
+- **Config + SSM Automation** = the standard pattern for auto-remediation.
+- **X-Ray** provides distributed tracing across Lambda, API GW, ECS, EC2.
+- **Secrets Manager** auto-rotates credentials. Parameter Store does not (manual/Lambda).
+- **VPC Gateway Endpoints** (S3, DynamoDB) are free and avoid NAT Gateway costs.
+- **CloudFront** has cheaper egress than direct AND reduces origin load via caching."

@@ -1,0 +1,467 @@
+certCode,domain,title,content
+"DEA-C01","Domain 1: Data Ingestion & Transformation","Data Ingestion and Transformation","## DEA-C01 Domain 1: Data Ingestion and Transformation
+
+**Weight:** ~34% of scored exam content (largest domain)
+**Exam Level:** Associate
+**Exam Format:** 65 questions, 170 minutes, passing score 720/1000
+
+This domain tests your ability to ingest data from streaming and batch sources, transform data using ETL services, orchestrate pipelines, and apply programming concepts.
+
+---
+
+## Streaming Data Ingestion
+
+### Amazon Kinesis Family
+
+| Service | What It Does | Use Case |
+|---------|-------------|----------|
+| **Kinesis Data Streams (KDS)** | Real-time data streaming (custom consumers) | Custom processing; multiple consumers; replay |
+| **Kinesis Data Firehose** | Managed delivery to destinations (near real-time) | Load streaming data to S3, Redshift, OpenSearch |
+| **Kinesis Data Analytics** | SQL/Apache Flink on streaming data | Real-time analytics; anomaly detection |
+| **Kinesis Video Streams** | Ingest and process video streams | Video analytics; ML on video |
+
+### Kinesis Data Streams - Deep Dive
+
+```
+Producers --> Kinesis Data Stream (Shards) --> Consumers
+                    |
+              +-----+-----+
+              | Shard 1   |  <- 1 MB/s in, 2 MB/s out per shard
+              | Shard 2   |  <- Data ordered within shard (by partition key)
+              | Shard N   |  <- Retention: 24 hrs (default) to 365 days
+              +-----------+
+```
+
+| Concept | Description |
+|---------|-------------|
+| **Shard** | Unit of capacity (1 MB/s write, 2 MB/s read) |
+| **Partition Key** | Determines which shard receives the record |
+| **Retention** | 24 hours (default); extendable to 365 days |
+| **Enhanced Fan-Out** | Dedicated 2 MB/s per consumer |
+| **Resharding** | Split (increase) or merge (decrease) shards |
+| **KPL** | Batches records for efficient writes |
+| **KCL** | Manages consumer coordination; checkpointing |
+
+**Capacity Planning:**
+
+```
+Incoming data rate: 10 MB/s
+Write capacity per shard: 1 MB/s
+Shards needed: 10 MB/s / 1 MB/s = 10 shards
+```
+
+### Kinesis Data Firehose - Deep Dive
+
+```
+Sources --> Firehose Delivery Stream --> Destinations
+                    |
+              +-----+-----+
+              | Buffer     |  <- Buffer size (1-128 MB) OR buffer time (60-900 sec)
+              | Transform  |  <- Optional Lambda transformation
+              | Convert    |  <- Optional format conversion (JSON -> Parquet/ORC)
+              | Compress   |  <- Optional compression (GZIP, Snappy, etc.)
+              +-----------+
+```
+
+**Supported Destinations:** S3, Redshift (via S3 COPY), OpenSearch, Splunk, HTTP Endpoint, Datadog, New Relic
+
+### Firehose vs. Data Streams
+
+| Feature | Kinesis Data Streams | Kinesis Data Firehose |
+|---------|---------------------|----------------------|
+| **Management** | You manage shards | Fully managed (serverless) |
+| **Latency** | Real-time (~200ms) | Near real-time (60s minimum buffer) |
+| **Consumers** | Custom (Lambda, KCL, Flink) | Fixed destinations (S3, Redshift, etc.) |
+| **Replay** | Yes (retention period) | No (deliver once) |
+| **Transformation** | External (you build) | Built-in Lambda + format conversion |
+| **Scaling** | Manual (add/remove shards) | Automatic |
+| **Use case** | Custom processing; multiple consumers | Simple delivery to storage/analytics |
+
+### Amazon MSK (Managed Streaming for Apache Kafka)
+
+| Feature | Description |
+|---------|-------------|
+| **What it is** | Fully managed Apache Kafka on AWS |
+| **When to use** | Existing Kafka workloads; Kafka ecosystem tools |
+| **MSK Serverless** | No cluster management; auto-scales |
+| **MSK Connect** | Managed Kafka Connect for source/sink connectors |
+| **Retention** | Unlimited (storage-based) |
+
+### MSK vs. Kinesis
+
+| Choose MSK When... | Choose Kinesis When... |
+|-------------------|----------------------|
+| Existing Kafka expertise/code | AWS-native; simpler setup |
+| Need Kafka ecosystem (Connect, Streams) | Need tight AWS integrations |
+| Need unlimited retention | Need managed delivery (Firehose) |
+| Open-source preference | Prefer fully managed |
+
+### DynamoDB Streams
+
+| Feature | Description |
+|---------|-------------|
+| **What it is** | Change data capture (CDC) for DynamoDB tables |
+| **What it captures** | INSERT, MODIFY, DELETE events |
+| **Retention** | 24 hours |
+| **Consumers** | Lambda (most common), Kinesis Data Streams |
+| **View types** | KEYS_ONLY, NEW_IMAGE, OLD_IMAGE, NEW_AND_OLD_IMAGES |
+
+---
+
+## Batch Data Ingestion
+
+### AWS Glue (ETL Engine)
+
+AWS Glue is the most heavily tested service in Domain 1.
+
+| Component | What It Does |
+|-----------|-------------|
+| **Glue Data Catalog** | Centralized metadata repository (Hive-compatible metastore) |
+| **Glue Crawlers** | Automatically discover schema and populate the Data Catalog |
+| **Glue ETL Jobs** | Serverless Spark-based data transformation |
+| **Glue Studio** | Visual ETL job authoring (drag-and-drop) |
+| **Glue DataBrew** | Visual data preparation (no-code cleaning) |
+| **Glue Schema Registry** | Schema versioning and validation for streaming |
+| **Glue Workflows** | Orchestrate multiple crawlers and jobs |
+| **Glue Triggers** | Start jobs on schedule, event, or condition |
+
+### Glue Data Catalog
+
+```
++------------------------------------------+
+|           GLUE DATA CATALOG              |
+|                                          |
+|  Database: ""sales_db""                   |
+|    +-- Table: ""orders""                  |
+|         +-- Schema: (order_id INT, ...)  |
+|         +-- Location: s3://bucket/orders |
+|         +-- Format: Parquet              |
+|         +-- Partitions: year/month/day   |
++------------------------------------------+
+```
+
+**Who Uses the Data Catalog:** Athena, Redshift Spectrum, EMR, Glue ETL, Lake Formation
+
+### Glue Crawlers
+
+| Feature | Description |
+|---------|-------------|
+| **Purpose** | Scan data sources and infer schema automatically |
+| **Sources** | S3, JDBC (RDS, Redshift), DynamoDB, MongoDB |
+| **Output** | Tables in the Glue Data Catalog |
+| **Partition detection** | Discovers Hive-style partitions |
+| **Scheduling** | On-demand, scheduled (cron), or event-triggered |
+
+### Glue ETL Jobs
+
+**Job Types:**
+
+| Type | Engine | Use Case |
+|------|--------|----------|
+| **Spark** | Apache Spark (PySpark/Scala) | Large-scale ETL; complex transformations |
+| **Spark Streaming** | Spark Structured Streaming | Micro-batch streaming ETL |
+| **Python Shell** | Python (no Spark) | Small datasets; simple scripts |
+| **Ray** | Ray framework | ML workloads; distributed Python |
+
+**DPU (Data Processing Unit):** 1 DPU = 4 vCPUs + 16 GB memory. Billed per DPU-hour.
+
+**Glue Bookmarks:** Track previously processed data to avoid reprocessing. Essential for incremental ETL.
+
+### Glue Dynamic Frames
+
+```python
+# Read from catalog
+datasource = glueContext.create_dynamic_frame.from_catalog(
+    database=""sales_db"", table_name=""orders""
+)
+
+# ResolveChoice - handle columns with multiple types
+resolved = datasource.resolveChoice(choice=""cast:double"")
+
+# Relationalize - flatten nested JSON into relational tables
+flat = datasource.relationalize(root_table_name=""orders"", staging_path=""s3://temp/"")
+
+# Write to S3 in Parquet
+glueContext.write_dynamic_frame.from_options(
+    frame=resolved, connection_type=""s3"",
+    connection_options={""path"": ""s3://output/orders/""},
+    format=""parquet""
+)
+```
+
+### AWS Database Migration Service (DMS)
+
+| Feature | Description |
+|---------|-------------|
+| **Purpose** | Migrate databases to AWS (or between AWS services) |
+| **Migration types** | Full load, CDC (ongoing replication), Full load + CDC |
+| **Sources/Targets** | Oracle, SQL Server, MySQL, PostgreSQL, MongoDB, S3, Kinesis, Redshift |
+| **CDC** | Captures ongoing changes after initial full load |
+| **Schema Conversion Tool (SCT)** | Converts schema between different engines |
+| **DMS Serverless** | Auto-scales capacity |
+
+### Other Batch Ingestion Services
+
+| Service | What It Does | When to Use |
+|---------|-------------|-------------|
+| **AWS DataSync** | Fast data transfer (on-prem -> AWS) | Large file transfers; NFS/SMB to S3/EFS |
+| **AWS Transfer Family** | SFTP/FTPS/FTP to S3 | Partners sending files via SFTP |
+| **S3 Transfer Acceleration** | Speed up S3 uploads over long distances | Global uploads to single bucket |
+| **Snow Family** | Physical data transfer | Petabyte-scale; network too slow |
+| **Amazon AppFlow** | SaaS data integration | Salesforce, SAP -> S3/Redshift |
+
+---
+
+## Data Transformation
+
+### Transformation Approaches
+
+| Approach | Service | Best For |
+|----------|---------|----------|
+| **Serverless ETL** | AWS Glue | Standard ETL; catalog integration |
+| **Managed Spark/Hadoop** | Amazon EMR | Complex processing; existing Spark code; Spot |
+| **SQL-based** | Athena / Redshift | Transform using SQL; CTAS |
+| **Real-time** | Kinesis Analytics (Flink) | Stream processing; windowed aggregations |
+| **No-code** | Glue DataBrew | Visual profiling and cleaning |
+
+### EMR vs. Glue
+
+| Feature | EMR | Glue |
+|---------|-----|------|
+| **Management** | You manage cluster (or Serverless) | Fully serverless |
+| **Flexibility** | Full Hadoop ecosystem; custom libraries | Spark-based; Glue libraries |
+| **Cost model** | Per instance-hour (Spot available) | Per DPU-second |
+| **Best for** | Complex/large workloads; existing code | Standard ETL; catalog integration |
+| **Startup time** | Minutes (cluster provisioning) | Seconds (serverless) |
+
+### Data Format Conversions
+
+| From -> To | Why | How |
+|-----------|-----|-----|
+| JSON -> Parquet | Columnar; compressed; faster queries | Glue ETL; Firehose; Athena CTAS |
+| CSV -> Parquet | Schema enforcement; performance | Glue ETL; EMR Spark |
+| Nested JSON -> Flat | Relational analytics | Glue Relationalize; Spark explode |
+| Raw -> Iceberg/Hudi | ACID transactions; upserts | EMR; Glue with Iceberg |
+
+### Key Data Formats
+
+| Format | Type | Best For |
+|--------|------|----------|
+| **Parquet** | Columnar | Analytics queries; Athena; Redshift Spectrum |
+| **ORC** | Columnar | Hive-optimized workloads |
+| **Avro** | Row-based | Schema evolution; streaming |
+| **JSON** | Row-based | Flexibility; human-readable |
+| **CSV** | Row-based | Simple; universal compatibility |
+
+**Columnar vs. Row-Based:**
+
+- **Row-based** (CSV, JSON, Avro): Read entire rows. Good for full record access and writes.
+- **Columnar** (Parquet, ORC): Read only needed columns. Good for analytics (SELECT specific columns); better compression; predicate pushdown.
+
+---
+
+## Data Partitioning and Optimization
+
+### S3 Partitioning Strategies
+
+**Hive-Style Partitioning:**
+
+```
+s3://data-lake/orders/
+  +-- year=2026/
+  |   +-- month=01/
+  |   |   +-- day=01/
+  |   |   |   +-- part-00000.parquet
+  |   |   +-- day=02/
+  |   +-- month=02/
+  +-- year=2025/
+```
+
+**Benefits:** Partition pruning (scan only relevant data), cost reduction, faster queries.
+
+### Partition Key Selection
+
+| Query Pattern | Partition By |
+|--------------|-------------|
+| Filter by date (most common) | year/month/day |
+| Filter by region | region |
+| Filter by customer | customer_id (use bucketing if high cardinality) |
+| Multiple filters | Combine (date + region) |
+
+### File Size Optimization
+
+| Problem | Impact | Solution |
+|---------|--------|----------|
+| Small files (< 128 MB) | Too many S3 LIST calls; slow Spark | Glue groupFiles; coalesce() |
+| Very large files (> 1 GB) | Can't parallelize; memory pressure | Repartition; split on write |
+| **Optimal size** | **128 MB - 1 GB per file** | Configure output partitioning |
+
+---
+
+## Pipeline Orchestration
+
+| Service | What It Does | Best For |
+|---------|-------------|----------|
+| **AWS Step Functions** | Visual workflow orchestration | AWS-native; complex branching; error handling |
+| **Amazon MWAA (Airflow)** | Managed Apache Airflow | Existing Airflow DAGs; complex dependencies |
+| **Glue Workflows** | Orchestrate Glue crawlers and jobs | Simple Glue-only pipelines |
+| **EventBridge** | Event-driven triggering | React to events; schedule-based |
+
+### Step Functions vs. MWAA
+
+| Feature | Step Functions | MWAA (Airflow) |
+|---------|---------------|---------------|
+| **Language** | JSON/YAML (ASL) | Python DAGs |
+| **Scheduling** | EventBridge rules (external) | Built-in cron |
+| **Cost** | Per state transition | Per environment (always running) |
+| **Best for** | AWS-native; event-driven; pay-per-use | Complex DAGs; existing Airflow |
+
+---
+
+## Schema Evolution and Data Quality
+
+### Schema Evolution Strategies
+
+| Strategy | Description | Service Support |
+|----------|-------------|----------------|
+| **Schema on Read** | No enforcement at write; interpret at query | S3 + Athena |
+| **Schema on Write** | Enforce at ingestion; reject non-conforming | Glue Schema Registry |
+| **Schema Evolution** | Allow changes over time (add columns) | Parquet/Avro; Iceberg/Hudi |
+
+### Glue Schema Registry
+
+- Centralized schema management for streaming data.
+- Supports Avro and JSON Schema formats.
+- Compatibility modes: BACKWARD, FORWARD, FULL, NONE.
+- Integrates with Kinesis, MSK, Glue Streaming.
+
+| Mode | What's Allowed |
+|------|---------------|
+| **BACKWARD** | New schema can read old data (add optional fields) |
+| **FORWARD** | Old schema can read new data (remove optional fields) |
+| **FULL** | Both backward and forward compatible |
+| **NONE** | Any change allowed |
+
+### Glue Data Quality (DQDL)
+
+```
+Rules = [
+    ColumnExists ""customer_id"",
+    IsComplete ""customer_id"",
+    IsUnique ""order_id"",
+    ColumnValues ""amount"" > 0,
+    Completeness ""phone_number"" >= 0.95
+]
+```
+
+**Quality Actions:** Fail the job, quarantine bad records, alert, or log.
+
+---
+
+## Incremental Data Processing
+
+### Change Data Capture (CDC) Patterns
+
+| Pattern | How It Works | Service |
+|---------|-------------|---------|
+| **DMS CDC** | Reads database transaction logs | DMS -> Kinesis/S3 |
+| **DynamoDB Streams** | Captures item-level changes | DynamoDB -> Lambda/Kinesis |
+| **Glue Bookmarks** | Tracks last processed file/record | Glue ETL (incremental reads) |
+| **S3 Event Notifications** | Triggers on new file arrival | S3 -> Lambda/SQS/EventBridge |
+| **Apache Iceberg/Hudi** | Upsert/delete on data lake | EMR/Glue |
+
+### Apache Iceberg / Hudi / Delta Lake
+
+| Feature | What It Enables |
+|---------|----------------|
+| **ACID transactions** | Consistent reads/writes on S3 |
+| **Upserts (MERGE)** | Update existing records |
+| **Time travel** | Query data at a previous point in time |
+| **Schema evolution** | Add/rename/drop columns without rewriting |
+| **Partition evolution** | Change partitioning without rewriting (Iceberg) |
+| **Row-level deletes** | GDPR compliance |
+| **Compaction** | Merge small files automatically |
+
+**AWS Support:** Iceberg (Athena, EMR, Glue, Redshift - AWS preferred), Hudi (EMR, Glue), Delta Lake (EMR)
+
+---
+
+## Programming Concepts (PySpark)
+
+| Concept | What It Does |
+|---------|-------------|
+| **DataFrame** | Distributed collection of rows with schema |
+| **Transformation** | Lazy operation (filter, select, groupBy) |
+| **Action** | Triggers execution (count, show, write) |
+| **Partitioning** | How data is distributed across workers |
+| **Caching** | Store intermediate results in memory |
+| **Broadcast** | Send small table to all workers (optimize joins) |
+
+### Repartition vs. Coalesce
+
+| Operation | What It Does | When to Use |
+|-----------|-------------|-------------|
+| **repartition(n)** | Full shuffle; creates exactly n partitions | Increase partitions; even distribution |
+| **coalesce(n)** | No shuffle; reduces partitions (merge only) | Decrease partitions; reduce output files |
+
+**Exam Pattern:** ""Too many small output files"" -> Use coalesce() before writing.
+
+---
+
+## Key Exam Patterns for DEA-C01 Domain 1
+
+- **""Real-time ingestion with replay""** -> Kinesis Data Streams
+- **""Deliver streaming data to S3 in Parquet""** -> Kinesis Data Firehose (format conversion)
+- **""Existing Kafka workloads""** -> Amazon MSK
+- **""Serverless ETL with catalog""** -> AWS Glue
+- **""Process only new files since last run""** -> Glue Bookmarks
+- **""Discover schema from S3 data""** -> Glue Crawler
+- **""Handle mixed data types""** -> Glue DynamicFrame + ResolveChoice
+- **""Flatten nested JSON""** -> Glue Relationalize or Spark explode
+- **""Migrate database with ongoing replication""** -> DMS with CDC
+- **""Convert CSV to Parquet""** -> Glue ETL or Athena CTAS
+- **""Reduce Athena query costs""** -> Partition + Parquet + compress
+- **""Too many small files""** -> Glue groupFiles or coalesce()
+- **""Update/delete records in data lake""** -> Apache Iceberg
+- **""Orchestrate multi-step pipeline""** -> Step Functions or MWAA
+- **""Validate data quality""** -> Glue Data Quality (DQDL)
+- **""Prevent schema-breaking changes""** -> Glue Schema Registry
+- **""Large-scale Spark with Spot""** -> EMR (Task nodes on Spot)
+- **""Trigger ETL on new S3 file""** -> S3 Event -> Lambda/EventBridge -> Glue
+- **""Reduce output file count""** -> coalesce() (not repartition)
+
+---
+
+## Quick Exam Tips for Domain 1
+
+- **Glue is the #1 service.** Know Catalog, Crawlers, ETL, Bookmarks, DynamicFrames, Data Quality.
+- **Firehose vs. Data Streams:** Firehose = managed delivery. Data Streams = custom processing, replay.
+- **Parquet** is almost always right for analytics. Columnar + compressed + predicate pushdown.
+- **Glue Bookmarks** = ""process only new data"" in batch ETL.
+- **DMS CDC** = ongoing database changes into data lake.
+- **Partition pruning** = #1 cost optimization for Athena.
+- **Small files problem:** groupFiles, coalesce(), compaction (Iceberg/Hudi).
+- **Schema Registry** prevents breaking changes in streaming.
+- **Step Functions vs. MWAA:** Step Functions = AWS-native, pay-per-use. MWAA = Airflow, Python DAGs.
+- **EMR vs. Glue:** EMR = more control, Spot, existing code. Glue = serverless, simpler.
+- **DynamicFrames** handle schema inconsistencies that break Spark DataFrames.
+- **Iceberg** = AWS preferred open table format for ACID, upserts, time travel.
+- **Shard capacity:** 1 MB/s write, 2 MB/s read per shard.
+- **Firehose buffer:** Delivers at buffer size OR time (whichever first). Min latency = 60s.
+
+---
+
+## Summary
+
+This covers all objectives in DEA-C01 Domain 1:
+
+- **Streaming ingestion** - Kinesis (Streams, Firehose, Analytics), MSK, DynamoDB Streams
+- **Batch ingestion** - Glue, DMS, AppFlow, DataSync, S3 events
+- **Transformation** - Glue ETL, EMR, Athena CTAS, DataBrew, Flink
+- **Data formats** - Parquet, ORC, Avro; columnar vs. row; compression
+- **Partitioning** - Hive-style partitions, file sizing, small files problem
+- **Orchestration** - Step Functions, MWAA, Glue Workflows, EventBridge
+- **Schema management** - Schema Registry, evolution, compatibility modes
+- **Data quality** - DQDL rules, validation, quarantine patterns
+- **Incremental processing** - Bookmarks, CDC, Iceberg/Hudi upserts
+- **Programming** - PySpark, DynamicFrames, repartition/coalesce"

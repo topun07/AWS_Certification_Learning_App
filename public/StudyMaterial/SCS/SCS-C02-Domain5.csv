@@ -1,0 +1,323 @@
+certCode,domain,title,content
+"SCS-C02","Domain 5: Data Protection","Data Protection","## SCS-C02 Domain 5: Data Protection
+
+**Weight:** ~32% of scored exam content (LARGEST DOMAIN)
+**Exam Level:** Specialty
+
+This domain covers encryption, key management, certificate management, secrets management, and data classification.
+
+---
+
+## KMS (Key Management Service)
+
+### Key Types
+
+| Type | Management | Rotation | Cost | Use Case |
+|------|-----------|----------|------|----------|
+| **AWS Owned** | AWS fully manages | AWS handles | Free | Default encryption (S3-SSE) |
+| **AWS Managed** | AWS creates, you use | Annual (automatic) | Per use | Service-default KMS (aws/s3) |
+| **Customer Managed (CMK)** | You create and control | Optional (annual) | Monthly + per use | Full control, audit, cross-account |
+| **Imported Key Material** | You provide key material | Manual only | Monthly + per use | Regulatory, key escrow |
+| **Custom Key Store (CloudHSM)** | HSM-backed | Manual | HSM + KMS cost | FIPS 140-2 Level 3 |
+| **External Key Store (XKS)** | External HSM | External | Per use | Keys never in AWS |
+
+### Key Policies (CRITICAL)
+
+- Every KMS key MUST have a key policy
+- Key policy is the PRIMARY access control (IAM alone is insufficient)
+- Default key policy: Allows account root full access (enables IAM policies)
+- Without root access in key policy, key becomes unmanageable
+
+```json
+{
+  ""Sid"": ""Enable IAM policies"",
+  ""Effect"": ""Allow"",
+  ""Principal"": {""AWS"": ""arn:aws:iam::123456789012:root""},
+  ""Action"": ""kms:*"",
+  ""Resource"": ""*""
+}
+```
+
+### Grants
+
+- Temporary, programmatic access to KMS keys
+- Created by: kms:CreateGrant
+- Use case: AWS services that encrypt on your behalf
+- Retire grant when no longer needed
+- More flexible than key policy for dynamic access
+
+### Envelope Encryption
+
+```
+1. Call KMS: GenerateDataKey
+2. KMS returns: Plaintext data key + Encrypted data key
+3. Encrypt data locally with plaintext data key
+4. Store: Encrypted data + Encrypted data key
+5. Discard plaintext data key from memory
+
+Decryption:
+1. Call KMS: Decrypt (send encrypted data key)
+2. KMS returns: Plaintext data key
+3. Decrypt data locally with plaintext data key
+```
+
+- Why: KMS has 4 KB limit for direct encryption
+- Data key encrypts actual data (any size)
+- KMS only encrypts/decrypts the data key
+- Reduces KMS API calls and network transfer
+
+### Key Rotation
+
+| Key Type | Rotation | Behavior |
+|----------|----------|----------|
+| **AWS Managed** | Annual (automatic, mandatory) | New backing key, old preserved |
+| **CMK (automatic)** | Annual (optional, enable it) | New backing key, old preserved |
+| **CMK (manual)** | Create new key, update alias | Must re-encrypt or use alias |
+| **Imported Material** | Manual only | Must re-import or create new |
+
+- Automatic rotation: Old backing key preserved (can still decrypt old data)
+- Key ID and ARN don't change
+- Alias makes manual rotation transparent to applications
+
+### Multi-Region Keys
+
+- Same key material replicated across regions
+- Same key ID in all regions (replica keys)
+- Encrypt in one region, decrypt in another
+- Use case: Global applications, cross-region DR, DynamoDB Global Tables
+- Primary key + Replica keys (one primary, multiple replicas)
+
+---
+
+## S3 Encryption
+
+### Server-Side Encryption Options
+
+| Method | Key Management | Audit | Use Case |
+|--------|---------------|-------|----------|
+| **SSE-S3** | AWS manages everything | No CloudTrail | Default, simplest |
+| **SSE-KMS** | KMS manages keys | CloudTrail logs every use | Audit, access control, rotation |
+| **SSE-C** | Customer provides key per request | No (AWS never stores key) | Full key control |
+| **DSSE-KMS** | Dual-layer KMS encryption | CloudTrail | Compliance (CNSSP-15) |
+
+### Client-Side Encryption
+
+- Encrypt BEFORE uploading to S3
+- AWS never sees plaintext data
+- Options: KMS-managed key or client-managed key
+- Use AWS Encryption SDK or S3 Encryption Client
+- Maximum control but more complexity
+
+### S3 Bucket Key
+
+- Reduces KMS API calls (and cost) for SSE-KMS
+- Generates bucket-level key from CMK
+- Bucket key encrypts objects (not individual KMS calls per object)
+- Reduces KMS request cost by up to 99%
+- CloudTrail shows bucket ARN instead of object ARN
+
+### Enforcing Encryption
+
+```json
+{
+  ""Effect"": ""Deny"",
+  ""Action"": ""s3:PutObject"",
+  ""Resource"": ""arn:aws:s3:::bucket/*"",
+  ""Condition"": {
+    ""StringNotEquals"": {
+      ""s3:x-amz-server-side-encryption"": ""aws:kms""
+    }
+  }
+}
+```
+
+---
+
+## Encryption for Other Services
+
+### EBS Encryption
+
+- AES-256 encryption
+- Encrypted at rest + in transit (between EC2 and EBS)
+- Snapshots of encrypted volumes are encrypted
+- Cannot encrypt existing volume (snapshot -> copy encrypted -> restore)
+- Default encryption: Account-level setting (all new volumes encrypted)
+- Supports CMK or AWS managed key
+
+### RDS Encryption
+
+- Must enable at creation (cannot add later)
+- Encrypts: Storage, backups, snapshots, read replicas
+- To encrypt existing: Snapshot -> Copy encrypted -> Restore
+- Read replicas must use same encryption as primary (same region)
+- Cross-region replica can use different CMK
+
+### DynamoDB Encryption
+
+| Option | Key | Cost |
+|--------|-----|------|
+| **AWS Owned** | AWS manages | Free (default) |
+| **AWS Managed** | aws/dynamodb | Per use |
+| **Customer Managed** | Your CMK | Monthly + per use |
+
+### EFS Encryption
+
+- Encryption at rest: Enable at creation (KMS)
+- Encryption in transit: TLS mount option
+- Cannot change after creation
+
+### Lambda Encryption
+
+- Environment variables: Encrypted with KMS (default or CMK)
+- At rest: Function code encrypted automatically
+- In transit: TLS for all invocations
+
+---
+
+## Certificate Management
+
+### ACM (AWS Certificate Manager)
+
+| Feature | Public Certs | Private Certs |
+|---------|-------------|---------------|
+| **Cost** | Free | $400/month per CA |
+| **Validation** | DNS or Email | N/A (internal) |
+| **Auto-Renewal** | Yes (DNS validation) | Yes |
+| **Attaches To** | ALB, CloudFront, API GW, NLB | ALB, API GW, internal services |
+| **Export** | No (cannot export private key) | Yes |
+
+### ACM Private CA
+
+- Issue private certificates for internal services
+- Mutual TLS (mTLS) between microservices
+- IoT device certificates
+- Short-lived certificates (hours/days)
+- Certificate revocation (CRL, OCSP)
+- Subordinate CA hierarchy
+
+### Certificate Pinning
+
+- Client validates specific certificate (not just CA chain)
+- Prevents MITM even with compromised CA
+- Use with: Mobile apps, IoT devices
+- Risk: Certificate rotation breaks pinned clients
+
+---
+
+## Secrets Management
+
+### Secrets Manager
+
+| Feature | Description |
+|---------|-------------|
+| **Automatic Rotation** | Lambda-based, configurable schedule |
+| **Cross-Account** | Resource policy for sharing |
+| **Replication** | Multi-region secret replication |
+| **Versioning** | AWSCURRENT, AWSPREVIOUS, AWSPENDING |
+| **Integration** | RDS, Redshift, DocumentDB native rotation |
+| **Cost** | $0.40/secret/month + $0.05/10K API calls |
+
+### Rotation Process
+
+```
+1. createSecret (AWSPENDING stage)
+2. setSecret (set new password in database)
+3. testSecret (verify new credentials work)
+4. finishSecret (move AWSPENDING to AWSCURRENT)
+```
+
+### Secrets Manager vs. Parameter Store
+
+| Feature | Secrets Manager | Parameter Store |
+|---------|----------------|----------------|
+| **Rotation** | Built-in automatic | Manual (Lambda) |
+| **Cost** | $0.40/secret/month | Free (Standard) |
+| **Cross-Account** | Yes (resource policy) | No |
+| **Size** | 64 KB | 4 KB (Standard), 8 KB (Advanced) |
+| **Replication** | Multi-region | No |
+| **Best For** | DB credentials, API keys | Config values, feature flags |
+
+---
+
+## Data Classification
+
+### Amazon Macie
+
+- ML-powered sensitive data discovery in S3
+- Detects: PII, financial data, credentials, health data
+- Managed data identifiers: 100+ pre-built patterns
+- Custom data identifiers: Regex + keywords
+- Automated discovery: Scheduled bucket scanning
+- Findings: Severity, data type, location, count
+- Integration: Security Hub, EventBridge
+
+### Data Loss Prevention Patterns
+
+| Layer | Control |
+|-------|---------|
+| **Network** | VPC Endpoints with restrictive policies |
+| **Storage** | S3 Block Public Access, bucket policies |
+| **Encryption** | KMS key policies (restrict who can decrypt) |
+| **Classification** | Macie (discover and alert on sensitive data) |
+| **Access** | IAM policies, resource policies, SCPs |
+| **Monitoring** | CloudTrail data events, S3 access logs |
+| **Exfiltration Prevention** | VPC endpoint policies, Network Firewall |
+
+---
+
+## Key Exam Patterns
+
+**KMS:**
+- **""Audit key usage""** -> CMK + CloudTrail (logs every Encrypt/Decrypt call)
+- **""Cross-account encryption""** -> Key policy allows external account + IAM in source
+- **""Encrypt large files""** -> Envelope encryption (GenerateDataKey)
+- **""Key never leaves AWS""** -> Standard KMS CMK
+- **""FIPS 140-2 Level 3""** -> CloudHSM-backed custom key store
+- **""Keys never in AWS at all""** -> External Key Store (XKS)
+- **""Encrypt in one region, decrypt in another""** -> Multi-Region Keys
+- **""Reduce S3 KMS costs""** -> S3 Bucket Keys
+
+**S3 Encryption:**
+- **""Default encryption, no audit""** -> SSE-S3
+- **""Encryption with audit trail""** -> SSE-KMS (CloudTrail logs)
+- **""Customer controls key, AWS never stores""** -> SSE-C
+- **""Maximum control, encrypt before upload""** -> Client-side encryption
+- **""Force encryption on all uploads""** -> Bucket policy denying unencrypted PutObject
+
+**Certificates:**
+- **""Free TLS for ALB/CloudFront""** -> ACM public certificate
+- **""Internal service mTLS""** -> ACM Private CA
+- **""Auto-renewal""** -> ACM with DNS validation
+- **""CloudFront certificate""** -> Must be in us-east-1
+
+**Secrets:**
+- **""Auto-rotate database password""** -> Secrets Manager (native RDS rotation)
+- **""Share secret cross-account""** -> Secrets Manager resource policy
+- **""Multi-region secret""** -> Secrets Manager replication
+- **""Config values, free""** -> Parameter Store (Standard tier)
+
+**Data Protection:**
+- **""Find PII in S3""** -> Macie
+- **""Prevent data exfiltration""** -> VPC Endpoint policies + Network Firewall
+- **""Encrypt existing EBS""** -> Snapshot -> Copy encrypted -> Restore
+- **""Encrypt existing RDS""** -> Snapshot -> Restore encrypted
+
+---
+
+## Quick Exam Tips
+
+- **Key policies are PRIMARY** for KMS access. IAM policies alone cannot grant KMS access without key policy allowing it.
+- **Envelope encryption** for anything > 4 KB. GenerateDataKey returns plaintext + encrypted data key.
+- **S3 Bucket Keys** reduce KMS costs by up to 99% (fewer API calls).
+- **SSE-KMS** provides CloudTrail audit trail. SSE-S3 does not.
+- **Multi-Region Keys** enable encrypt in one region, decrypt in another (same key ID).
+- **CloudHSM** = FIPS 140-2 Level 3. Standard KMS = FIPS 140-2 Level 2.
+- **External Key Store (XKS)** = keys never enter AWS (ultimate control, highest latency).
+- **ACM certificates cannot be exported** (public). Private CA certs can be exported.
+- **ACM auto-renewal** requires DNS validation (email validation doesn't auto-renew reliably).
+- **Secrets Manager** auto-rotates. Parameter Store does not (must build with Lambda).
+- **Secrets Manager replication** enables multi-region secrets (DR, global apps).
+- **Macie** discovers sensitive data in S3 using ML + managed/custom data identifiers.
+- **Cannot encrypt existing EBS/RDS** directly. Must use snapshot workaround.
+- **Default EBS encryption** (account setting) encrypts all new volumes automatically.
+- **KMS grants** provide temporary, programmatic access (used by AWS services internally)."

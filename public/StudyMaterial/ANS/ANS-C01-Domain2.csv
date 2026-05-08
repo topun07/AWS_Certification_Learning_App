@@ -1,0 +1,612 @@
+certCode,domain,title,content
+"ANS-C01","Domain 2: Network Implementation","Network Implementation","## ANS-C01 Domain 2: Network Implementation
+
+**Weight:** ~26% of scored exam content
+**Exam Level:** Specialty
+**Target Audience:** Network engineers preparing for the AWS Certified Advanced Networking - Specialty exam
+
+Domain 1 asked ""what should we build?"" Domain 2 asks ""how do we build it?"" This domain tests hands-on configuration knowledge - route tables, BGP sessions, DX virtual interfaces, VPN tunnels, load balancers, and endpoint implementations. Expect scenario-based questions where you must select the correct sequence of configuration steps.
+
+---
+
+## Objective 2.1: Routing Implementation
+
+### VPC Route Table Mechanics
+
+**Route Table Rules:**
+
+- Every subnet must be associated with exactly one route table.
+- The local route (VPC CIDR) is always present and cannot be removed.
+- Routes are evaluated by longest prefix match (most specific wins).
+- If two routes have the same prefix length, priority order applies.
+
+**Route Priority (same prefix length):**
+
+1. Local route (VPC CIDR) - always wins
+2. Most specific route (longest prefix)
+3. Static routes
+4. Propagated routes (from VGW/TGW)
+5. If still tied: Local > Static > Propagated > BGP (shortest AS path)
+
+**Route Table Targets:**
+
+| Target | Use Case |
+|--------|----------|
+| **local** | Intra-VPC traffic (automatic) |
+| **igw-xxx** | Internet-bound traffic (public subnets) |
+| **nat-xxx** | Internet-bound from private subnets |
+| **vgw-xxx** | Traffic to on-premises via VPN/DX |
+| **tgw-xxx** | Traffic to Transit Gateway |
+| **pcx-xxx** | Traffic to peered VPC |
+| **vpce-xxx** | Traffic to Gateway endpoint (S3/DynamoDB) |
+| **eni-xxx** | Traffic to specific ENI (appliance/firewall) |
+| **gwlbe-xxx** | Traffic to Gateway Load Balancer endpoint |
+| **eigw-xxx** | IPv6 egress-only internet gateway |
+
+### Implementing Asymmetric Routing Prevention
+
+A common exam scenario: traffic enters through one path but returns through another, causing stateful firewalls to drop packets.
+
+**Problem:**
+
+```
+Inbound:  Internet -> IGW -> ALB -> Instance
+Outbound: Instance -> NAT GW -> Internet  <- WRONG! Return traffic must go back through ALB
+```
+
+**Solution:** Route tables must ensure symmetric paths. For inspection architectures:
+
+```
+Ingress route table (IGW):
+  Destination: 10.0.1.0/24 (ALB subnet) -> Target: gwlbe-xxx (firewall)
+
+Workload subnet route table:
+  Destination: 0.0.0.0/0 -> Target: gwlbe-xxx (firewall)
+```
+
+### Transit Gateway Routing Implementation
+
+**Step-by-step TGW attachment and routing:**
+
+1. Create TGW (in Network account)
+2. Share via RAM (to workload accounts)
+3. Create VPC attachment (in each workload account - specify subnets)
+4. Accept attachment (if auto-accept disabled)
+5. Associate attachment with appropriate TGW route table
+6. Enable/disable propagation per attachment per route table
+7. Add static routes where needed (e.g., default route to inspection VPC)
+8. Update VPC route tables to point traffic at TGW
+
+**TGW Routing Example - Centralized Egress:**
+
+```
+Workload VPC Route Table:
+  0.0.0.0/0 -> tgw-xxx
+
+TGW Route Table (workload associations):
+  0.0.0.0/0 -> Egress VPC attachment (static)
+  10.0.0.0/8 -> propagated from all VPC attachments
+
+Egress VPC Route Table (TGW subnet):
+  0.0.0.0/0 -> nat-xxx
+
+Egress VPC Route Table (NAT subnet):
+  10.0.0.0/8 -> tgw-xxx
+  0.0.0.0/0 -> igw-xxx
+```
+
+### Implementing VPC Peering
+
+**Configuration Steps:**
+
+1. Requester creates peering connection (specify peer VPC ID, account, region).
+2. Accepter accepts the peering request.
+3. Both sides add routes to their route tables pointing to pcx-xxx.
+4. Both sides update security groups to allow traffic from peer CIDR.
+
+**Critical Constraints:**
+
+- No transitive routing (A-B and B-C does NOT mean A-C).
+- No overlapping CIDRs between peered VPCs.
+- No edge-to-edge routing (can't route through a peered VPC's IGW, VGW, or NAT).
+- DNS resolution: must enable ""DNS resolution from peer VPC"" for private DNS to work.
+
+---
+
+## Objective 2.2: Direct Connect Implementation
+
+### Establishing a DX Connection
+
+**Physical Setup:**
+
+1. Order connection via AWS Console (choose location, port speed).
+2. Download LOA-CFA (Letter of Authorization - Connecting Facility Assignment).
+3. Provide LOA to colocation provider to establish cross-connect.
+4. Wait for physical connection to come up (port status: available -> down -> up).
+
+### Virtual Interface Configuration
+
+**Private VIF Implementation:**
+
+```
+Parameters:
+  - VLAN ID: 100 (802.1Q tag)
+  - BGP ASN: 65000 (your ASN)
+  - BGP Auth Key: (optional MD5 key)
+  - Your Router IP: 169.254.100.2/30
+  - Amazon Router IP: 169.254.100.1/30
+  - Prefixes to advertise: 192.168.0.0/16 (your on-prem)
+  - Jumbo frames: 9001 MTU (optional)
+  - Virtual Gateway or DX Gateway: target
+```
+
+**Transit VIF Implementation:**
+
+```
+Parameters:
+  - Same as Private VIF EXCEPT:
+  - Connects to DX Gateway (which connects to TGW)
+  - Supports up to 3 allowed prefixes from AWS side
+  - Supports BGP communities for route scope control
+```
+
+**Public VIF Implementation:**
+
+```
+Parameters:
+  - Same BGP setup
+  - Prefixes to advertise: Your PUBLIC IP ranges (or AWS-provided)
+  - Receives: All AWS public IP prefixes
+  - Use case: Access S3, DynamoDB, and other public AWS endpoints privately
+```
+
+### DX Link Aggregation Groups (LAGs)
+
+Bundle multiple DX connections for increased bandwidth:
+
+- All connections must be same speed and terminate at same DX location.
+- Uses LACP (Link Aggregation Control Protocol).
+- Minimum links threshold: set minimum active links before LAG goes down.
+- Maximum 4 connections per LAG (4 x 10 Gbps = 40 Gbps, or 4 x 100 Gbps = 400 Gbps).
+
+### DX Gateway Implementation
+
+**Connecting DX to multiple regions:**
+
+```
+On-premises -> DX Connection -> Private/Transit VIF -> DX Gateway
+                                                         |
+                        +--------------------------------+--------------------------------+
+                        v                                v                                v
+                  VGW (us-east-1)                  VGW (eu-west-1)              TGW (ap-southeast-1)
+                        |                                |                                |
+                  VPC (us-east-1)                  VPC (eu-west-1)              VPCs (ap-southeast-1)
+```
+
+**Key DX Gateway Rules:**
+
+- One DX Gateway can connect to up to 10 VGWs or 3 TGWs.
+- VGWs attached to a DX Gateway cannot have overlapping CIDRs.
+- DX Gateway does NOT enable VPC-to-VPC routing (only on-prem to VPC).
+- Allowed prefixes: you configure which AWS CIDRs are advertised to on-premises.
+
+### MACsec Encryption on DX
+
+For connections requiring Layer 2 encryption:
+
+- Available on 10 Gbps and 100 Gbps dedicated connections.
+- Encrypts traffic between your router and the AWS DX router.
+- Uses 256-bit AES-GCM encryption.
+- Requires MACsec-capable router on your side.
+- Configure CKN/CAK (Connectivity Association Key) pairs.
+
+---
+
+## Objective 2.3: VPN Implementation
+
+### Site-to-Site VPN Configuration
+
+**On TGW (recommended for multi-VPC):**
+
+1. Create Customer Gateway (CGW) - specify on-prem router's public IP and ASN.
+2. Create VPN connection - attach to TGW; choose routing type (static/dynamic).
+3. Download configuration - AWS provides config for your specific router vendor.
+4. Configure on-premises router - IPsec tunnels, BGP sessions.
+5. Verify tunnel status - both tunnels should show ""UP.""
+
+**Tunnel Configuration Details:**
+
+| Parameter | Tunnel 1 | Tunnel 2 |
+|-----------|----------|----------|
+| **AWS endpoint** | Different public IPs | Different public IPs |
+| **Pre-shared key** | Unique per tunnel | Unique per tunnel |
+| **Inside CIDR** | 169.254.x.x/30 | 169.254.y.y/30 |
+| **BGP peer** | AWS IP from inside CIDR | AWS IP from inside CIDR |
+| **IKE version** | IKEv2 (recommended) | IKEv2 (recommended) |
+| **Encryption** | AES-256 | AES-256 |
+| **DPD (Dead Peer Detection)** | 10 seconds | 10 seconds |
+
+### ECMP (Equal-Cost Multi-Path) on TGW
+
+- Attach multiple VPN connections to the same TGW.
+- TGW automatically load-balances across tunnels with equal-cost routes.
+- Each VPN = 2 tunnels x 1.25 Gbps = 2.5 Gbps.
+- 4 VPN connections = 8 tunnels = up to 10 Gbps aggregate.
+- Only works with TGW (not VGW).
+
+### Accelerated Site-to-Site VPN
+
+- VPN traffic enters AWS Global Accelerator edge location nearest to on-premises.
+- Travels over AWS backbone (not public internet) to the VPN endpoint.
+- Reduces jitter and improves performance for geographically distant connections.
+- Additional cost for Global Accelerator usage.
+- Cannot be enabled on existing VPN - must create new VPN connection.
+
+### Client VPN Implementation
+
+For remote user access to AWS VPCs:
+
+| Component | Configuration |
+|-----------|--------------|
+| **Endpoint** | Create in target VPC; specify client CIDR (non-overlapping) |
+| **Authentication** | Mutual TLS (certificates), Active Directory, SAML/SSO |
+| **Authorization** | Rules per target network (allow specific AD groups) |
+| **Target network** | Associate with VPC subnets (one per AZ for HA) |
+| **Routes** | Add routes for on-premises or internet access |
+| **Split tunnel** | Enable to only route AWS-destined traffic through VPN |
+| **Connection logging** | CloudWatch Logs for audit trail |
+
+---
+
+## Objective 2.4: Load Balancer Implementation
+
+### Elastic Load Balancing - All Types
+
+**Application Load Balancer (ALB):**
+
+| Feature | Detail |
+|---------|--------|
+| **Layer** | 7 (HTTP/HTTPS/gRPC) |
+| **Targets** | EC2, IP, Lambda, containers |
+| **Routing** | Path-based, host-based, header-based, query string, source IP |
+| **SSL/TLS** | Terminates at ALB; ACM certificates |
+| **Sticky sessions** | Cookie-based (duration or application) |
+| **WebSocket** | Supported |
+| **HTTP/2** | Supported (frontend); HTTP/1.1 to targets |
+| **Cross-zone** | Enabled by default |
+| **Security groups** | Yes (controls inbound to ALB) |
+
+**Network Load Balancer (NLB):**
+
+| Feature | Detail |
+|---------|--------|
+| **Layer** | 4 (TCP/UDP/TLS) |
+| **Targets** | EC2, IP, ALB, containers |
+| **Performance** | Millions of requests/sec; ultra-low latency |
+| **Static IPs** | One static IP per AZ (or Elastic IP) |
+| **Preserve source IP** | Yes (by default for instance targets) |
+| **TLS termination** | Optional (TLS listener) |
+| **Cross-zone** | Disabled by default (enable for even distribution) |
+| **Security groups** | Optional (recently added) |
+| **PrivateLink** | Required for endpoint services |
+| **Zonal isolation** | Supports zonal DNS for AZ-aware routing |
+
+**Gateway Load Balancer (GWLB):**
+
+| Feature | Detail |
+|---------|--------|
+| **Layer** | 3 (IP packets) |
+| **Purpose** | Transparent inline inspection (firewalls, IDS/IPS) |
+| **Protocol** | GENEVE encapsulation (port 6081) |
+| **Targets** | Firewall/security appliances |
+| **Deployment** | GWLB in appliance VPC; GWLB endpoints in workload VPCs |
+| **Traffic flow** | Workload -> GWLBE -> GWLB -> Appliance -> GWLB -> GWLBE -> Workload |
+| **Cross-zone** | Enabled by default |
+| **Use case** | Third-party firewalls (Palo Alto, Fortinet, Check Point) |
+
+### GWLB Implementation - Traffic Flow
+
+```
++------------------------------------------------------------------+
+| WORKLOAD VPC                                                      |
+|                                                                    |
+|  Instance (10.0.1.5) --> Route Table: 0.0.0.0/0 -> gwlbe-xxx     |
+|                                          |                         |
+|                              +-----------v-----------+             |
+|                              |  GWLB Endpoint (ENI)  |             |
+|                              +-----------+-----------+             |
++-------------------------------------|------------------------------+
+                                      | (GENEVE tunnel)
++-------------------------------------|------------------------------+
+| APPLIANCE VPC                       |                              |
+|                              +------v----------------+             |
+|                              |  Gateway Load Balancer |             |
+|                              +------+----------------+             |
+|                                     |                              |
+|                              +------v----------------+             |
+|                              |  Firewall Appliance    |             |
+|                              |  (inspect + forward)   |             |
+|                              +------+----------------+             |
+|                                     |                              |
+|                              +------v----------------+             |
+|                              |  Gateway Load Balancer |             |
+|                              +------+----------------+             |
++-------------------------------------|------------------------------+
+                                      | (return path)
+                               Back to workload VPC
+```
+
+### ALB Advanced Routing Rules
+
+```
+Listener Rule Priority Order:
+
+1. IF path = /api/v2/*
+   AND header X-Custom = ""internal""  -> Target Group A
+
+2. IF path = /api/*                    -> Target Group B
+
+3. IF host = admin.example.com         -> Target Group C
+
+4. IF source-ip = 10.0.0.0/8          -> Target Group D (internal)
+
+5. DEFAULT                             -> Target Group E (public)
+```
+
+**Weighted Target Groups (for deployments):**
+
+```
+Forward action:
+  - Target Group (v1): weight 90  <- 90% of traffic
+  - Target Group (v2): weight 10  <- 10% of traffic (canary)
+```
+
+### Cross-Zone Load Balancing
+
+```
+WITHOUT cross-zone (NLB default):
+  AZ-a (2 instances): Each gets 25% of AZ-a's 50% share = 25% total
+  AZ-b (8 instances): Each gets 6.25% of AZ-b's 50% share = 6.25% total
+  -> UNEVEN distribution per instance
+
+WITH cross-zone (ALB default):
+  All 10 instances: Each gets exactly 10% regardless of AZ
+  -> EVEN distribution per instance
+```
+
+---
+
+## Objective 2.5: VPC Endpoint Implementation
+
+### Interface Endpoints (PrivateLink)
+
+**Implementation Steps:**
+
+1. Create interface endpoint - specify service, VPC, subnets, security groups.
+2. Private DNS (optional but recommended) - resolves service's public DNS to private endpoint IP.
+3. Endpoint policy - restrict which actions/resources are accessible through the endpoint.
+4. Security group - controls which resources can reach the endpoint ENI.
+
+**Endpoint Policy Example (restrict S3 access to specific bucket):**
+
+```json
+{
+  ""Statement"": [
+    {
+      ""Effect"": ""Allow"",
+      ""Principal"": ""*"",
+      ""Action"": ""s3:GetObject"",
+      ""Resource"": ""arn:aws:s3:::my-approved-bucket/*""
+    }
+  ]
+}
+```
+
+**Private DNS Considerations:**
+
+- When enabled, the service's default DNS name (e.g., ec2.us-east-1.amazonaws.com) resolves to the endpoint's private IP.
+- Requires enableDnsSupport and enableDnsHostnames on the VPC.
+- Affects ALL resources in the VPC (can't selectively route some traffic to endpoint and some to public).
+
+### Gateway Endpoints (S3 and DynamoDB)
+
+**Implementation:**
+
+1. Create gateway endpoint - specify service and VPC.
+2. Associate with route tables - adds a prefix list route automatically.
+3. Endpoint policy - restrict access (same as interface endpoint).
+4. No security group needed (route-table based).
+
+**Key Difference from Interface Endpoints:**
+
+- Free (no hourly charge or data processing charge).
+- Cannot be accessed from on-premises (route table entry only works within VPC).
+- For on-premises access to S3 via private connection: use Interface Endpoint for S3.
+
+### Centralized VPC Endpoints (Shared Services Pattern)
+
+```
++-------------------------------------------------------------+
+| SHARED SERVICES VPC                                          |
+|                                                              |
+|  +----------------------------------------------------------+
+|  | Interface Endpoints:                                      |
+|  | - com.amazonaws.us-east-1.s3                              |
+|  | - com.amazonaws.us-east-1.ec2                             |
+|  | - com.amazonaws.us-east-1.logs                            |
+|  | - com.amazonaws.us-east-1.secretsmanager                  |
+|  +----------------------------------------------------------+
+|                          |                                   |
+|                    TGW Attachment                             |
++-------------------------------------------------------------+
+                           |
+                    Transit Gateway
+                    +------+------+
+                    v      v      v
+              Workload  Workload  Workload
+              VPC 1     VPC 2     VPC 3
+```
+
+**Requirements for centralized endpoints:**
+
+- Private DNS must be disabled on the endpoint (otherwise only works in local VPC).
+- Use Route 53 Private Hosted Zones to resolve service DNS to endpoint IPs.
+- Associate PHZ with all workload VPCs.
+- Route traffic from workload VPCs to shared services VPC via TGW.
+
+---
+
+## Objective 2.6: DNS Implementation
+
+### Route 53 Resolver Implementation
+
+**Inbound Endpoint (on-premises -> AWS resolution):**
+
+1. Create inbound endpoint in VPC - specify 2+ subnets (for HA).
+2. Each endpoint gets ENIs with private IPs.
+3. Configure on-premises DNS to forward AWS domains to these IPs.
+4. On-premises queries for *.aws.internal -> forwarded to inbound endpoint -> resolved by Route 53.
+
+**Outbound Endpoint (AWS -> on-premises resolution):**
+
+1. Create outbound endpoint in VPC - specify 2+ subnets.
+2. Create forwarding rules - specify which domains forward to on-premises DNS.
+3. Associate rules with VPCs.
+4. AWS queries for *.corp.local -> forwarded via outbound endpoint -> resolved by on-prem DNS.
+
+**Forwarding Rule Example:**
+
+```
+Rule: corp.local
+  Target IPs: 192.168.1.10, 192.168.1.11 (on-prem DNS servers)
+  VPCs: All workload VPCs
+
+Rule: partners.example.com
+  Target IPs: 10.50.1.5 (partner DNS)
+  VPCs: Partner-facing VPC only
+```
+
+### Route 53 Private Hosted Zone Implementation
+
+**Cross-Account PHZ Association:**
+
+1. Create PHZ in Account A.
+2. Create authorization in Account A: aws route53 create-vpc-association-authorization
+3. Associate VPC from Account B: aws route53 associate-vpc-with-hosted-zone
+4. Delete authorization (one-time use).
+
+**Split-Horizon DNS:**
+
+```
+Public Hosted Zone (api.example.com):
+  A record -> 54.x.x.x (public ALB IP)
+
+Private Hosted Zone (api.example.com):
+  A record -> 10.0.1.50 (internal NLB IP)
+
+Result: External users hit public endpoint; internal VPC resources hit private endpoint.
+```
+
+---
+
+## Objective 2.7: Network Firewall Implementation
+
+### AWS Network Firewall Deployment
+
+**Rule Groups:**
+
+| Type | Evaluation | Use Case |
+|------|-----------|----------|
+| **Stateless** | Evaluates each packet independently (5-tuple) | Fast allow/deny by IP, port, protocol |
+| **Stateful (5-tuple)** | Tracks connections; evaluates flows | Allow established connections |
+| **Stateful (Domain list)** | Allow/deny by FQDN | Block specific domains |
+| **Stateful (Suricata)** | Full IPS/IDS rules | Complex inspection; threat detection |
+
+**Stateless Rule Processing:**
+
+```
+Priority 1: ALLOW TCP from 10.0.0.0/8 to any port 443
+Priority 2: DROP TCP from any to any port 22
+Priority 3: FORWARD to stateful engine (everything else)
+```
+
+- Processed in priority order (lowest number first).
+- Actions: PASS, DROP, or FORWARD (to stateful rules).
+
+**Stateful Rule Processing:**
+
+- Default action: PASS, DROP, or ALERT.
+- Strict order: rules evaluated in priority order; first match wins.
+- Action order: all rules evaluated; most restrictive action wins.
+
+**Domain Filtering Example:**
+
+```
+Stateful rule (domain list):
+  Action: ALLOW
+  Protocol: HTTPS
+  Domains: .amazonaws.com, .github.com, .docker.io
+
+Default action: DROP (block all other HTTPS domains)
+```
+
+### TLS Inspection
+
+Network Firewall can decrypt, inspect, and re-encrypt HTTPS traffic:
+
+- Configure TLS inspection with ACM certificate.
+- Firewall acts as man-in-the-middle (decrypts with its cert).
+- Clients must trust the firewall's CA certificate.
+- Enables domain filtering and deep packet inspection on encrypted traffic.
+- Performance impact - adds latency; size firewall endpoints accordingly.
+
+---
+
+## Key Exam Patterns for ANS-C01 Domain 2
+
+- **""Implement connectivity between 50 VPCs and on-premises""** - TGW + Transit VIF on DX + DX Gateway
+- **""VPN throughput needs to exceed 1.25 Gbps""** - Multiple VPN connections with ECMP on TGW
+- **""Need static IPs for a TCP load balancer""** - NLB (one static/Elastic IP per AZ)
+- **""Inspect traffic from third-party firewall appliances transparently""** - Gateway Load Balancer + GWLB endpoints
+- **""Centralize VPC endpoints to reduce cost""** - Shared services VPC + disable private DNS + Route 53 PHZ + TGW routing
+- **""On-premises can't resolve AWS private DNS names""** - Route 53 Resolver inbound endpoint
+- **""Block outbound traffic to unauthorized domains""** - AWS Network Firewall with domain list rules
+- **""Need encryption on Direct Connect""** - MACsec (Layer 2) or IPsec VPN over DX (Layer 3)
+- **""Canary deployment with load balancer""** - ALB weighted target groups (90/10 split)
+- **""Peered VPC can't resolve private hosted zone""** - Enable DNS resolution from peer VPC on peering connection
+- **""Access S3 from on-premises via DX without internet""** - Public VIF (access AWS public endpoints over DX) or Interface Endpoint for S3 + Transit VIF
+- **""Route table has both static and propagated route for same CIDR""** - Static route wins over propagated
+- **""TGW inter-region peering routes not propagating""** - Expected behavior - inter-region peering only supports static routes
+- **""GWLB appliance not seeing traffic""** - Check route tables point to GWLBE; verify GENEVE support on appliance
+- **""NLB targets in different AZs getting uneven traffic""** - Enable cross-zone load balancing (disabled by default on NLB)
+
+---
+
+## Quick Exam Tips for Domain 2
+
+- **Route table longest prefix match** is the #1 routing rule. A /32 route always beats a /16 route, regardless of target type or priority.
+- **Static routes beat propagated routes** at the same prefix length. This is how you override BGP-learned routes.
+- **NLB is required for PrivateLink.** You cannot create an endpoint service with an ALB alone (though NLB can target ALB).
+- **GWLB uses GENEVE encapsulation** (not GRE, not VXLAN). Appliances must support GENEVE on port 6081.
+- **Cross-zone load balancing defaults:** ALB = enabled (free); NLB = disabled (charges apply when enabled); GWLB = enabled.
+- **DX failover timing:** BGP convergence on DX failure can take 60-90 seconds. For faster failover, use BFD (Bidirectional Forwarding Detection) - reduces to <1 second.
+- **VPC Peering edge-to-edge routing is NOT supported.** You cannot route through a peer's IGW, NAT, VGW, or VPC endpoint. This is a frequent exam trap.
+- **Interface endpoint private DNS affects the entire VPC.** If you enable it, ALL resources in the VPC resolve the service DNS to the endpoint. You can't selectively route some traffic to the endpoint and some to the public service.
+- **Transit VIF supports a maximum of 3 allowed prefixes** advertised from AWS to on-premises (per DX Gateway -> TGW association). Plan your summarization accordingly.
+- **Network Firewall stateless vs. stateful:** Stateless is faster (per-packet, no connection tracking). Stateful is more powerful (tracks flows, supports domain filtering, Suricata rules). Use stateless for simple allow/deny; forward complex traffic to stateful engine.
+- **Accelerated VPN cannot be added to an existing VPN connection.** You must create a new connection with acceleration enabled.
+- **Client VPN split tunnel:** When enabled, only traffic destined for the VPC routes through the VPN. All other traffic (internet) goes directly from the client. Reduces bandwidth costs and improves user experience.
+
+---
+
+## Summary
+
+This covers all objectives in ANS-C01 Domain 2:
+
+- **Routing implementation** - route tables, TGW routing, VPC peering configuration
+- **Direct Connect implementation** - VIFs, DX Gateway, LAGs, MACsec
+- **VPN implementation** - Site-to-Site, ECMP, Accelerated VPN, Client VPN
+- **Load balancer implementation** - ALB, NLB, GWLB, routing rules, cross-zone
+- **VPC endpoint implementation** - interface vs. gateway, centralized endpoints, policies
+- **DNS implementation** - Route 53 Resolver, PHZ, split-horizon
+- **Network Firewall implementation** - rule groups, domain filtering, TLS inspection"

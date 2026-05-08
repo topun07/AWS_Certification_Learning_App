@@ -45,6 +45,9 @@ public class QuizQuestionController {
     @Autowired
     private com.example.awsMachineLearningExam.repository.ReviewRepository reviewRepository;
 
+    @Autowired
+    private com.example.awsMachineLearningExam.repository.QuestionRepository questionRepository;
+
     // --- QUIZ QUESTION ENDPOINTS ---
     @GetMapping("/all")
     public ResponseEntity<?> getAllQuestions() {
@@ -53,7 +56,7 @@ public class QuizQuestionController {
 
     @PostMapping("/upload")
     public ResponseEntity<?> uploadCsv(@RequestHeader("X-Admin-Key") String adminKey, @RequestParam("file") MultipartFile file) {
-        if (!"YOUR_SECRET_MASTER_KEY".equals(adminKey)) {
+        if (!"masterkey".equals(adminKey)) {
             return ResponseEntity.status(403).body(Map.of("error", "Security Breach: Unauthorized Admin Access."));
         }
 
@@ -70,7 +73,7 @@ public class QuizQuestionController {
 
     @PostMapping("/flashcards/upload")
     public ResponseEntity<?> uploadFlashcards(@RequestHeader("X-Admin-Key") String adminKey, @RequestParam("file") MultipartFile file) {
-        if (!"YOUR_SECRET_MASTER_KEY".equals(adminKey)) {
+        if (!"masterkey".equals(adminKey)) {
             return ResponseEntity.status(403).body(Map.of("error", "Security Breach: Unauthorized Admin Access."));
         }
 
@@ -83,6 +86,22 @@ public class QuizQuestionController {
     public ResponseEntity<?> deleteFlashcard(@PathVariable Long id) {
         flashcardRepository.deleteById(id);
         return ResponseEntity.ok(Map.of("message", "Vaporized"));
+    }
+
+    // Batch fetch questions by IDs (for Review Room)
+    @GetMapping("/batch")
+    public ResponseEntity<?> getQuestionsByIds(@RequestParam String ids) {
+        try {
+            List<Long> idList = java.util.Arrays.stream(ids.split(","))
+                    .map(String::trim)
+                    .filter(s -> !s.isEmpty())
+                    .map(Long::parseLong)
+                    .toList();
+            List<com.example.awsMachineLearningExam.model.Question> questions = questionRepository.findByIdIn(idList);
+            return ResponseEntity.ok(questions);
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(Map.of("error", "Invalid question IDs: " + e.getMessage()));
+        }
     }
 
     // 1. Fetches a random question the user hasn't seen yet
@@ -127,16 +146,24 @@ public class QuizQuestionController {
     // 1. Fetch User Exam History
     @GetMapping("/history")
     public ResponseEntity<?> getUserHistory(@RequestParam Long userId) {
+        List<java.util.Map<String, Object>> result = new java.util.ArrayList<>();
+        var historyList = examHistoryRepository.findByUser_Id(userId);
 
-        // 🚨 Bypass Hibernate entirely and pull the exact columns Vue needs as a raw Map!
-        String sql = "SELECT id, exam_code AS examCode, score_percentage AS scorePercentage, " +
-                "total_questions AS totalQuestions, correct_count AS correctCount, " +
-                "completed_at AS completedAt " +
-                "FROM exam_history WHERE user_id = ? ORDER BY completed_at DESC";
+        for (var h : historyList) {
+            java.util.Map<String, Object> entry = new java.util.LinkedHashMap<>();
+            entry.put("id", h.getId());
+            entry.put("examCode", h.getExamCode());
+            entry.put("scorePercentage", h.getScorePercentage());
+            entry.put("totalQuestions", h.getTotalQuestions());
+            entry.put("correctCount", h.getCorrectCount());
+            entry.put("timeSpentSeconds", h.getTimeSpentSeconds());
+            entry.put("weakestCategory", h.getWeakestCategory());
+            entry.put("missedQuestionIds", h.getMissedQuestionIds());
+            entry.put("completedAt", h.getCompletedAt() != null ? h.getCompletedAt().toString() : null);
+            result.add(entry);
+        }
 
-        java.util.List<java.util.Map<String, Object>> history = jdbcTemplate.queryForList(sql, userId);
-
-        return ResponseEntity.ok(history);
+        return ResponseEntity.ok(result);
     }
 
     // 2. Save New Exam Results
@@ -154,6 +181,16 @@ public class QuizQuestionController {
         historyData.setCompletedAt(java.time.LocalDateTime.now());
 
         examHistoryRepository.save(historyData);
+        return ResponseEntity.ok().build();
+    }
+
+    // 2b. Delete a specific exam history entry
+    @DeleteMapping("/history/{id}")
+    public ResponseEntity<?> deleteHistoryEntry(@PathVariable Long id) {
+        if (!examHistoryRepository.existsById(id)) {
+            return ResponseEntity.notFound().build();
+        }
+        examHistoryRepository.deleteById(id);
         return ResponseEntity.ok().build();
     }
 

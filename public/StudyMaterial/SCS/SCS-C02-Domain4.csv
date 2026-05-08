@@ -1,0 +1,283 @@
+certCode,domain,title,content
+"SCS-C02","Domain 4: Identity & Access Management","Identity & Access Management","## SCS-C02 Domain 4: Identity & Access Management
+
+**Weight:** ~16% of scored exam content
+**Exam Level:** Specialty
+
+This domain covers advanced IAM policies, cross-account access, federation, and fine-grained authorization.
+
+---
+
+## Advanced IAM Policies
+
+### Policy Evaluation Logic
+
+```
+1. Explicit Deny? -> DENY (always wins, evaluation stops)
+2. SCP allows? -> If no SCP allows, DENY
+3. Resource-based policy allows? -> ALLOW (same-account, no boundary check)
+4. Permission boundary allows? -> If boundary denies, DENY
+5. Session policy allows? -> If session denies, DENY
+6. Identity-based policy allows? -> If yes, ALLOW
+7. Default -> IMPLICIT DENY
+```
+
+### Policy Conditions (Critical for Exam)
+
+| Condition Key | Use Case |
+|--------------|----------|
+| **aws:SourceIp** | Restrict by IP address |
+| **aws:SourceVpc** | Restrict to specific VPC |
+| **aws:SourceVpce** | Restrict to specific VPC endpoint |
+| **aws:RequestedRegion** | Restrict to specific regions |
+| **aws:PrincipalOrgID** | Restrict to organization members |
+| **aws:PrincipalOrgPaths** | Restrict to specific OUs |
+| **aws:PrincipalTag** | ABAC (attribute-based access) |
+| **aws:ResourceTag** | Access based on resource tags |
+| **aws:MultiFactorAuthPresent** | Require MFA |
+| **aws:MultiFactorAuthAge** | MFA token age (seconds) |
+| **kms:ViaService** | KMS key used only via specific service |
+| **s3:prefix** | Restrict S3 access to specific prefix |
+| **dynamodb:LeadingKeys** | Restrict DynamoDB to specific partition keys |
+| **ec2:ResourceTag** | EC2 actions based on instance tags |
+
+### Policy Variables
+
+```json
+{
+  ""Effect"": ""Allow"",
+  ""Action"": ""s3:*"",
+  ""Resource"": ""arn:aws:s3:::bucket/${aws:username}/*""
+}
+```
+
+- `${aws:username}` - IAM user name
+- `${aws:userid}` - Unique ID
+- `${aws:PrincipalTag/department}` - Tag value
+- `${cognito-identity.amazonaws.com:sub}` - Cognito user ID
+- Use for: Per-user S3 folders, per-user DynamoDB items
+
+### ABAC (Attribute-Based Access Control)
+
+- Access decisions based on tags (attributes)
+- Principal tags + Resource tags + Condition keys
+- Scales without policy updates (add tag = grant access)
+- Example: Department=Engineering tag on user matches resource tag
+
+```json
+{
+  ""Effect"": ""Allow"",
+  ""Action"": ""ec2:*"",
+  ""Resource"": ""*"",
+  ""Condition"": {
+    ""StringEquals"": {
+      ""ec2:ResourceTag/Department"": ""${aws:PrincipalTag/Department}""
+    }
+  }
+}
+```
+
+---
+
+## Cross-Account Access
+
+### Methods
+
+| Method | Use Case | Mechanism |
+|--------|----------|-----------|
+| **AssumeRole** | Any service, controlled access | Trust policy + IAM policy |
+| **Resource Policy** | S3, KMS, SQS, Lambda, SNS | Principal from other account |
+| **RAM** | VPC subnets, TGW, License Manager | Managed sharing |
+| **Organizations Trust** | Org-wide access | aws:PrincipalOrgID condition |
+| **Identity Center** | Human access | Permission sets |
+
+### AssumeRole Flow
+
+```
+Account A (Source):
+  1. User/Role has permission: sts:AssumeRole on target role ARN
+
+Account B (Target):
+  2. Role trust policy allows Account A principal
+  3. Role has permissions for actions in Account B
+
+Result: Temporary credentials (access key, secret key, session token)
+```
+
+### Cross-Account KMS
+
+```json
+// Key Policy in Account B (key owner)
+{
+  ""Effect"": ""Allow"",
+  ""Principal"": {""AWS"": ""arn:aws:iam::ACCOUNT_A:root""},
+  ""Action"": [""kms:Decrypt"", ""kms:GenerateDataKey""],
+  ""Resource"": ""*""
+}
+
+// IAM Policy in Account A (key user)
+{
+  ""Effect"": ""Allow"",
+  ""Action"": [""kms:Decrypt"", ""kms:GenerateDataKey""],
+  ""Resource"": ""arn:aws:kms:us-east-1:ACCOUNT_B:key/key-id""
+}
+```
+
+Both key policy AND IAM policy must allow for cross-account KMS access.
+
+### Confused Deputy Problem
+
+- Service acting on behalf of customer accesses wrong customer's resources
+- Solution: `aws:SourceArn` and `aws:SourceAccount` conditions in trust policies
+
+```json
+{
+  ""Condition"": {
+    ""StringEquals"": {""aws:SourceAccount"": ""123456789012""},
+    ""ArnLike"": {""aws:SourceArn"": ""arn:aws:service::123456789012:*""}
+  }
+}
+```
+
+---
+
+## Identity Federation
+
+### IAM Identity Center (SSO)
+
+| Feature | Description |
+|---------|-------------|
+| **Identity Source** | Built-in, Active Directory, External IdP (Okta, Azure AD) |
+| **Permission Sets** | Templates applied to accounts (become IAM roles) |
+| **ABAC** | Tag-based access across accounts |
+| **Multi-Account** | Single sign-on to all org accounts |
+| **AWS Access Portal** | Web portal for account/role selection |
+| **CLI Integration** | `aws sso login` for temporary credentials |
+
+### Cognito
+
+| Component | Purpose | Protocol |
+|-----------|---------|----------|
+| **User Pools** | Authentication (sign-up/in) | OIDC, SAML |
+| **Identity Pools** | Authorization (AWS credentials) | STS |
+| **Hosted UI** | Pre-built login pages | OAuth 2.0 |
+| **Lambda Triggers** | Custom auth logic | N/A |
+
+**User Pool Tokens:**
+- **ID Token:** User identity claims (name, email)
+- **Access Token:** Authorization scopes
+- **Refresh Token:** Get new ID/Access tokens
+
+**Identity Pool Flows:**
+- Authenticated: User Pool token -> Identity Pool -> STS credentials (authenticated role)
+- Unauthenticated: No token -> Identity Pool -> STS credentials (guest role)
+- Fine-grained: Policy variables for per-user access (${cognito-identity:sub})
+
+### SAML 2.0 Federation
+
+```
+1. User authenticates with corporate IdP
+2. IdP returns SAML assertion
+3. User calls STS AssumeRoleWithSAML
+4. STS returns temporary AWS credentials
+5. User accesses AWS resources
+```
+
+### Web Identity Federation (OIDC)
+
+```
+1. User authenticates with social IdP (Google, Facebook)
+2. IdP returns OIDC token
+3. Token exchanged via Cognito Identity Pool (recommended)
+   OR direct STS AssumeRoleWithWebIdentity
+4. STS returns temporary AWS credentials
+```
+
+---
+
+## API Authorization
+
+### API Gateway Authorization Methods
+
+| Method | Use Case | Token Type |
+|--------|----------|-----------|
+| **IAM** | AWS service-to-service | Sig V4 |
+| **Cognito Authorizer** | User-facing apps | JWT (User Pool) |
+| **Lambda Authorizer** | Custom logic, third-party tokens | Any |
+| **API Keys** | Identification only (NOT auth) | API Key header |
+| **Resource Policy** | IP/VPC/account restriction | N/A |
+
+### Lambda Authorizer Types
+
+| Type | Input | Cache Key | Use Case |
+|------|-------|-----------|----------|
+| **Token-based** | Authorization header | Token value | Bearer tokens |
+| **Request-based** | Headers, query strings, context | Multiple params | Complex auth |
+
+---
+
+## Permission Boundaries
+
+### How They Work
+
+- Set maximum permissions for users/roles
+- Effective permissions = Identity policy INTERSECT Boundary
+- Use case: Developers create roles but can't exceed their own permissions
+
+### Delegation Pattern
+
+```
+Admin sets boundary: AllowedServices = [S3, Lambda, DynamoDB]
+Developer creates role with: S3 full access + EC2 full access
+Effective: S3 full access only (EC2 blocked by boundary)
+```
+
+---
+
+## Key Exam Patterns
+
+**Policies:**
+- **""Restrict to specific region""** -> Condition: aws:RequestedRegion
+- **""Require MFA for sensitive actions""** -> Condition: aws:MultiFactorAuthPresent
+- **""Per-user S3 folders""** -> Policy variable: ${aws:username} in resource ARN
+- **""Per-user DynamoDB items""** -> Condition: dynamodb:LeadingKeys
+- **""Tag-based access control""** -> ABAC with aws:PrincipalTag/aws:ResourceTag
+- **""Restrict to organization only""** -> Condition: aws:PrincipalOrgID
+
+**Cross-Account:**
+- **""Cross-account S3 access""** -> Bucket policy (resource-based) OR AssumeRole
+- **""Cross-account KMS""** -> Key policy allows external account + IAM policy in source
+- **""Share VPC subnets""** -> RAM (Resource Access Manager)
+- **""Prevent confused deputy""** -> aws:SourceArn + aws:SourceAccount conditions
+
+**Federation:**
+- **""Enterprise SSO to AWS""** -> IAM Identity Center
+- **""Customer-facing auth""** -> Cognito User Pools
+- **""Mobile app AWS access""** -> Cognito Identity Pools (temporary credentials)
+- **""Corporate SAML to AWS""** -> SAML 2.0 federation + AssumeRoleWithSAML
+- **""Social login""** -> Cognito (User Pool federation or Identity Pool)
+
+**Authorization:**
+- **""API auth for users""** -> Cognito Authorizer (JWT validation)
+- **""API auth for services""** -> IAM authorization (Sig V4)
+- **""Custom auth logic""** -> Lambda Authorizer
+- **""Limit developer-created roles""** -> Permission Boundaries
+
+---
+
+## Quick Exam Tips
+
+- **Explicit Deny always wins.** No other policy can override an explicit deny.
+- **Resource-based policies** allow cross-account access WITHOUT AssumeRole (for supported services).
+- **Key policies** are the primary control for KMS. IAM alone cannot grant KMS access without key policy.
+- **aws:PrincipalOrgID** restricts access to your organization (prevents external account access).
+- **ABAC** scales without policy updates - just tag users and resources consistently.
+- **Permission Boundaries** limit maximum permissions. They never grant permissions.
+- **Cognito User Pools** = authentication (JWT tokens). Identity Pools = authorization (AWS credentials).
+- **IAM Identity Center** is the answer for workforce multi-account SSO.
+- **Lambda Authorizer** for custom/third-party tokens. Cognito Authorizer for User Pool JWTs.
+- **Confused deputy** prevention: Always use aws:SourceArn/aws:SourceAccount in trust policies.
+- **Cross-account KMS** requires BOTH key policy (target) AND IAM policy (source) to allow.
+- **Session policies** further restrict AssumeRole permissions (cannot exceed role's permissions).
+- **API Keys** are for identification/throttling only - NEVER for authentication.
+- **Policy variables** enable dynamic, per-user access without separate policies per user."

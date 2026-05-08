@@ -1,0 +1,346 @@
+certCode,domain,title,content
+"SAA-C03","Domain 4: Design Cost-Optimized Architectures","Design Cost-Optimized Architectures","## SAA-C03 Domain 4: Design Cost-Optimized Architectures
+
+**Weight:** ~20% of scored exam content
+**Exam Level:** Associate
+
+This domain covers designing cost-effective compute, storage, database, and network architectures.
+
+---
+
+## EC2 Pricing Models
+
+### Pricing Comparison
+
+| Model | Savings | Commitment | Use Case |
+|-------|---------|-----------|----------|
+| **On-Demand** | 0% (baseline) | None | Unpredictable, short-term |
+| **Reserved (1yr)** | ~40% | 1 year | Steady-state workloads |
+| **Reserved (3yr)** | ~60% | 3 years | Long-term, predictable |
+| **Savings Plans (Compute)** | Up to 66% | 1 or 3 years | Flexible (any instance/region) |
+| **Savings Plans (EC2)** | Up to 72% | 1 or 3 years | Specific instance family + region |
+| **Spot Instances** | Up to 90% | None (can be interrupted) | Fault-tolerant, flexible |
+| **Dedicated Hosts** | Varies | On-Demand or Reserved | Licensing, compliance |
+
+### Spot Instances
+
+- Up to 90% discount vs. On-Demand
+- Can be interrupted with 2-minute warning
+- Best for: Batch jobs, data analysis, CI/CD, stateless web servers
+- NOT for: Databases, critical applications, stateful workloads
+- **Spot Fleet:** Mix of Spot + On-Demand to meet target capacity
+- **Spot Block:** Reserved Spot for 1-6 hours (being deprecated)
+
+### Savings Plans vs. Reserved Instances
+
+| Feature | Savings Plans | Reserved Instances |
+|---------|--------------|-------------------|
+| **Flexibility** | Any instance type/size/OS/region (Compute SP) | Specific instance type + AZ |
+| **Commitment** | $/hour commitment | Instance commitment |
+| **Applies to** | EC2, Fargate, Lambda | EC2 only |
+| **Easier to manage** | Yes (automatic) | No (must match exactly) |
+
+### Right-Sizing
+
+- **AWS Compute Optimizer:** ML-based recommendations for EC2, EBS, Lambda
+- **Cost Explorer:** Right-sizing recommendations based on utilization
+- **Trusted Advisor:** Identifies idle/underutilized resources
+- **CloudWatch:** Monitor CPU, memory, network utilization
+- Rule of thumb: If CPU < 40% consistently, downsize
+
+---
+
+## Storage Cost Optimization
+
+### S3 Storage Classes (Cost: High -> Low)
+
+| Class | Cost/GB | Retrieval | Min Duration | Use Case |
+|-------|---------|-----------|-------------|----------|
+| **Standard** | $$$ | Free | None | Frequently accessed |
+| **Intelligent-Tiering** | $$ | Free | None | Unknown patterns |
+| **Standard-IA** | $$ | Per GB | 30 days | Infrequent but rapid |
+| **One Zone-IA** | $ | Per GB | 30 days | Reproducible, infrequent |
+| **Glacier Instant** | $ | Per GB | 90 days | Archive, ms retrieval |
+| **Glacier Flexible** | $0.5 | Per GB + time | 90 days | Archive, min-hours |
+| **Glacier Deep Archive** | $0.25 | Per GB + time | 180 days | Long-term, 12-48 hrs |
+
+### S3 Lifecycle Policies
+
+```
+Day 0: S3 Standard (frequent access)
+  |
+Day 30: Transition to Standard-IA (infrequent)
+  |
+Day 90: Transition to Glacier Instant Retrieval
+  |
+Day 365: Transition to Glacier Deep Archive
+  |
+Day 730: Expire (delete)
+```
+
+- Automate transitions between storage classes
+- Can filter by prefix or tags
+- Minimum 30 days before transitioning from Standard
+- Cannot transition to a higher-cost class
+
+### EBS Cost Optimization
+
+| Strategy | How |
+|----------|-----|
+| **Delete unattached volumes** | Regular audit (Trusted Advisor) |
+| **Use gp3 over gp2** | Better price-performance, no burst credits |
+| **Snapshot lifecycle** | Delete old snapshots (DLM policies) |
+| **Right-size volumes** | Monitor IOPS/throughput utilization |
+| **Use st1/sc1** | For sequential, throughput-heavy workloads |
+
+---
+
+## Database Cost Optimization
+
+### Database Pricing Strategies
+
+| Strategy | Service | Savings |
+|----------|---------|---------|
+| **Reserved Instances** | RDS, ElastiCache, Redshift | Up to 60% |
+| **Aurora Serverless** | Aurora | Pay per ACU-second (scale to zero) |
+| **DynamoDB On-Demand** | DynamoDB | No over-provisioning |
+| **DynamoDB Reserved** | DynamoDB | Up to 77% for steady workloads |
+| **Redshift Serverless** | Redshift | Pay per RPU-hour |
+| **Read Replicas** | RDS | Offload reads from expensive primary |
+
+### When to Use What
+
+| Scenario | Cost-Effective Choice |
+|----------|---------------------|
+| **Variable/unpredictable traffic** | DynamoDB On-Demand, Aurora Serverless |
+| **Steady-state database** | RDS Reserved Instance |
+| **Infrequent analytics** | Athena (pay per query) or Redshift Serverless |
+| **Caching to reduce DB load** | ElastiCache (reduce expensive DB reads) |
+| **Read-heavy workload** | Read Replicas (cheaper than scaling primary) |
+
+---
+
+## Serverless Cost Benefits
+
+### Serverless Services
+
+| Service | Pricing Model | Cost Advantage |
+|---------|--------------|---------------|
+| **Lambda** | Per request + duration | Zero cost when idle |
+| **API Gateway** | Per request | No server to maintain |
+| **DynamoDB On-Demand** | Per request | No capacity planning |
+| **S3** | Per request + storage | No provisioning |
+| **Fargate** | Per vCPU + memory/second | No EC2 management |
+| **Step Functions** | Per state transition | Orchestration without servers |
+| **EventBridge** | Per event | Event routing without servers |
+| **SQS** | Per request | Queue without servers |
+
+### When Serverless Saves Money
+
+- Unpredictable or spiky traffic
+- Low or intermittent usage
+- Development and testing environments
+- Event-driven workloads
+- Microservices with variable load
+
+### When Serverless Costs More
+
+- Steady high-throughput workloads (EC2 Reserved cheaper)
+- Long-running processes (> 15 min for Lambda)
+- Predictable, constant load (provisioned is cheaper)
+
+---
+
+## Network Cost Optimization
+
+### Data Transfer Costs
+
+| Transfer Type | Cost |
+|--------------|------|
+| **Inbound (internet -> AWS)** | Free |
+| **Same AZ (private IP)** | Free |
+| **Cross-AZ** | $0.01/GB each direction |
+| **Same Region (S3, DynamoDB, etc.)** | Free (to same-region services) |
+| **Cross-Region** | $0.02/GB |
+| **Outbound (AWS -> internet)** | $0.09/GB (first 10 TB) |
+| **CloudFront -> internet** | Lower than direct ($0.085/GB) |
+| **VPC Endpoints** | Avoid NAT Gateway data charges |
+
+### Cost Reduction Strategies
+
+| Strategy | Savings |
+|----------|---------|
+| **Use private IPs** | Avoid cross-AZ charges within same AZ |
+| **VPC Endpoints** | Avoid NAT Gateway processing fees |
+| **CloudFront** | Cheaper egress than direct + caching reduces origin requests |
+| **S3 same-region** | Free transfer to same-region services |
+| **Compress data** | Less bytes = less cost |
+| **Direct Connect** | Lower per-GB cost for high-volume |
+
+### NAT Gateway Costs
+
+- $0.045/hour + $0.045/GB processed
+- Expensive for high-traffic workloads
+- Alternatives:
+  - VPC Endpoints (free for S3/DynamoDB Gateway)
+  - Interface Endpoints (cheaper for specific services)
+  - NAT Instance (cheaper but self-managed, less HA)
+
+---
+
+## Cost Management Tools
+
+### AWS Cost Tools
+
+| Tool | Purpose | Key Feature |
+|------|---------|-------------|
+| **Cost Explorer** | Visualize and forecast costs | Right-sizing recommendations |
+| **Budgets** | Set spending alerts | Action-based (stop instances) |
+| **Compute Optimizer** | Right-size recommendations | ML-based analysis |
+| **Trusted Advisor** | Identify waste | Idle resources, underutilized |
+| **Cost Anomaly Detection** | Unusual spending alerts | ML-based anomaly detection |
+| **Billing Conductor** | Custom billing for teams | Showback/chargeback |
+
+### Tagging Strategy
+
+- Tag all resources for cost allocation
+- Use AWS Organizations tag policies for consistency
+- Common tags: Environment, Team, Project, CostCenter
+- Enable Cost Allocation Tags in Billing console
+- Use tag-based access control (ABAC) for governance
+
+---
+
+## Architecture Patterns for Cost
+
+### Cost-Effective Patterns
+
+| Pattern | Description | Savings |
+|---------|-------------|---------|
+| **Serverless-first** | Lambda + API GW + DynamoDB | No idle cost |
+| **Spot + On-Demand mix** | Spot Fleet with On-Demand base | 60-90% compute |
+| **Caching layer** | CloudFront + ElastiCache | Reduce origin/DB load |
+| **S3 lifecycle** | Auto-transition to cheaper tiers | 50-90% storage |
+| **Reserved + Savings Plans** | Commit for steady workloads | 40-72% compute |
+| **Auto Scaling to zero** | Scale down during off-hours | 50-70% compute |
+| **Multi-tier storage** | Hot/warm/cold data separation | Significant storage savings |
+
+### Environment-Specific Strategies
+
+| Environment | Strategy |
+|-------------|----------|
+| **Production** | Reserved/Savings Plans + Auto Scaling + Multi-AZ |
+| **Staging** | Smaller instances, scheduled scaling, single-AZ |
+| **Development** | Spot instances, auto-shutdown, minimal resources |
+| **Testing** | Spot, ephemeral, destroy after use |
+
+---
+
+## Key Exam Patterns
+
+**Compute Cost:**
+- **""Steady-state, predictable""** -> Reserved Instances or Savings Plans
+- **""Flexible commitment""** -> Compute Savings Plans (any instance/region)
+- **""Fault-tolerant batch jobs""** -> Spot Instances (up to 90% off)
+- **""Mix of reliable + cheap""** -> Spot Fleet (On-Demand base + Spot)
+- **""Idle resources""** -> Trusted Advisor + Compute Optimizer
+- **""Variable traffic, zero idle cost""** -> Lambda / Fargate
+
+**Storage Cost:**
+- **""Unknown access patterns""** -> S3 Intelligent-Tiering (no retrieval fees)
+- **""Archive, rarely accessed""** -> Glacier Deep Archive
+- **""Automate storage transitions""** -> S3 Lifecycle policies
+- **""Reduce EBS cost""** -> Delete unattached volumes, use gp3
+- **""Infrequent access, rapid retrieval""** -> S3 Standard-IA
+
+**Database Cost:**
+- **""Variable database traffic""** -> Aurora Serverless or DynamoDB On-Demand
+- **""Reduce expensive DB reads""** -> ElastiCache or DAX
+- **""Infrequent analytics queries""** -> Athena (pay per query scanned)
+- **""Steady database workload""** -> RDS Reserved Instance
+
+**Network Cost:**
+- **""Reduce data transfer cost""** -> CloudFront (cheaper egress + caching)
+- **""Avoid NAT Gateway fees""** -> VPC Gateway Endpoint for S3/DynamoDB
+- **""High-volume outbound""** -> Direct Connect (lower per-GB)
+- **""Same-AZ communication""** -> Use private IPs (free)
+
+**General:**
+- **""Track spending by team""** -> Cost Allocation Tags + Budgets
+- **""Identify waste""** -> Trusted Advisor + Cost Explorer
+- **""Forecast future costs""** -> Cost Explorer forecasting
+- **""Auto-stop idle resources""** -> AWS Budgets actions or Lambda scheduler
+
+---
+
+## Quick Exam Tips
+
+- **Savings Plans > Reserved Instances** for flexibility. Compute SP works across instance types/regions.
+- **Spot Instances** save up to 90% but can be interrupted. Never for databases or stateful apps.
+- **S3 Intelligent-Tiering** = no retrieval fees, auto-moves between tiers. Best for unknown patterns.
+- **Glacier Deep Archive** = cheapest storage ($1/TB/month) but 12-48 hour retrieval.
+- **VPC Gateway Endpoints** for S3/DynamoDB are free and avoid NAT Gateway data processing fees.
+- **CloudFront** has cheaper egress than direct internet transfer AND reduces origin load via caching.
+- **Aurora Serverless** can scale to zero ACUs - perfect for dev/test or variable workloads.
+- **Athena** = pay per TB scanned. Use columnar formats (Parquet) and partitioning to reduce cost.
+- **Lambda** = zero cost when idle. But steady high-throughput is cheaper on EC2 Reserved.
+- **Compute Optimizer** uses ML to recommend right-sized instances based on actual utilization.
+- **Data transfer between AZs** costs money. Keep tightly coupled services in the same AZ when possible.
+- **NAT Gateway** is expensive at scale ($0.045/hr + $0.045/GB). Use VPC Endpoints where possible.
+- **Lifecycle policies** automate S3 transitions. Standard -> IA (30 days) -> Glacier (90 days) is common.
+- **Spot Fleet** maintains target capacity with a mix of Spot and On-Demand for reliability.
+- **Tag everything.** Without tags, you cannot allocate costs to teams or projects.
+
+---
+
+## Domain 4 Concept Map
+
+```
+COST-OPTIMIZED ARCHITECTURES
+|
++-- COMPUTE PRICING
+|   +-- On-Demand: No commitment, highest cost
+|   +-- Reserved: 1-3 year commitment, up to 72% savings
+|   +-- Savings Plans: Flexible commitment, up to 66% (Compute SP)
+|   +-- Spot: Up to 90% savings, interruptible
+|   +-- Right-Sizing: Compute Optimizer, CloudWatch metrics
+|
++-- STORAGE OPTIMIZATION
+|   +-- S3 Classes: Standard > IA > Glacier > Deep Archive
+|   +-- Lifecycle Policies: Auto-transition between tiers
+|   +-- Intelligent-Tiering: Auto-move, no retrieval fees
+|   +-- EBS: gp3 over gp2, delete unattached, snapshot lifecycle
+|
++-- DATABASE COST
+|   +-- Serverless: Aurora Serverless, DynamoDB On-Demand
+|   +-- Reserved: RDS RI for steady workloads
+|   +-- Caching: ElastiCache/DAX to reduce DB load
+|   +-- Analytics: Athena (per query) vs. Redshift (provisioned)
+|
++-- NETWORK COST
+|   +-- Inbound: Free
+|   +-- Same AZ (private IP): Free
+|   +-- VPC Endpoints: Avoid NAT Gateway fees
+|   +-- CloudFront: Cheaper egress + caching
+|   +-- Direct Connect: Lower per-GB for high volume
+|
++-- SERVERLESS
+|   +-- Lambda: Zero idle cost, per-request pricing
+|   +-- Fargate: Per vCPU-second, no EC2 management
+|   +-- API Gateway: Per request
+|   +-- Best for: Variable/spiky/low traffic
+|
++-- COST TOOLS
+|   +-- Cost Explorer: Visualize, forecast, right-size
+|   +-- Budgets: Alerts and automated actions
+|   +-- Compute Optimizer: ML-based recommendations
+|   +-- Trusted Advisor: Identify idle/waste
+|   +-- Tags: Cost allocation and governance
+|
++-- PATTERNS
+    +-- Serverless-first: No idle cost
+    +-- Spot + On-Demand: Reliable base + cheap burst
+    +-- Caching: Reduce expensive operations
+    +-- Auto Scaling: Match capacity to demand
+    +-- Environment tiers: Prod (RI) / Dev (Spot) / Test (ephemeral)
+```"

@@ -1,0 +1,538 @@
+certCode,domain,title,content
+"DEA-C01","Domain 4: Data Security & Governance","Data Security and Governance","## DEA-C01 Domain 4: Data Security and Governance
+
+**Weight:** ~18% of scored exam content (smallest domain)
+**Exam Level:** Associate
+
+This domain tests your ability to secure data pipelines end-to-end: encryption, access control, network security, data governance, and compliance.
+
+---
+
+## Authentication and Authorization
+
+### IAM for Data Engineering
+
+| Principal | Role in Data Pipeline | Example |
+|-----------|---------------------|---------|
+| **IAM Users** | Human operators (avoid for services) | Data engineer accessing console |
+| **IAM Roles** | Service-to-service access (preferred) | Glue job role; Lambda execution role |
+| **Service-linked Roles** | AWS-managed for specific services | Lake Formation service-linked role |
+| **Federated Users** | External identity (SSO/SAML) | Analysts via corporate SSO |
+
+### IAM Policy Types
+
+| Policy Type | Attached To | Use Case |
+|-------------|------------|----------|
+| **Identity-based** | Users, groups, roles | Grant permissions to principals |
+| **Resource-based** | S3 buckets, KMS keys, SQS | Cross-account access |
+| **Permissions boundary** | Users, roles | Maximum permissions ceiling |
+| **SCP** | Organizations OU/account | Guardrails across accounts |
+| **Session policy** | Assumed role sessions | Further restrict temporary credentials |
+
+### Least Privilege Principles
+
+| Principle | Implementation |
+|-----------|---------------|
+| **Minimum permissions** | Grant only actions needed for the task |
+| **Resource-level restrictions** | Specify exact ARNs (not *) |
+| **Condition keys** | Restrict by IP, time, MFA, VPC, tags |
+| **Separate roles per job** | Each Glue job/Lambda gets its own role |
+| **Temporary credentials** | Use roles (STS) not long-term keys |
+| **Regular review** | IAM Access Analyzer; remove unused permissions |
+
+### IAM Access Analyzer
+
+| Feature | What It Does | Data Engineering Use |
+|---------|-------------|-------------------|
+| **External access findings** | Resources shared outside account | Find S3 buckets accessible externally |
+| **Unused access findings** | Permissions not used in 90 days | Remove over-provisioned role permissions |
+| **Policy validation** | Checks for errors and best practices | Validate before deploying pipeline roles |
+| **Policy generation** | Generates least-privilege from CloudTrail | Create minimal role based on actual usage |
+
+---
+
+## Encryption
+
+### Encryption at Rest
+
+| Service | Default Encryption | Customer-Managed Key (CMK) |
+|---------|-------------------|--------------------------|
+| **S3** | SSE-S3 (AES-256) | SSE-KMS (customer CMK) |
+| **Redshift** | AES-256 (AWS-managed or KMS) | KMS CMK or CloudHSM |
+| **DynamoDB** | AWS-owned key | KMS CMK |
+| **RDS/Aurora** | AES-256 with KMS | KMS CMK |
+| **Glue Data Catalog** | AWS-managed or KMS | KMS CMK |
+| **Kinesis Data Streams** | Server-side (KMS) | KMS CMK |
+| **EMR (EMRFS)** | SSE-S3, SSE-KMS, or CSE-KMS | KMS CMK |
+| **CloudWatch Logs** | AWS-managed or KMS | KMS CMK |
+
+### S3 Encryption Options
+
+| Option | Key Management | Use Case |
+|--------|---------------|----------|
+| **SSE-S3** | AWS manages everything | Default; simplest |
+| **SSE-KMS** | AWS KMS manages keys | Audit key usage; cross-account control |
+| **SSE-KMS (CMK)** | You create and manage key | Full control; custom rotation |
+| **DSSE-KMS** | Dual-layer encryption | Highest security; compliance |
+| **CSE** | You encrypt before upload | Data encrypted before leaving your environment |
+
+### Encryption in Transit
+
+| Service | Protocol | Configuration |
+|---------|----------|--------------|
+| **S3** | HTTPS (TLS 1.2+) | Bucket policy with aws:SecureTransport |
+| **Redshift** | SSL/TLS | require_ssl = true |
+| **RDS/Aurora** | SSL/TLS | rds.force_ssl = 1 |
+| **DynamoDB** | HTTPS (always) | Enforced by default |
+| **Kinesis** | HTTPS (TLS) | Enforced by default |
+| **EMR** | In-transit encryption | Security configuration |
+| **Glue (JDBC)** | SSL/TLS | Connection properties |
+
+### Enforce HTTPS on S3
+
+```json
+{
+  ""Statement"": [{
+    ""Effect"": ""Deny"",
+    ""Principal"": ""*"",
+    ""Action"": ""s3:*"",
+    ""Resource"": [""arn:aws:s3:::my-bucket/*""],
+    ""Condition"": {
+      ""Bool"": {""aws:SecureTransport"": ""false""}
+    }
+  }]
+}
+```
+
+---
+
+## Network Security for Data Pipelines
+
+### VPC Endpoints for Data Services
+
+| Service | Endpoint Type | Why It Matters |
+|---------|--------------|---------------|
+| **S3** | Gateway (free) | Glue/EMR access S3 without internet |
+| **Glue** | Interface (PrivateLink) | Glue API calls stay within VPC |
+| **KMS** | Interface (PrivateLink) | Encryption without internet |
+| **Kinesis** | Interface (PrivateLink) | Stream access from private subnet |
+| **Redshift** | Interface (PrivateLink) | API access from private subnet |
+| **STS** | Interface (PrivateLink) | Role assumption without internet |
+| **Secrets Manager** | Interface (PrivateLink) | Retrieve credentials privately |
+| **DynamoDB** | Gateway (free) | DynamoDB access without internet |
+
+### Glue VPC Networking
+
+| Scenario | Configuration |
+|----------|--------------|
+| Glue -> S3 | S3 Gateway endpoint (or NAT Gateway) |
+| Glue -> RDS/Redshift | Glue Connection with VPC, subnet, SG |
+| Glue -> Internet | NAT Gateway in public subnet |
+| Glue -> Glue API | Glue Interface endpoint |
+
+**Critical:** Glue jobs in a VPC require a **self-referencing security group rule** (inbound from itself on all TCP ports) for Spark worker-to-worker communication.
+
+### Redshift Network Security
+
+| Feature | Description |
+|---------|-------------|
+| **Enhanced VPC Routing** | Forces COPY/UNLOAD traffic through VPC (not internet) |
+| **Publicly accessible = No** | Cluster only accessible from within VPC |
+| **Security groups** | Control which IPs/services can connect |
+| **SSL enforcement** | require_ssl = true in parameter group |
+
+### VPC Endpoint Policy (restrict S3 access)
+
+```json
+{
+  ""Statement"": [{
+    ""Effect"": ""Allow"",
+    ""Principal"": ""*"",
+    ""Action"": [""s3:GetObject"", ""s3:PutObject""],
+    ""Resource"": [
+      ""arn:aws:s3:::approved-data-bucket/*"",
+      ""arn:aws:s3:::approved-output-bucket/*""
+    ]
+  }]
+}
+```
+
+---
+
+## AWS Lake Formation Security
+
+### Permission Levels
+
+| Level | What You Can Control | Example |
+|-------|---------------------|---------|
+| **Database** | CREATE_TABLE, ALTER, DROP | Grant analyst CREATE_TABLE |
+| **Table** | SELECT, INSERT, DELETE, ALTER | Grant analyst SELECT on orders |
+| **Column** | Include/Exclude specific columns | Exclude SSN from analyst access |
+| **Row** | Filter rows based on condition | Only show rows where region = 'US' |
+| **Cell** | Column + row filtering combined | Show salary only for own department |
+| **Tag-based (TBAC)** | Grant based on LF-Tags | Access all tables tagged ""Public"" |
+
+### Column-Level Security
+
+```
+TABLE: customers
+| customer_id | name    | email   | ssn      | segment |
+| Analyst: Y  | Analyst: Y | Analyst: Y | Analyst: N | Analyst: Y |
+| Admin: Y    | Admin: Y   | Admin: Y   | Admin: Y   | Admin: Y   |
+
+Grant: GRANT SELECT ON TABLE customers
+       TO analyst_role
+       COLUMNS INCLUDE (customer_id, name, email, segment)
+       -- SSN excluded
+```
+
+### Row-Level Security (Data Filters)
+
+```sql
+-- Create a data filter
+CREATE DATA FILTER us_only_filter ON TABLE orders
+WITH ROW FILTER EXPRESSION (region = 'US');
+
+-- Grant with filter
+GRANT SELECT ON TABLE orders
+TO us_team_role
+WITH DATA FILTER us_only_filter;
+
+-- US team sees only rows where region = 'US'
+```
+
+### Cross-Account Data Sharing
+
+```
+PRODUCER ACCOUNT:
+  1. Register S3 location with Lake Formation
+  2. Create database/tables in Glue Catalog
+  3. Grant permissions to external account
+
+CONSUMER ACCOUNT:
+  1. Accept RAM resource share
+  2. Create resource link to shared table
+  3. Grant local users access to resource link
+  4. Users query via Athena/Spectrum (reads from producer's S3)
+
+Benefits: No data copying; producer controls access; latest data
+```
+
+---
+
+## Data Classification and Sensitive Data
+
+### Amazon Macie
+
+| Feature | What It Does | Data Engineering Use |
+|---------|-------------|-------------------|
+| **Automated discovery** | Scans S3 for sensitive data | Find PII in data lake |
+| **Custom data identifiers** | Regex for your sensitive data | Employee IDs, internal codes |
+| **Managed identifiers** | Pre-built patterns (100+ types) | PII, financial, health data |
+| **Findings** | Reports of sensitive data location | Prioritize protection efforts |
+| **Integration** | EventBridge, Security Hub | Automate response |
+
+### Data Classification Levels
+
+```
+PUBLIC - No restrictions; marketing materials
+INTERNAL - All employees; operational data
+CONFIDENTIAL - Specific teams; financial data
+RESTRICTED - Strict control; PII, PHI, payment data
+  + Encryption with CMK
+  + VPC endpoint restrictions
+  + Audit all access
+```
+
+### Data Masking Techniques
+
+| Technique | What It Does | Use Case |
+|-----------|-------------|----------|
+| **Redaction** | Remove entirely | Remove SSN from analytics |
+| **Masking** | Replace with fake data | Show ***-**-1234 |
+| **Tokenization** | Replace with random token; reversible | Payment processing |
+| **Hashing** | One-way transformation | Pseudonymize user IDs |
+| **Generalization** | Reduce precision | Age 34 -> ""30-39"" |
+
+---
+
+## S3 Security (Deep Dive)
+
+### S3 Access Control Layers
+
+```
+Layer 1: Block Public Access (account + bucket level)
+Layer 2: Bucket Policy (resource-based)
+Layer 3: IAM Policy (identity-based)
+Layer 4: Lake Formation (if registered)
+Layer 5: S3 Access Points (simplified access)
+Layer 6: Object ACLs (legacy; avoid)
+Layer 7: S3 Object Ownership (BucketOwnerEnforced)
+```
+
+### S3 Bucket Policy Patterns
+
+**Restrict to VPC Endpoint Only:**
+
+```json
+{
+  ""Statement"": [{
+    ""Effect"": ""Deny"",
+    ""Principal"": ""*"",
+    ""Action"": ""s3:*"",
+    ""Resource"": [""arn:aws:s3:::data-lake-bucket/*""],
+    ""Condition"": {
+      ""StringNotEquals"": {
+        ""aws:sourceVpce"": ""vpce-1234567890abcdef0""
+      }
+    }
+  }]
+}
+```
+
+**Enforce Encryption:**
+
+```json
+{
+  ""Statement"": [{
+    ""Effect"": ""Deny"",
+    ""Principal"": ""*"",
+    ""Action"": ""s3:PutObject"",
+    ""Resource"": ""arn:aws:s3:::data-lake-bucket/*"",
+    ""Condition"": {
+      ""StringNotEquals"": {
+        ""s3:x-amz-server-side-encryption"": ""aws:kms""
+      }
+    }
+  }]
+}
+```
+
+### S3 Access Points
+
+- Named network endpoint with its own access policy.
+- Simplify access for different teams/applications.
+- Can restrict to specific VPC.
+- Each access point has its own policy (simpler than one complex bucket policy).
+
+---
+
+## Secrets Management
+
+### AWS Secrets Manager
+
+| Feature | Description | Data Engineering Use |
+|---------|-------------|-------------------|
+| **Store secrets** | DB credentials, API keys, tokens | JDBC connections for Glue/EMR |
+| **Automatic rotation** | Rotate on schedule (Lambda-based) | Auto-rotate RDS passwords |
+| **Cross-account** | Share via resource policy | Central secrets for all pipelines |
+| **Versioning** | Track versions | Rollback if rotation fails |
+| **Encryption** | KMS encryption at rest | Secrets encrypted with CMK |
+
+### Secrets in Data Pipelines
+
+```
+NEVER:
+X Hardcode credentials in code
+X Store in environment variables
+X Store in S3 as plain text
+X Pass as job parameters (visible in logs)
+
+ALWAYS:
+Y Retrieve from Secrets Manager at runtime
+Y Use IAM role to access Secrets Manager
+Y Enable automatic rotation
+Y Audit access via CloudTrail
+```
+
+### Parameter Store vs. Secrets Manager
+
+| Feature | Parameter Store | Secrets Manager |
+|---------|----------------|----------------|
+| **Cost** | Free (Standard) | $0.40/secret/month |
+| **Rotation** | No built-in | Built-in automatic |
+| **Max size** | 8 KB | 64 KB |
+| **Best for** | Configuration values | Credentials needing rotation |
+| **Encryption** | Optional (KMS) | Always encrypted |
+
+---
+
+## Compliance and Auditing
+
+### GDPR Compliance in Data Pipelines
+
+| GDPR Requirement | AWS Implementation |
+|-----------------|-------------------|
+| **Right to erasure** | Apache Iceberg DELETE; DynamoDB DeleteItem |
+| **Right to access** | Query data lake for individual's data |
+| **Data minimization** | Collect only necessary; TTL; lifecycle |
+| **Encryption** | KMS at rest; TLS in transit |
+| **Consent management** | Track in database; check before processing |
+| **Data residency** | Region-specific S3; SCPs to prevent cross-region |
+| **Audit trail** | CloudTrail; Lake Formation audit |
+
+### GDPR Deletion Pattern (Data Lake)
+
+```
+CHALLENGE: S3 Parquet files are immutable - can't delete individual records
+
+SOLUTION: Apache Iceberg (row-level deletes)
+  1. Store data in Iceberg table format
+  2. Receive deletion request
+  3. Execute: DELETE FROM orders WHERE customer_id = 'CUST-123'
+  4. Iceberg creates delete file (marks records as deleted)
+  5. Compaction removes deleted records
+  6. Verify deletion with audit query
+```
+
+### Auditing Data Access
+
+| What to Audit | How to Audit | Where Logs Go |
+|--------------|-------------|--------------|
+| Who accessed what data | Lake Formation audit | CloudTrail |
+| API calls to data services | CloudTrail management events | CloudTrail -> S3 |
+| S3 object access | CloudTrail data events | CloudTrail -> S3 |
+| Redshift queries | Audit logging | S3 bucket |
+| Encryption key usage | CloudTrail (KMS events) | CloudTrail -> S3 |
+
+### AWS Config for Data Governance
+
+| Rule | What It Checks |
+|------|---------------|
+| **s3-bucket-server-side-encryption-enabled** | S3 buckets have encryption |
+| **s3-bucket-public-read-prohibited** | No public read access |
+| **s3-bucket-ssl-requests-only** | HTTPS enforced |
+| **redshift-cluster-configuration-check** | Encryption, logging, VPC |
+| **rds-storage-encrypted** | RDS encryption enabled |
+| **kms-cmk-not-scheduled-for-deletion** | Keys not being deleted |
+
+### SCPs for Data Governance
+
+```json
+// Prevent data from leaving approved regions
+{
+  ""Effect"": ""Deny"",
+  ""Action"": ""*"",
+  ""Resource"": ""*"",
+  ""Condition"": {
+    ""StringNotEquals"": {
+      ""aws:RequestedRegion"": [""us-east-1"", ""us-west-2"", ""eu-west-1""]
+    }
+  }
+}
+```
+
+---
+
+## Data Governance Framework
+
+```
+DATA GOVERNANCE STACK:
+
+DISCOVERY & CLASSIFICATION
++-- Glue Crawlers (schema discovery)
++-- Amazon Macie (sensitive data detection)
++-- Glue Data Catalog (metadata management)
+
+ACCESS CONTROL
++-- Lake Formation (fine-grained permissions)
++-- IAM (identity and role management)
++-- S3 Bucket Policies (resource-level)
++-- VPC Endpoints (network-level)
+
+DATA PROTECTION
++-- KMS (encryption at rest)
++-- TLS (encryption in transit)
++-- Secrets Manager (credentials)
++-- Data masking (Glue DataBrew)
+
+MONITORING & AUDITING
++-- CloudTrail (API audit trail)
++-- Lake Formation audit (data access)
++-- AWS Config (compliance rules)
++-- Security Hub (centralized findings)
+
+DATA QUALITY & LINEAGE
++-- Glue Data Quality (DQDL rules)
++-- Data lineage (track transformations)
++-- Schema Registry (evolution control)
+
+LIFECYCLE & RETENTION
++-- S3 Lifecycle Policies (tiering)
++-- S3 Object Lock (WORM compliance)
++-- DynamoDB TTL (auto-expiration)
+```
+
+---
+
+## Key Exam Patterns for DEA-C01 Domain 4
+
+**Encryption:**
+- **""Encrypt S3 with audit trail of key usage""** -> SSE-KMS (CMK) + CloudTrail
+- **""Encrypt in transit to S3""** -> Bucket policy with aws:SecureTransport
+- **""Encrypt Redshift""** -> KMS CMK at cluster creation
+- **""Dual-layer encryption""** -> DSSE-KMS
+
+**Access Control:**
+- **""Column-level security on data lake""** -> Lake Formation
+- **""Different teams see different rows""** -> Lake Formation row-level filters
+- **""Scale permissions across hundreds of tables""** -> Lake Formation TBAC (LF-Tags)
+- **""Cross-account sharing without copying""** -> Lake Formation + RAM
+- **""Restrict S3 to specific VPC""** -> Bucket policy with VPC endpoint condition
+- **""Prevent public S3 access""** -> S3 Block Public Access
+
+**Network Security:**
+- **""Glue can't access S3 from private subnet""** -> Add S3 Gateway endpoint
+- **""Keep traffic within AWS network""** -> VPC endpoints
+- **""Redshift traffic must stay in VPC""** -> Enhanced VPC Routing
+- **""Glue Spark workers can't communicate""** -> Self-referencing security group
+
+**Secrets:**
+- **""Store DB credentials securely""** -> Secrets Manager
+- **""Auto-rotate RDS password""** -> Secrets Manager with rotation
+- **""Never hardcode credentials""** -> Retrieve from Secrets Manager at runtime
+
+**Compliance:**
+- **""Delete individual's data (GDPR)""** -> Apache Iceberg row-level DELETE
+- **""Detect PII in S3""** -> Amazon Macie
+- **""Ensure all buckets encrypted""** -> AWS Config rule + auto-remediation
+- **""Prevent data leaving regions""** -> SCP with region restriction
+- **""Immutable retention""** -> S3 Object Lock (Compliance mode)
+- **""Audit data access""** -> CloudTrail data events + Lake Formation audit
+
+---
+
+## Quick Exam Tips for Domain 4
+
+- **Lake Formation** = #1 answer for data lake security. Column, row, cell, tag-based access.
+- **KMS CMK** = when you need audit trail of key usage or cross-account key sharing.
+- **S3 Gateway endpoint** is free and essential for Glue/EMR in private subnets.
+- **Enhanced VPC Routing** for Redshift forces COPY/UNLOAD through VPC.
+- **Self-referencing security group** required for Glue jobs in VPC (Spark communication).
+- **Secrets Manager** (not Parameter Store) for credentials needing rotation.
+- **Apache Iceberg** enables GDPR ""right to erasure"" on data lakes.
+- **Amazon Macie** finds sensitive data in S3 (doesn't protect - discovers).
+- **S3 Block Public Access** should be enabled at account level.
+- **CloudTrail data events** must be explicitly enabled for S3/DynamoDB object access.
+- **VPC Endpoint Policies** restrict which resources are accessible through the endpoint.
+- **SCPs** are organizational guardrails (deny only; don't grant).
+- **AWS Config** provides continuous compliance monitoring with auto-remediation.
+- **IAM Access Analyzer** helps achieve least privilege from actual usage patterns.
+- **S3 Object Lock Compliance mode** cannot be overridden by anyone (including root).
+- **Data residency** = SCPs + region-specific buckets + replication controls.
+
+---
+
+## Summary
+
+This covers all objectives in DEA-C01 Domain 4:
+
+- **Authentication and authorization** - IAM roles/policies, Lake Formation, S3 policies
+- **Encryption at rest** - SSE-S3, SSE-KMS, CMK, per-service encryption
+- **Encryption in transit** - TLS enforcement, bucket policies
+- **Network security** - VPC, endpoints, security groups, Enhanced VPC Routing
+- **Lake Formation security** - Column/row/cell level, TBAC, cross-account
+- **Secrets management** - Secrets Manager, Parameter Store, rotation
+- **Data classification** - Macie, classification levels, masking
+- **Compliance** - GDPR, CloudTrail, Config, Object Lock
+- **Data governance** - Catalog, lineage, SCPs, organizational guardrails"

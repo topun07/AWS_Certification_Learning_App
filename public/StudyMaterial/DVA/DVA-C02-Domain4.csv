@@ -1,0 +1,508 @@
+certCode,domain,title,content
+"DVA-C02","Domain 4: Troubleshooting & Optimization","Troubleshooting and Optimization","## DVA-C02 Domain 4: Troubleshooting and Optimization
+
+**Weight:** ~18% of scored exam content
+**Exam Level:** Associate
+
+This domain covers CloudWatch, X-Ray, common error patterns, SDK error handling, and performance optimization for Lambda, DynamoDB, S3, and API Gateway.
+
+---
+
+## Amazon CloudWatch
+
+### Key Metrics by Service
+
+| Service | Important Metrics | NOT Included (need Agent) |
+|---------|------------------|--------------------------|
+| **EC2** | CPU, Network, Disk I/O, Status | Memory, Disk space, Processes |
+| **Lambda** | Invocations, Duration, Errors, Throttles, ConcurrentExecutions | N/A (managed) |
+| **API Gateway** | Count, Latency, 4XX, 5XX, IntegrationLatency | N/A |
+| **DynamoDB** | ConsumedRCU/WCU, ThrottledRequests | N/A |
+| **SQS** | MessagesVisible, AgeOfOldestMessage | N/A |
+
+### CloudWatch Agent
+
+- Required for EC2 memory and disk metrics
+- Collects: mem_used_percent, disk_used_percent, swap, processes
+- Config stored in SSM Parameter Store
+- IAM role: CloudWatchAgentServerPolicy
+
+### Embedded Metric Format (EMF)
+
+- Structured JSON logs that auto-create CloudWatch metrics
+- No PutMetricData API call needed
+- Combine logs + metrics in single output
+- Best for Lambda custom metrics without extra cost
+
+### Logs Insights Queries
+
+```sql
+-- Lambda cold starts
+filter @type = ""REPORT""
+| stats avg(@duration), max(@duration) by bin(5m)
+
+-- Find timeouts
+filter @message like /Task timed out/
+| stats count(*) by bin(1h)
+
+-- Memory utilization
+filter @type = ""REPORT""
+| stats avg(@maxMemoryUsed/@memorySize * 100) as avgMemPct by bin(1h)
+```
+
+### Metric Filters
+
+- Extract metrics from log patterns
+- Pattern -> Custom Metric -> Alarm -> Action
+- Example: Count ""ERROR"" occurrences -> alarm if > 10/min
+
+### Alarms
+
+- States: OK, ALARM, INSUFFICIENT_DATA
+- Actions: SNS, Auto Scaling, EC2 actions
+- Composite Alarms: AND/OR logic (reduce noise)
+- Evaluation: M out of N datapoints must breach
+
+---
+
+## AWS X-Ray
+
+### Key Concepts
+
+| Concept | Description | Use Case |
+|---------|-------------|----------|
+| **Trace** | End-to-end request path | See full journey |
+| **Segment** | Work by one service | Identify slow service |
+| **Subsegment** | Downstream call detail | Identify slow dependency |
+| **Annotation** | Indexed key-value (searchable) | Filter by user_id, order_type |
+| **Metadata** | Non-indexed (not searchable) | Store request/response body |
+| **Service Map** | Visual architecture | Identify bottlenecks |
+| **Sampling** | Control trace volume | Reduce cost |
+
+### Sampling Rules
+
+- Default: 1 request/second + 5% additional
+- Custom: 100% errors, 100% /payment, 5% /health
+- Priority: Lower number = higher priority
+
+### Integration
+
+| Service | How to Enable |
+|---------|--------------|
+| **Lambda** | Active Tracing (checkbox) |
+| **API Gateway** | Enable on stage |
+| **ECS/Fargate** | X-Ray daemon sidecar (port 2000 UDP) |
+| **EC2** | Install X-Ray daemon + SDK |
+
+### Annotations vs. Metadata
+
+| Feature | Annotations | Metadata |
+|---------|-------------|----------|
+| **Indexed** | Yes (searchable) | No |
+| **Filterable** | Yes | No |
+| **Types** | String, Number, Boolean | Any object |
+| **Use case** | Filter traces | Store debug data |
+
+### Service Map
+
+- Shows all services + connections
+- Color-coded: Green (healthy), Yellow (4XX), Red (5XX)
+- Click node to see traces, latency, errors
+- Identifies root cause (which service is slow/failing)
+
+---
+
+## Common Error Patterns
+
+### Lambda Errors
+
+| Error | Cause | Fix |
+|-------|-------|-----|
+| **Task timed out** | Exceeds timeout (max 15 min) | Increase timeout; optimize; check downstream |
+| **signal: killed** | Out of memory | Increase memory (also increases CPU) |
+| **TooManyRequestsException** | Concurrency limit exceeded | Reserved concurrency; request increase |
+| **AccessDeniedException** | Execution role missing permissions | Add permissions to role |
+| **Cold start** | New environment initialization | Provisioned Concurrency; smaller package |
+| **VPC no internet** | No NAT Gateway | Add NAT or VPC endpoints |
+
+### API Gateway Errors
+
+| Code | Meaning | Common Cause |
+|------|---------|-------------|
+| **400** | Bad Request | Malformed request |
+| **403** | Forbidden | WAF, resource policy, missing API key |
+| **429** | Too Many Requests | Throttled (account/stage/usage plan) |
+| **502** | Bad Gateway | Lambda response format wrong (proxy mode) |
+| **504** | Gateway Timeout | Backend > 29 seconds (hard limit) |
+
+**Key:** 502 + Lambda Proxy = missing statusCode/headers/body in response.
+
+### DynamoDB Errors
+
+| Error | Cause | Fix |
+|-------|-------|-----|
+| **ProvisionedThroughputExceededException** | Exceeded RCU/WCU or hot partition | On-Demand mode; better key design; DAX |
+| **ValidationException (> 400 KB)** | Item too large | Store in S3; keep pointer in DDB |
+| **ConditionalCheckFailedException** | Condition not met (optimistic locking) | Retry with fresh read |
+
+### SQS Issues
+
+| Issue | Cause | Fix |
+|-------|-------|-----|
+| **Message reappears** | Visibility timeout too short | Increase timeout > processing time |
+| **Duplicates** | Standard queue (at-least-once) | FIFO queue or idempotent processing |
+| **Messages in DLQ** | Failed maxReceiveCount times | Fix consumer; redrive messages |
+| **Batch retry on single failure** | No partial batch reporting | Enable ReportBatchItemFailures |
+
+### S3 Errors
+
+| Error | Cause | Fix |
+|-------|-------|-----|
+| **403 Access Denied** | Bucket policy, IAM, KMS key, VPC endpoint | Check all access layers |
+| **KMS throttling** | High throughput + SSE-KMS | S3 Bucket Keys; quota increase; SSE-S3 |
+| **Slow uploads** | Large files over distance | Multipart upload; Transfer Acceleration |
+
+---
+
+## SDK Error Handling
+
+### Retryable vs. Non-Retryable
+
+| Retryable (SDK retries) | Non-Retryable (fix your code) |
+|------------------------|------------------------------|
+| 500, 502, 503, 504 | 400 Bad Request |
+| 429 Throttling | 401 Unauthorized |
+| Network errors | 403 Forbidden |
+| RequestTimeout | 404 Not Found |
+
+### Retry Modes
+
+| Mode | Behavior |
+|------|----------|
+| **Standard** | Exponential backoff + jitter + token bucket |
+| **Adaptive** | Standard + client-side rate limiting |
+| **Legacy** | Simple exponential backoff |
+
+### Exponential Backoff with Jitter
+
+```
+wait = min(cap, base x 2^attempt) + random_jitter
+Example: 100ms, 200ms, 400ms, 800ms... capped at 20s
+```
+
+---
+
+## Performance Optimization
+
+### Lambda Optimization
+
+| Technique | Impact |
+|-----------|--------|
+| **Provisioned Concurrency** | Eliminates cold starts |
+| **Increase memory** | More CPU = faster execution |
+| **Init outside handler** | Reuse SDK clients, connections |
+| **Smaller package** | Faster cold start |
+| **Lambda Layers** | Shared deps (cached separately) |
+| **ARM64 (Graviton2)** | 20% cheaper, often faster |
+| **Avoid VPC unless needed** | ENI creation adds latency |
+
+### DynamoDB Optimization
+
+| Technique | Use Case |
+|-----------|----------|
+| **DAX** | Microsecond read cache (DynamoDB-specific) |
+| **Eventually Consistent** | 2x throughput (default) |
+| **Query over Scan** | Always prefer (by partition key) |
+| **GSI** | Alternative access patterns |
+| **Projection Expression** | Return only needed attributes |
+| **On-Demand Mode** | Auto-scales (no planning) |
+| **Batch operations** | Reduce API calls |
+
+### API Gateway Optimization
+
+| Technique | Impact |
+|-----------|--------|
+| **Stage caching** | Reduce backend calls (TTL 0-3600s) |
+| **HTTP API** | Lower latency + cheaper than REST |
+| **Edge-optimized** | CloudFront for global clients |
+| **Throttling** | Protect backend from overload |
+
+### S3 Optimization
+
+| Technique | Use Case |
+|-----------|----------|
+| **Multipart Upload** | Large files (> 100 MB) |
+| **Transfer Acceleration** | Long-distance uploads |
+| **CloudFront** | Cache reads at edge |
+| **Byte-Range Fetches** | Parallel partial downloads |
+| **S3 Select** | Query subset of object |
+| **Prefix distribution** | 3,500 PUT / 5,500 GET per prefix/sec |
+
+### Caching Layers
+
+```
+Layer 1: Client-side (browser cache, local storage)
+Layer 2: CDN (CloudFront - edge caching)
+Layer 3: API Gateway Cache (per-stage, TTL)
+Layer 4: Application Cache (ElastiCache Redis/Memcached)
+Layer 5: Database Cache (DAX for DynamoDB)
+
+Decision:
+- Static content -> CloudFront
+- API responses -> API Gateway Cache
+- DynamoDB reads -> DAX
+- Complex app data -> ElastiCache Redis
+- Sessions -> ElastiCache Redis or DynamoDB
+```
+
+### ElastiCache Patterns
+
+| Pattern | How It Works | Trade-off |
+|---------|-------------|-----------|
+| **Lazy Loading** | Cache on read miss | Stale data possible |
+| **Write-Through** | Cache on every write | Always fresh; slower writes |
+| **TTL** | Expire after time | Balance freshness vs. load |
+
+---
+
+## Key Exam Patterns
+
+**CloudWatch:**
+- **""EC2 memory metrics""** -> CloudWatch Agent
+- **""Custom metrics without API calls""** -> EMF
+- **""Alert on error rate""** -> Metric Filter -> Alarm -> SNS
+- **""Analyze logs""** -> Logs Insights
+- **""High-resolution metrics""** -> Custom metric (StorageResolution: 1)
+
+**X-Ray:**
+- **""Identify bottleneck""** -> Service Map
+- **""Find slow dependency""** -> Trace subsegments
+- **""Search by user ID""** -> Annotations (indexed)
+- **""Reduce tracing cost""** -> Sampling rules
+- **""ECS tracing""** -> X-Ray daemon sidecar (port 2000)
+
+**Lambda:**
+- **""Task timed out""** -> Increase timeout; check X-Ray
+- **""signal: killed""** -> Increase memory
+- **""Throttled""** -> Reserved/provisioned concurrency
+- **""Cold start""** -> Provisioned Concurrency
+- **""VPC no internet""** -> NAT Gateway or VPC endpoints
+
+**API Gateway:**
+- **""502""** -> Lambda response format wrong
+- **""504""** -> Backend > 29 seconds
+- **""429""** -> Throttled (check limits)
+
+**DynamoDB:**
+- **""Throttled""** -> Hot partition or insufficient capacity
+- **""Slow reads""** -> DAX or eventually consistent
+- **""Expensive scan""** -> Redesign to use Query + GSI
+
+**SDK:**
+- **""Throttling errors""** -> Exponential backoff (SDK handles automatically)
+- **""Which errors retry?""** -> 5XX and 429 (not 4XX)
+
+---
+
+## Quick Exam Tips
+
+- **CloudWatch Agent** = memory + disk on EC2. Not available by default.
+- **EMF** = metrics from structured logs. No PutMetricData needed. Best for Lambda.
+- **X-Ray Annotations** = indexed, searchable. **Metadata** = not searchable.
+- **X-Ray sampling** default: 1/sec + 5%. Custom rules for cost control.
+- **Lambda REPORT line** shows: Duration, Billed Duration, Memory Size, Max Memory Used.
+- **API Gateway 29-second hard limit.** If backend is slower, get 504.
+- **502 in Lambda Proxy** = response format wrong (need statusCode + headers + body).
+- **DynamoDB hot partition** = most common throttling cause. Fix: better key design.
+- **DAX** = DynamoDB-specific cache (microseconds). **ElastiCache** = general purpose.
+- **SDK retries 5XX and 429 automatically.** Does NOT retry 4XX (client errors).
+- **Exponential backoff with jitter** prevents thundering herd on retries.
+- **SQS visibility timeout** must be > Lambda timeout. Otherwise duplicates.
+- **ReportBatchItemFailures** = only retry failed messages (not entire batch).
+- **S3 Bucket Keys** reduce KMS API calls by 99% (for SSE-KMS at scale).
+- **CloudFront** for read optimization. **Transfer Acceleration** for upload optimization.
+
+---
+
+## Summary
+
+This covers all objectives in DVA-C02 Domain 4:
+
+- **CloudWatch** - Metrics, Agent, EMF, Logs Insights, Metric Filters, Alarms
+- **X-Ray** - Traces, segments, annotations, sampling, service map, integration
+- **Lambda errors** - Timeout, OOM, throttling, cold starts, VPC issues
+- **API Gateway errors** - 502, 504, 429, 403 and their causes
+- **DynamoDB errors** - Throttling, hot partitions, conditional failures
+- **SQS/Kinesis errors** - Visibility timeout, duplicates, DLQ, iterator age
+- **SDK patterns** - Retry modes, exponential backoff, error handling
+- **Optimization** - Lambda (memory, concurrency), DynamoDB (DAX, keys), S3 (multipart, CDN)
+- **Caching** - CloudFront, API Gateway, ElastiCache, DAX (when to use each)
+
+---
+
+## Additional Exam Patterns (Continued)
+
+**DynamoDB:**
+- **""ProvisionedThroughputExceededException""** -> Hot partition or insufficient capacity -> On-Demand or redesign key
+- **""Identify hot partition key""** -> CloudWatch Contributor Insights
+- **""Slow reads on large table""** -> Query (not Scan), GSI, or DAX
+- **""Item too large""** -> 400 KB limit; store in S3, pointer in DDB
+- **""ConditionalCheckFailedException""** -> Optimistic locking conflict; retry with fresh read
+- **""GSI throttling base table""** -> Increase GSI WCU or On-Demand
+- **""Microsecond read latency""** -> DAX
+- **""RCU calculation""** -> ceil(item_size/4KB) x reads/sec
+
+**S3:**
+- **""Access Denied with SSE-KMS""** -> KMS key policy must allow Decrypt
+- **""Slow large upload""** -> Multipart upload (parallel parts)
+- **""High request rate throttling""** -> Spread across prefixes (3,500 PUT / 5,500 GET per prefix)
+- **""KMS throttling with S3""** -> S3 Bucket Keys (reduces calls 99%)
+- **""CORS error""** -> Configure CORS rules on bucket
+- **""Reduce transfer for large objects""** -> S3 Select or byte-range fetches
+
+**SQS:**
+- **""Messages processed multiple times""** -> Visibility timeout too short or use FIFO
+- **""Messages in DLQ""** -> Consumer failing; inspect, fix, redrive
+- **""Lambda partial batch failure""** -> Enable ReportBatchItemFailures
+- **""Recommended visibility timeout""** -> 6x Lambda timeout
+- **""FIFO throughput too low""** -> More MessageGroupIds for parallelism
+
+**Kinesis:**
+- **""IteratorAge increasing""** -> Consumer behind; add shards, increase batch, Enhanced Fan-Out
+- **""Read throughput exceeded""** -> Enhanced Fan-Out (dedicated 2 MB/sec per consumer)
+- **""Hot shard""** -> High-cardinality partition key or random suffix
+- **""Lambda failures blocking stream""** -> Bisect on error + max retry + on-failure destination
+
+**SDK:**
+- **""Handle throttling""** -> Exponential backoff with jitter (SDK automatic)
+- **""SDK keeps failing""** -> Increase max retries or adaptive mode
+- **""4XX not retried""** -> Correct; 4XX (except 429) are client errors
+- **""Credential errors""** -> Check provider chain: env vars -> credentials file -> instance profile
+
+**Caching:**
+- **""Reduce DynamoDB read costs""** -> DAX (microsecond) or ElastiCache (app-level)
+- **""Cache API responses""** -> API Gateway caching (stage-level, TTL)
+- **""Cache static content globally""** -> CloudFront
+- **""Session management""** -> ElastiCache Redis or DynamoDB with TTL
+- **""Lazy Loading vs. Write-Through""** -> Lazy = cache on miss (stale possible); Write-Through = cache on write (always fresh)
+
+**General Optimization:**
+- **""Reduce cold starts""** -> Provisioned Concurrency, smaller package, init outside handler
+- **""Find optimal Lambda memory""** -> Lambda Power Tuning tool
+- **""ARM64 vs. x86""** -> Graviton2: 20% cheaper, often faster
+- **""Async processing""** -> SQS/SNS + Lambda (decouple, retry, scale)
+- **""Reduce API Gateway latency""** -> HTTP API or enable caching
+
+---
+
+## Additional Quick Tips
+
+- **Logs Insights** = ad-hoc log analysis. Know: fields, filter, stats, sort, limit.
+- **X-Ray Annotations vs. Metadata** = guaranteed exam question. Annotations = searchable.
+- **X-Ray Sampling** controls cost. Default: 1/sec + 5%.
+- **Lambda REPORT line** shows: Duration, Billed Duration, Memory Size, Max Memory Used, Init Duration.
+- **502 from API Gateway** = Lambda response format wrong (need statusCode + headers + body).
+- **29-second hard limit** on API Gateway. Use async patterns for longer tasks.
+- **DAX vs. ElastiCache:** DAX = DynamoDB-specific (drop-in). ElastiCache = general purpose (code changes).
+- **Exponential backoff with jitter** = correct retry strategy. SDK does it automatically.
+- **CloudWatch Agent** = EC2 memory + disk. Tested repeatedly.
+- **Contributor Insights** identifies hot partition keys in DynamoDB.
+- **ReportBatchItemFailures** = only retry failed messages (not entire batch).
+- **Enhanced Fan-Out** = dedicated 2 MB/sec per Kinesis consumer.
+- **CloudTrail** has ~15 min delay. For real-time -> EventBridge.
+- **S3 Bucket Keys** reduce KMS calls by 99% for SSE-KMS at scale.
+
+---
+
+## Domain 4 Concept Map
+
+```
+TROUBLESHOOTING AND OPTIMIZATION
+|
++-- CLOUDWATCH (Monitoring)
+|   +-- Metrics: Default + Custom + EMF
+|   +-- Logs: Groups -> Streams -> Insights queries
+|   +-- Metric Filters: Extract metrics from log patterns
+|   +-- Subscription Filters: Stream to Lambda/ES/Firehose
+|   +-- Alarms: Threshold -> SNS/Auto Scaling/EC2
+|   +-- Agent: Memory, disk, custom logs (EC2)
+|   +-- Contributor Insights: Top-N contributors (hot keys)
+|   +-- EMF: Structured logs -> automatic metrics
+|
++-- X-RAY (Distributed Tracing)
+|   +-- Concepts: Trace -> Segment -> Subsegment
+|   +-- Annotations: Indexed, searchable (filter traces)
+|   +-- Metadata: Not indexed (store large data)
+|   +-- Service Map: Visual architecture + latency + errors
+|   +-- Sampling: Reservoir + Rate (control cost)
+|   +-- Integration: Lambda, ECS (sidecar), API GW
+|   +-- SDK: patch_all() auto-instruments
+|
++-- ERROR PATTERNS
+|   +-- Lambda: Timeout, OOM, Throttle, Cold Start, Permission
+|   +-- API Gateway: 502 (bad response), 504 (timeout), 429 (throttle)
+|   +-- DynamoDB: Throttle (hot partition), Item too large, Conditional fail
+|   +-- S3: 403 (permissions/KMS), CORS, KMS throttle
+|   +-- SQS: Visibility timeout, Duplicates, DLQ, Partial batch
+|   +-- Kinesis: Throughput exceeded, Iterator age, Hot shard
+|   +-- ECS: CannotPullContainer, OOM killed, Health check fail
+|
++-- SDK ERROR HANDLING
+|   +-- Retryable: 5XX, 429, timeouts, network errors
+|   +-- Non-Retryable: 4XX (except 429), validation errors
+|   +-- Retry Modes: Standard, Adaptive, Legacy
+|   +-- Backoff: Exponential with jitter (SDK automatic)
+|
++-- PERFORMANCE OPTIMIZATION
+|   +-- Lambda: Provisioned Concurrency, memory, init outside handler
+|   +-- DynamoDB: DAX, Query over Scan, GSI, On-Demand, batch
+|   +-- API Gateway: Caching, HTTP API, throttling
+|   +-- S3: Multipart, Transfer Acceleration, CloudFront, S3 Select
+|   +-- General: Async patterns, connection reuse, ARM64
+|
++-- CACHING LAYERS
+|   +-- Client-side: Browser cache, local storage
+|   +-- CDN: CloudFront (edge, static + dynamic)
+|   +-- API: API Gateway cache (per-stage, TTL)
+|   +-- Application: ElastiCache Redis/Memcached
+|   +-- Database: DAX (DynamoDB-specific, microsecond)
+|
++-- DEPLOYMENT DEBUGGING
+|   +-- CloudFormation: CREATE_FAILED, ROLLBACK_FAILED, drift
+|   +-- CodeDeploy: Hook failures, agent issues, alarm rollback
+|   +-- Elastic Beanstalk: Health RED, .ebextensions, logs
+|   +-- Lambda: Package too large, permissions, VPC connectivity
+|
++-- AUDIT AND FORENSICS
+    +-- CloudTrail: API call history (who/what/when)
+    +-- Event Types: Management (default), Data (opt-in), Insights
+    +-- Integration: S3, CloudWatch Logs, EventBridge, Athena
+```
+
+---
+
+## Summary Table
+
+| Topic | Key Services | Critical Concepts |
+|-------|-------------|------------------|
+| **Monitoring** | CloudWatch | Metrics (default/custom/EMF), Logs Insights, Alarms, Agent, Contributor Insights |
+| **Tracing** | X-Ray | Annotations (indexed) vs. Metadata, Service Map, Sampling, SDK patch_all |
+| **Lambda Issues** | Lambda, CloudWatch | Timeout, OOM, Throttle, Cold Start (Provisioned Concurrency) |
+| **API GW Issues** | API Gateway | 502 (malformed response), 504 (29s limit), 429 (throttle), caching |
+| **DynamoDB Issues** | DynamoDB, DAX | Hot partition, Contributor Insights, RCU/WCU calc, DAX for reads |
+| **S3 Issues** | S3, KMS | 403 (KMS key policy), Bucket Keys, multipart, CORS |
+| **Queue Issues** | SQS, Kinesis | Visibility timeout (6x Lambda), ReportBatchItemFailures, Enhanced Fan-Out |
+| **SDK** | AWS SDK | Exponential backoff + jitter, retry modes, retryable vs. non-retryable |
+| **Caching** | CloudFront, ElastiCache, DAX | Lazy Loading vs. Write-Through, TTL, DAX vs. ElastiCache |
+| **Audit** | CloudTrail | Management vs. Data events, 15-min delay, EventBridge for real-time |
+
+---
+
+## DVA-C02 Complete Domain Summary
+
+| Domain | Weight | Core Focus |
+|--------|--------|-----------|
+| **1. Development with AWS Services** | 32% | Lambda, API GW, DynamoDB, S3, SQS, SNS, Step Functions |
+| **2. Security** | 26% | IAM, Cognito, KMS, Secrets Manager, VPC endpoints, WAF |
+| **3. Deployment** | 24% | CodePipeline, CodeBuild, CodeDeploy, CloudFormation, SAM, Beanstalk |
+| **4. Troubleshooting & Optimization** | 18% | CloudWatch, X-Ray, error patterns, caching, performance tuning |"

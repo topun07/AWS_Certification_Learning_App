@@ -1,0 +1,352 @@
+certCode,domain,title,content
+"SAA-C03","Domain 2: Design Resilient Architectures","Design Resilient Architectures","## SAA-C03 Domain 2: Design Resilient Architectures
+
+**Weight:** ~26% of scored exam content
+**Exam Level:** Associate
+
+This domain covers designing scalable, loosely coupled, fault-tolerant, and highly available architectures.
+
+---
+
+## High Availability Concepts
+
+### Key Definitions
+
+| Term | Definition | Example |
+|------|-----------|---------|
+| **High Availability (HA)** | System remains operational despite failures | Multi-AZ RDS |
+| **Fault Tolerance** | System continues operating with zero downtime | Active-Active |
+| **Scalability** | Ability to handle increased load | Auto Scaling |
+| **Elasticity** | Automatically scale up AND down | Lambda, Auto Scaling |
+| **Durability** | Data is not lost | S3 11 9s durability |
+
+### Multi-AZ vs. Multi-Region
+
+| Strategy | Use Case | Cost | Complexity |
+|----------|----------|------|-----------|
+| **Single AZ** | Dev/test | Lowest | Lowest |
+| **Multi-AZ** | Production HA | Medium | Low |
+| **Multi-Region** | Global apps, DR | Highest | Highest |
+
+---
+
+## Elastic Load Balancing (ELB)
+
+### Load Balancer Types
+
+| Type | Layer | Use Case | Key Features |
+|------|-------|----------|-------------|
+| **ALB** | Layer 7 (HTTP/S) | Web apps, microservices | Path/host routing, WebSocket, gRPC |
+| **NLB** | Layer 4 (TCP/UDP) | Ultra-low latency, gaming | Static IP, millions of requests/sec |
+| **GLB** | Layer 3 (IP) | Third-party appliances | Transparent network gateway |
+| **CLB** | Layer 4/7 | Legacy (avoid) | Being deprecated |
+
+### ALB Features
+
+- Path-based routing (/api/* -> service A, /web/* -> service B)
+- Host-based routing (api.example.com -> service A)
+- Query string/header routing
+- Fixed response actions
+- Redirect actions (HTTP -> HTTPS)
+- Target groups: EC2, ECS, Lambda, IP addresses
+- Sticky sessions (cookie-based)
+- Cross-zone load balancing (enabled by default)
+
+### NLB Features
+
+- Static IP per AZ (or Elastic IP)
+- Millions of requests per second
+- Ultra-low latency (~100ms vs ALB ~400ms)
+- Preserves source IP
+- TCP, UDP, TLS protocols
+- Target groups: EC2, IP, ALB (chaining)
+- Cross-zone load balancing (disabled by default)
+
+### Health Checks
+
+- ALB: HTTP/HTTPS health checks on target group
+- NLB: TCP, HTTP, HTTPS health checks
+- Unhealthy threshold: Number of consecutive failures
+- Healthy threshold: Number of consecutive successes
+- Grace period: Time before first health check after launch
+
+---
+
+## Auto Scaling
+
+### Auto Scaling Components
+
+| Component | Purpose |
+|-----------|---------|
+| **Launch Template** | Instance configuration (AMI, type, SG, user data) |
+| **Auto Scaling Group (ASG)** | Manages fleet (min, max, desired) |
+| **Scaling Policy** | When and how to scale |
+
+### Scaling Policy Types
+
+| Type | How It Works | Use Case |
+|------|-------------|----------|
+| **Target Tracking** | Maintain metric at target value | CPU at 50%, requests per target at 1000 |
+| **Step Scaling** | Scale by amount based on alarm severity | Different actions for 60% vs 80% CPU |
+| **Simple Scaling** | Scale by fixed amount on alarm | Add 1 instance when CPU > 70% |
+| **Scheduled** | Scale at specific times | Scale up at 9 AM, down at 6 PM |
+| **Predictive** | ML-based forecasting | Recurring traffic patterns |
+
+### Scaling Cooldown
+
+- Default: 300 seconds
+- Prevents rapid scale in/out oscillation
+- Target tracking has built-in cooldown
+- Tip: Use detailed monitoring (1-min) for faster response
+
+### ASG Lifecycle Hooks
+
+- **Pending:Wait** -> Run scripts before instance enters service
+- **Terminating:Wait** -> Drain connections, save logs before termination
+- Use cases: Install software, register with service discovery, deregister from LB
+
+---
+
+## Decoupling Architectures
+
+### SQS (Simple Queue Service)
+
+| Feature | Standard | FIFO |
+|---------|----------|------|
+| **Throughput** | Unlimited | 3,000 msg/sec (batching) |
+| **Ordering** | Best-effort | Guaranteed (per group) |
+| **Duplicates** | Possible | Exactly-once |
+| **Use Case** | High throughput | Order matters |
+
+**Key SQS Concepts:**
+- Visibility Timeout: Message hidden while being processed (default 30s)
+- Dead Letter Queue (DLQ): Failed messages after maxReceiveCount
+- Long Polling: Reduce empty responses (WaitTimeSeconds > 0)
+- Message Retention: 1 minute to 14 days (default 4 days)
+- Max Message Size: 256 KB (use S3 for larger via Extended Client Library)
+
+### SNS (Simple Notification Service)
+
+- Pub/Sub model (one-to-many)
+- Subscribers: SQS, Lambda, HTTP, Email, SMS, Kinesis Firehose
+- Fan-out pattern: SNS -> multiple SQS queues
+- Message filtering: Subscriber receives only matching messages
+- FIFO topics: Ordered delivery to FIFO SQS queues
+
+### EventBridge
+
+- Event-driven architecture (successor to CloudWatch Events)
+- Event Bus: Default, custom, partner
+- Rules: Match events and route to targets
+- Targets: Lambda, SQS, SNS, Step Functions, API Gateway, etc.
+- Schema Registry: Discover and store event schemas
+- Archive & Replay: Store events and replay them
+
+### Decoupling Patterns
+
+```
+Synchronous (tight coupling):
+  Client -> API -> Service -> Database
+
+Asynchronous (loose coupling):
+  Client -> API -> SQS -> Worker -> Database
+  Client -> API -> SNS -> [SQS, Lambda, Email]
+  Client -> API -> EventBridge -> [Multiple Targets]
+```
+
+---
+
+## Disaster Recovery
+
+### DR Strategies (Cost: Low -> High, RTO: High -> Low)
+
+| Strategy | RTO | RPO | Cost | Description |
+|----------|-----|-----|------|-------------|
+| **Backup & Restore** | Hours | Hours | $ | Restore from backups |
+| **Pilot Light** | 10s of minutes | Minutes | $$ | Core systems always running (DB replicated) |
+| **Warm Standby** | Minutes | Seconds | $$$ | Scaled-down full environment |
+| **Active-Active (Multi-Site)** | Near zero | Near zero | $$$$ | Full environment in both regions |
+
+### Key DR Services
+
+| Service | DR Feature |
+|---------|-----------|
+| **S3** | Cross-Region Replication (CRR) |
+| **RDS** | Multi-AZ (HA), Read Replicas (cross-region), Automated Backups |
+| **DynamoDB** | Global Tables (active-active multi-region) |
+| **Aurora** | Global Database (< 1 sec replication, cross-region failover) |
+| **EBS** | Snapshots (copy to another region) |
+| **Route 53** | Failover routing policy |
+| **CloudFormation** | StackSets (deploy to multiple regions) |
+
+### RDS High Availability
+
+| Feature | Multi-AZ | Read Replica |
+|---------|----------|-------------|
+| **Purpose** | High availability | Read scaling |
+| **Replication** | Synchronous | Asynchronous |
+| **Failover** | Automatic (DNS flip) | Manual promotion |
+| **Read traffic** | No (standby only) | Yes |
+| **Cross-region** | No (same region) | Yes |
+| **Endpoint** | Same DNS (auto-failover) | Separate endpoint |
+
+### Aurora High Availability
+
+- 6 copies of data across 3 AZs
+- Auto-healing storage
+- Writer + up to 15 read replicas
+- Failover: Promote replica in < 30 seconds
+- Global Database: < 1 second cross-region replication
+- Serverless: Auto-scale capacity (pay per ACU-second)
+
+---
+
+## S3 Resilience
+
+### S3 Durability & Availability
+
+| Class | Durability | Availability | Use Case |
+|-------|-----------|-------------|----------|
+| **Standard** | 11 9s | 99.99% | Frequently accessed |
+| **Standard-IA** | 11 9s | 99.9% | Infrequent, rapid access needed |
+| **One Zone-IA** | 11 9s | 99.5% | Reproducible infrequent data |
+| **Glacier Instant** | 11 9s | 99.9% | Archive, millisecond retrieval |
+| **Glacier Flexible** | 11 9s | 99.99% | Archive, minutes-hours retrieval |
+| **Glacier Deep Archive** | 11 9s | 99.99% | Long-term archive, 12-48 hours |
+| **Intelligent-Tiering** | 11 9s | 99.9% | Unknown access patterns |
+
+### S3 Replication
+
+| Type | Scope | Use Case |
+|------|-------|----------|
+| **CRR (Cross-Region)** | Different regions | DR, compliance, latency |
+| **SRR (Same-Region)** | Same region | Log aggregation, compliance |
+
+- Requires versioning on both buckets
+- Can replicate to different account
+- Not retroactive (only new objects)
+- Delete markers can be replicated (optional)
+
+---
+
+## Stateless Architecture
+
+### Design Principles
+
+- Store session state externally (ElastiCache, DynamoDB)
+- Use ELB sticky sessions only as last resort
+- Store files in S3 (not local disk)
+- Use shared storage (EFS) if local filesystem needed
+- Containerize applications (ECS, EKS)
+
+### Session Management
+
+| Option | Latency | Durability | Cost |
+|--------|---------|-----------|------|
+| **ElastiCache (Redis)** | Sub-ms | Optional persistence | Medium |
+| **DynamoDB** | Single-digit ms | Highly durable | Low-Medium |
+| **Sticky Sessions (ELB)** | N/A | Lost on instance failure | Free |
+
+---
+
+## Key Exam Patterns
+
+**Load Balancing:**
+- **""Web application with path routing""** -> ALB
+- **""Ultra-low latency, static IP""** -> NLB
+- **""Millions of connections""** -> NLB
+- **""HTTP to HTTPS redirect""** -> ALB redirect rule
+- **""Microservices routing""** -> ALB (path/host-based)
+
+**Auto Scaling:**
+- **""Maintain CPU at 50%""** -> Target Tracking policy
+- **""Scale at 9 AM daily""** -> Scheduled scaling
+- **""Predictable traffic patterns""** -> Predictive scaling
+- **""Drain connections before terminate""** -> Lifecycle hooks
+
+**Decoupling:**
+- **""Decouple components""** -> SQS (point-to-point)
+- **""Fan-out to multiple consumers""** -> SNS + SQS
+- **""Guaranteed order""** -> SQS FIFO
+- **""Event-driven architecture""** -> EventBridge
+- **""Failed message handling""** -> Dead Letter Queue
+
+**DR:**
+- **""Lowest cost DR""** -> Backup & Restore
+- **""Near-zero downtime DR""** -> Active-Active
+- **""Cross-region database""** -> Aurora Global Database or DynamoDB Global Tables
+- **""Automatic failover""** -> Route 53 failover routing + health checks
+
+**Database HA:**
+- **""RDS high availability""** -> Multi-AZ (synchronous, auto-failover)
+- **""RDS read scaling""** -> Read Replicas (async, manual promotion)
+- **""Global database < 1s replication""** -> Aurora Global Database
+- **""Multi-region active-active""** -> DynamoDB Global Tables
+
+---
+
+## Quick Exam Tips
+
+- **ALB for HTTP/HTTPS.** NLB for TCP/UDP/extreme performance. Always.
+- **Multi-AZ RDS** is for HA (auto-failover). Read Replicas are for scaling (manual promotion).
+- **SQS decouples** components. SNS fans out to multiple subscribers. EventBridge routes events.
+- **DLQ** catches messages that fail processing after maxReceiveCount attempts.
+- **Target Tracking** is the simplest and most common scaling policy.
+- **Aurora Global Database** provides < 1 second cross-region replication.
+- **DynamoDB Global Tables** provide active-active multi-region (read/write anywhere).
+- **S3 CRR** requires versioning on both source and destination buckets.
+- **Pilot Light** = minimal core running (DB). **Warm Standby** = scaled-down full stack.
+- **Sticky sessions** break HA - use external session store (ElastiCache/DynamoDB) instead.
+- **ASG Lifecycle Hooks** let you run scripts before instances join or leave the group.
+- **Long Polling** in SQS reduces costs and empty responses (set WaitTimeSeconds > 0).
+- **Route 53 failover** routing with health checks enables automatic DNS-level failover.
+- **S3 Intelligent-Tiering** has no retrieval fees - best for unknown access patterns.
+- **Cross-zone load balancing** distributes traffic evenly across all AZs.
+
+---
+
+## Domain 2 Concept Map
+
+```
+RESILIENT ARCHITECTURES
+|
++-- HIGH AVAILABILITY
+|   +-- Multi-AZ: RDS, ElastiCache, EFS, ALB
+|   +-- Multi-Region: Aurora Global, DynamoDB Global Tables, S3 CRR
+|   +-- Fault Tolerance: No single point of failure
+|
++-- LOAD BALANCING
+|   +-- ALB: HTTP/S, path/host routing, WebSocket
+|   +-- NLB: TCP/UDP, static IP, ultra-low latency
+|   +-- Health Checks: Detect and remove unhealthy targets
+|   +-- Cross-Zone: Distribute evenly across AZs
+|
++-- AUTO SCALING
+|   +-- Policies: Target Tracking, Step, Scheduled, Predictive
+|   +-- Components: Launch Template, ASG, Scaling Policy
+|   +-- Lifecycle Hooks: Custom actions on launch/terminate
+|   +-- Cooldown: Prevent oscillation
+|
++-- DECOUPLING
+|   +-- SQS: Queue (point-to-point), Standard vs. FIFO
+|   +-- SNS: Pub/Sub (fan-out), message filtering
+|   +-- EventBridge: Event-driven routing, archive/replay
+|   +-- Patterns: Async processing, fan-out, event-driven
+|
++-- DISASTER RECOVERY
+|   +-- Strategies: Backup/Restore < Pilot Light < Warm Standby < Active-Active
+|   +-- RTO/RPO: Recovery Time vs. Recovery Point Objective
+|   +-- Services: Route 53 failover, Aurora Global, DynamoDB Global
+|   +-- Backups: Automated (RDS), Snapshots (EBS), CRR (S3)
+|
++-- DATABASE HA
+|   +-- RDS Multi-AZ: Synchronous, auto-failover, same region
+|   +-- Read Replicas: Async, manual promotion, cross-region
+|   +-- Aurora: 6 copies/3 AZs, < 30s failover, Global Database
+|   +-- DynamoDB: Global Tables (active-active multi-region)
+|
++-- STATELESS DESIGN
+    +-- External Sessions: ElastiCache, DynamoDB
+    +-- Shared Storage: S3, EFS
+    +-- Containers: ECS, EKS (portable, scalable)
+```"

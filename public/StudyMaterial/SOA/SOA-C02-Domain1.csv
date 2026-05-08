@@ -1,0 +1,260 @@
+certCode,domain,title,content
+"SOA-C02","Domain 1: Monitoring, Logging & Remediation","Monitoring, Logging & Remediation","## SOA-C02 Domain 1: Monitoring, Logging & Remediation
+
+**Weight:** ~20% of scored exam content
+**Exam Level:** Associate
+
+This domain covers implementing monitoring, logging, alerting, and automated remediation using AWS services.
+
+---
+
+## CloudWatch
+
+### CloudWatch Metrics
+
+| Concept | Description |
+|---------|-------------|
+| **Namespace** | Container for metrics (AWS/EC2, AWS/RDS, custom) |
+| **Dimension** | Key-value pair to filter (InstanceId, AutoScalingGroupName) |
+| **Period** | Time length for aggregation (60s, 300s, etc.) |
+| **Statistic** | Aggregation function (Average, Sum, Min, Max, p99) |
+| **Resolution** | Standard (60s) or High-Resolution (1s) |
+
+### Default vs. Custom Metrics
+
+| Default (Free) | Custom (Must Install Agent) |
+|----------------|---------------------------|
+| CPU Utilization | Memory utilization |
+| Network In/Out | Disk space usage |
+| Disk Read/Write (ops) | Swap usage |
+| Status Checks | Custom application metrics |
+| EBS Volume metrics | Per-process metrics |
+
+**Critical:** Memory and disk space are NOT default EC2 metrics. You need the CloudWatch Agent.
+
+### CloudWatch Agent
+
+- Install on EC2 or on-premises servers
+- Collects: Memory, disk, swap, custom logs, StatsD, collectd
+- Configuration: JSON file (wizard or manual)
+- Store config in SSM Parameter Store for fleet management
+- Unified Agent = metrics + logs (replaces older Logs Agent)
+
+### CloudWatch Alarms
+
+| State | Meaning |
+|-------|---------|
+| **OK** | Metric within threshold |
+| **ALARM** | Metric breached threshold |
+| **INSUFFICIENT_DATA** | Not enough data to evaluate |
+
+**Alarm Actions:**
+- EC2: Stop, Terminate, Reboot, Recover
+- Auto Scaling: Scale out/in
+- SNS: Send notification
+- Systems Manager: Run automation
+- Lambda: Custom remediation
+
+### Composite Alarms
+
+- Combine multiple alarms with AND/OR logic
+- Reduce alarm noise (only fire when multiple conditions met)
+- Example: CPU > 80% AND Network > 1 Gbps = true issue (not just a spike)
+
+### CloudWatch Logs
+
+| Component | Purpose |
+|-----------|---------|
+| **Log Group** | Collection of log streams (retention, encryption) |
+| **Log Stream** | Sequence of events from one source |
+| **Metric Filter** | Extract metrics from log patterns |
+| **Subscription Filter** | Real-time stream to Lambda, Kinesis, OpenSearch |
+| **Insights** | Interactive query language for log analysis |
+| **Contributor Insights** | Top-N contributors (top IPs, URLs) |
+
+### CloudWatch Logs Insights
+
+```
+# Find top 10 errors in last hour
+fields @timestamp, @message
+| filter @message like /ERROR/
+| sort @timestamp desc
+| limit 10
+
+# Count by status code
+fields @timestamp, status
+| stats count(*) by status
+| sort count desc
+```
+
+### CloudWatch Dashboards
+
+- Cross-account and cross-region dashboards
+- Automatic dashboards (pre-built per service)
+- Custom widgets: Metrics, logs, alarms, text, explorer
+- Share via public link or CloudWatch Dashboard Sharing
+
+---
+
+## EventBridge
+
+### Core Concepts
+
+| Component | Description |
+|-----------|-------------|
+| **Event Bus** | Channel for events (default, custom, partner) |
+| **Rule** | Pattern matching + target routing |
+| **Target** | Destination (Lambda, SQS, SNS, Step Functions, SSM) |
+| **Schema** | Event structure definition |
+| **Archive** | Store events for replay |
+
+### Event-Driven Remediation Pattern
+
+```
+Event Source -> EventBridge Rule -> Target (Remediation)
+
+Examples:
+- EC2 state change (stopped) -> Lambda (restart or notify)
+- GuardDuty finding -> SNS (alert) + Lambda (isolate instance)
+- Config non-compliant -> SSM Automation (fix resource)
+- S3 object created -> Lambda (process file)
+```
+
+### Scheduled Events (Cron)
+
+- Replace CloudWatch Events scheduled rules
+- Cron expressions: `cron(0 9 * * ? *)` = daily at 9 AM UTC
+- Rate expressions: `rate(5 minutes)`, `rate(1 hour)`
+- Use for: Scheduled Lambda, periodic checks, maintenance windows
+
+---
+
+## CloudTrail
+
+### What CloudTrail Captures
+
+| Event Type | Description | Example |
+|-----------|-------------|---------|
+| **Management Events** | Control plane operations | CreateBucket, RunInstances |
+| **Data Events** | Data plane operations | GetObject, PutItem, Invoke |
+| **Insights Events** | Unusual API activity | Spike in API calls |
+
+### Key Features
+
+- Enabled by default (90-day history, management events)
+- Trail: Deliver to S3 (all regions, all accounts via Organization trail)
+- CloudWatch Logs integration: Real-time alerting on API calls
+- Log file integrity validation: Detect tampering
+- Multi-region: Single trail captures all regions
+
+### CloudTrail + EventBridge Pattern
+
+```
+API Call -> CloudTrail -> EventBridge Rule -> Remediation
+
+Example: Someone deletes a security group rule
+  CloudTrail logs DeleteSecurityGroupRule
+  -> EventBridge matches event
+  -> Lambda re-creates the rule
+```
+
+---
+
+## AWS Config
+
+### Core Concepts
+
+| Component | Purpose |
+|-----------|---------|
+| **Configuration Recorder** | Records resource configurations |
+| **Config Rules** | Evaluate compliance (managed or custom) |
+| **Conformance Packs** | Collection of rules (compliance framework) |
+| **Remediation** | Auto-fix non-compliant resources |
+| **Aggregator** | Multi-account/region view |
+
+### Popular Config Rules
+
+| Rule | Checks |
+|------|--------|
+| **s3-bucket-public-read-prohibited** | No public S3 buckets |
+| **ec2-instance-no-public-ip** | EC2 in private subnets |
+| **rds-instance-public-access-check** | RDS not publicly accessible |
+| **encrypted-volumes** | EBS volumes encrypted |
+| **iam-root-access-key-check** | No root access keys |
+| **required-tags** | Resources have required tags |
+
+### Auto-Remediation
+
+```
+Non-Compliant Resource -> Config Rule Violation -> SSM Automation Document -> Fix
+
+Examples:
+- Unencrypted EBS -> Encrypt volume
+- Public S3 bucket -> Block public access
+- Missing tags -> Apply default tags
+- Security group open to 0.0.0.0/0 -> Remove rule
+```
+
+---
+
+## Systems Manager (SSM)
+
+### Key Capabilities for Monitoring/Remediation
+
+| Feature | Purpose |
+|---------|---------|
+| **Run Command** | Execute commands on fleet (no SSH) |
+| **Automation** | Multi-step runbooks (remediation) |
+| **OpsCenter** | Centralized operational issues |
+| **Explorer** | Operational dashboard |
+| **Incident Manager** | Incident response workflow |
+
+### SSM Automation Documents
+
+- Pre-built or custom runbooks
+- Steps: aws:executeScript, aws:runCommand, aws:approve
+- Trigger from: Config rules, EventBridge, manual
+- Examples: Restart instance, patch OS, rotate credentials
+
+---
+
+## Key Exam Patterns
+
+**CloudWatch:**
+- **""Monitor memory/disk on EC2""** -> CloudWatch Agent (not default metrics)
+- **""Alert on multiple conditions""** -> Composite Alarms
+- **""Search log patterns""** -> CloudWatch Logs Insights
+- **""Stream logs in real-time""** -> Subscription Filter (Lambda, Kinesis)
+- **""Top contributors to errors""** -> Contributor Insights
+- **""1-second metric resolution""** -> High-Resolution custom metrics
+
+**Remediation:**
+- **""Auto-fix non-compliant resources""** -> Config Rule + SSM Automation
+- **""React to EC2 state changes""** -> EventBridge + Lambda/SSM
+- **""Respond to security findings""** -> GuardDuty -> EventBridge -> Lambda
+- **""Scheduled maintenance""** -> EventBridge scheduled rule
+- **""Run commands on fleet without SSH""** -> SSM Run Command
+
+**Logging:**
+- **""Audit all API calls""** -> CloudTrail
+- **""Detect unusual API activity""** -> CloudTrail Insights
+- **""Centralize logs from multiple accounts""** -> Organization Trail + S3
+- **""Real-time log analysis""** -> Subscription Filter -> OpenSearch/Lambda
+- **""Detect log tampering""** -> CloudTrail log file integrity validation
+
+---
+
+## Quick Exam Tips
+
+- **Memory and disk are NOT default CloudWatch metrics.** Install the Unified Agent.
+- **Composite Alarms** reduce noise by combining alarms with AND/OR logic.
+- **CloudWatch Logs Insights** is the query language for searching logs interactively.
+- **EventBridge** is the successor to CloudWatch Events. Use it for event-driven automation.
+- **Config Rules** evaluate compliance. SSM Automation documents perform remediation.
+- **CloudTrail** is enabled by default (90 days). Create a Trail for long-term S3 storage.
+- **CloudTrail Data Events** (S3 GetObject, Lambda Invoke) are NOT enabled by default - extra cost.
+- **SSM Run Command** executes commands on EC2 without SSH/RDP (requires SSM Agent).
+- **Metric Filters** extract custom metrics from CloudWatch Logs (e.g., count ERROR occurrences).
+- **Subscription Filters** stream logs in real-time to Lambda, Kinesis, or OpenSearch.
+- **Config Aggregator** provides a multi-account, multi-region compliance view.
+- **OpsCenter** centralizes operational issues (OpsItems) from multiple sources."

@@ -1,0 +1,384 @@
+certCode,domain,title,content
+"DVA-C02","Domain 3: Deployment","Deployment","## DVA-C02 Domain 3: Deployment
+
+**Weight:** ~24% of scored exam content
+**Exam Level:** Associate
+
+This domain covers CodePipeline, CodeBuild, CodeDeploy, CloudFormation, SAM, CDK, Elastic Beanstalk, and container deployment patterns.
+
+---
+
+## AWS CodePipeline
+
+### Pipeline Structure
+
+```
+SOURCE -> BUILD -> TEST -> DEPLOY
+
+Source: CodeCommit, GitHub, Bitbucket, S3, ECR
+Build: CodeBuild, Jenkins
+Deploy: CodeDeploy, CloudFormation, Beanstalk, ECS, S3
+```
+
+### Key Concepts
+
+- **Artifacts:** Output from one stage -> input to next (S3, encrypted with KMS)
+- **Manual Approval:** Human gate between stages (SNS notification)
+- **Cross-Region:** Artifacts replicated to target region S3 bucket
+- **Cross-Account:** IAM role + KMS key policy + S3 bucket policy
+
+---
+
+## AWS CodeBuild
+
+### buildspec.yml
+
+```yaml
+version: 0.2
+env:
+  parameter-store:
+    DB_PASSWORD: ""/myapp/prod/db-password""
+  secrets-manager:
+    API_KEY: ""prod/api-key:api_key""
+  exported-variables:
+    - IMAGE_TAG
+
+phases:
+  install:
+    commands: [""npm install""]
+  pre_build:
+    commands: [""aws ecr get-login-password | docker login...""]
+  build:
+    commands: [""docker build -t $REPO:$TAG ."", ""docker push $REPO:$TAG""]
+  post_build:
+    commands: [""printf '[{""name"":""app"",""imageUri"":""%s""}]' $REPO:$TAG > imagedefinitions.json""]
+
+artifacts:
+  files: [""imagedefinitions.json"", ""appspec.yml""]
+```
+
+### Key Points
+
+- **Privileged mode:** Required for building Docker images
+- **Caching:** S3 (cross-build) or Local (Docker layers)
+- **VPC access:** Optional (access private resources like RDS)
+- **Secrets:** env section (parameter-store, secrets-manager)
+- **Phases:** install -> pre_build -> build -> post_build (post_build runs even if build fails)
+
+---
+
+## AWS CodeDeploy
+
+### Platforms and Strategies
+
+| Platform | Strategies | Agent | AppSpec |
+|----------|-----------|-------|---------|
+| **EC2** | In-Place, Blue/Green | Required | files + hooks (shell scripts) |
+| **Lambda** | Canary, Linear, AllAtOnce | Not needed | function + versions + hooks (Lambda) |
+| **ECS** | Canary, Linear, AllAtOnce | Not needed | task definition + hooks (Lambda) |
+
+### EC2 Lifecycle Hooks
+
+```
+ApplicationStop -> DownloadBundle -> BeforeInstall -> Install ->
+AfterInstall -> ApplicationStart -> ValidateService
+```
+
+### Lambda Deployment Configurations
+
+| Config | Traffic Shift |
+|--------|--------------|
+| **Canary10Percent5Minutes** | 10% for 5 min -> 100% |
+| **Canary10Percent10Minutes** | 10% for 10 min -> 100% |
+| **Linear10PercentEvery1Minute** | +10% every 1 min |
+| **Linear10PercentEvery10Minutes** | +10% every 10 min |
+| **AllAtOnce** | 100% immediately |
+
+### Rollback
+
+- **Automatic:** On deployment failure or CloudWatch alarm trigger
+- **Manual:** Redeploy previous revision
+- **CloudWatch Alarms:** Error rate, latency -> trigger rollback
+
+---
+
+## AWS CloudFormation
+
+### Key Concepts
+
+| Concept | Description |
+|---------|-------------|
+| **Parameters** | Input values (type, constraints) |
+| **Mappings** | Static lookups (region -> AMI) |
+| **Conditions** | Conditional resource creation |
+| **DeletionPolicy** | Delete (default), Retain, Snapshot |
+| **Change Sets** | Preview changes before applying |
+| **Nested Stacks** | Reuse common templates |
+| **Cross-Stack** | Export/ImportValue (same region) |
+| **Stack Policy** | Protect resources from updates |
+| **Drift Detection** | Find manual changes |
+
+### Intrinsic Functions
+
+| Function | Purpose |
+|----------|---------|
+| **!Ref** | Parameter value or resource ID |
+| **!GetAtt** | Resource attribute |
+| **!Sub** | String substitution |
+| **!Join** | Join strings |
+| **!FindInMap** | Lookup in Mappings |
+| **!If** | Conditional value |
+| **!ImportValue** | Cross-stack reference |
+
+### Helper Scripts (EC2)
+
+| Script | Purpose |
+|--------|---------|
+| **cfn-init** | Apply metadata (packages, files, services) |
+| **cfn-signal** | Signal stack that resource is ready |
+| **cfn-hup** | Detect metadata changes, re-run cfn-init |
+
+**Pattern:** CreationPolicy + cfn-signal = wait for EC2 bootstrap to complete.
+
+---
+
+## AWS SAM
+
+### Overview
+
+- Extension of CloudFormation for serverless
+- Transform: AWS::Serverless-2016-10-31
+- Resources: Function, Api, HttpApi, SimpleTable, LayerVersion
+
+### SAM CLI Commands
+
+| Command | Purpose |
+|---------|---------|
+| **sam init** | Create new project |
+| **sam build** | Build application |
+| **sam local invoke** | Test Lambda locally (Docker) |
+| **sam local start-api** | Local API Gateway |
+| **sam deploy** | Deploy to AWS |
+| **sam sync** | Fast development sync |
+
+### Safe Deployment
+
+```yaml
+AutoPublishAlias: live
+DeploymentPreference:
+  Type: Canary10Percent5Minutes
+  Alarms: [!Ref ErrorAlarm]
+  Hooks:
+    PreTraffic: !Ref PreTrafficFunction
+    PostTraffic: !Ref PostTrafficFunction
+```
+
+### Policy Templates
+
+| Template | Grants |
+|----------|--------|
+| **DynamoDBCrudPolicy** | CRUD on table |
+| **S3ReadPolicy** | Read from bucket |
+| **SQSPollerPolicy** | Receive/delete from queue |
+| **KMSDecryptPolicy** | Decrypt with key |
+
+---
+
+## AWS CDK
+
+### Key Concepts
+
+| Concept | Description |
+|---------|-------------|
+| **App** | Root of CDK application |
+| **Stack** | Unit of deployment (= CloudFormation stack) |
+| **Construct L1** | Direct CloudFormation (CfnBucket) |
+| **Construct L2** | Higher-level with defaults (Bucket) |
+| **Construct L3** | Multi-resource patterns (LambdaRestApi) |
+| **Bootstrap** | Required once per account/region |
+| **Synth** | Generate CloudFormation template |
+
+### CLI Commands
+
+| Command | Purpose |
+|---------|---------|
+| **cdk init** | Create project |
+| **cdk synth** | Generate CF template |
+| **cdk diff** | Show changes |
+| **cdk deploy** | Deploy |
+| **cdk bootstrap** | Prepare account/region |
+
+---
+
+## Elastic Beanstalk
+
+### Deployment Policies
+
+| Policy | Downtime | Capacity | Rollback |
+|--------|----------|----------|----------|
+| **All at Once** | Yes | Full | Redeploy |
+| **Rolling** | No | Reduced | Redeploy |
+| **Rolling + Batch** | No | Full | Redeploy |
+| **Immutable** | No | Double | Terminate new |
+| **Traffic Splitting** | No | Double | Reroute |
+
+### .ebextensions
+
+```yaml
+# .ebextensions/01-config.config
+option_settings:
+  aws:elasticbeanstalk:application:environment:
+    NODE_ENV: production
+
+container_commands:
+  01_migrate:
+    command: ""python manage.py migrate""
+    leader_only: true  # Only on one instance
+```
+
+### Blue/Green
+
+- Create new environment -> test -> swap URLs (CNAME swap)
+- **RDS:** Create outside Beanstalk (avoid lifecycle coupling)
+
+---
+
+## ECS/ECR Deployment
+
+### ECS Deployment Options
+
+| Method | How It Works |
+|--------|-------------|
+| **Rolling** | ECS replaces tasks (minimumHealthyPercent/maximumPercent) |
+| **Blue/Green** | CodeDeploy + ALB + two target groups |
+
+### Deployment Artifacts
+
+| Deploy Type | Artifact File |
+|-------------|--------------|
+| **ECS Rolling** (CodePipeline) | imagedefinitions.json |
+| **ECS Blue/Green** (CodeDeploy) | imageDetail.json |
+
+### ECR Features
+
+- Image scanning (vulnerabilities)
+- Lifecycle policies (auto-delete old images)
+- Immutable tags (prevent overwrite)
+- Cross-region replication
+
+---
+
+## Lambda Deployment
+
+### Mechanism
+
+```
+Before: Alias ""prod"" -> Version 1 (100%)
+During: Alias ""prod"" -> Version 1 (90%) + Version 2 (10%)
+After:  Alias ""prod"" -> Version 2 (100%)
+```
+
+- CodeDeploy manages alias traffic shifting
+- Pre/Post traffic hooks validate deployment
+- CloudWatch alarms trigger automatic rollback
+
+---
+
+## AWS AppConfig
+
+| Feature | Description |
+|---------|-------------|
+| **Feature Flags** | Boolean/JSON toggles with safe rollout |
+| **Deployment Strategies** | Canary, Linear, AllAtOnce, Custom |
+| **Validators** | JSON Schema or Lambda (validate before deploy) |
+| **Lambda Extension** | Local caching (no cold start penalty) |
+| **Benefit** | Change without redeploy + instant rollback |
+
+---
+
+## Key Exam Patterns
+
+**CodePipeline:**
+- **""Automate source->build->deploy""** -> CodePipeline
+- **""Human approval before prod""** -> Manual Approval action
+- **""Deploy to another account""** -> Cross-account role + KMS + S3 policy
+
+**CodeBuild:**
+- **""Build Docker images""** -> Privileged mode enabled
+- **""Cache dependencies""** -> S3 cache in buildspec
+- **""Access secrets in build""** -> env section (parameter-store/secrets-manager)
+- **""Build spec not found""** -> Must be at root of source
+
+**CodeDeploy:**
+- **""EC2 zero downtime""** -> Blue/Green (new ASG + ALB)
+- **""Gradually shift Lambda traffic""** -> Canary or Linear
+- **""Rollback on error spike""** -> CloudWatch Alarm trigger
+- **""Agent not found""** -> Install CodeDeploy Agent + IAM profile
+
+**CloudFormation:**
+- **""Preview changes""** -> Change Set
+- **""Keep bucket on delete""** -> DeletionPolicy: Retain
+- **""Wait for EC2 bootstrap""** -> CreationPolicy + cfn-signal
+- **""Share resources between stacks""** -> Cross-stack (Export/ImportValue)
+- **""Stuck in ROLLBACK_FAILED""** -> ContinueUpdateRollback
+
+**SAM:**
+- **""Test Lambda locally""** -> sam local invoke
+- **""Safe Lambda deployment""** -> AutoPublishAlias + DeploymentPreference
+- **""Simplest serverless deploy""** -> SAM template + sam deploy
+
+**CDK:**
+- **""IaC with programming language""** -> CDK
+- **""First deploy fails""** -> Run cdk bootstrap
+- **""Preview changes""** -> cdk diff
+
+**Beanstalk:**
+- **""Deploy without managing infra""** -> Elastic Beanstalk
+- **""Zero downtime""** -> Immutable or Traffic Splitting
+- **""Customize environment""** -> .ebextensions/*.config
+- **""Run migration once""** -> container_commands + leader_only: true
+- **""RDS deleted with environment""** -> Create RDS outside Beanstalk
+
+**ECS:**
+- **""Rolling update""** -> ECS service update (min/max healthy %)
+- **""Canary for ECS""** -> CodeDeploy Blue/Green
+- **""Prevent image tag overwrite""** -> ECR immutable tags
+
+---
+
+## Quick Exam Tips
+
+- **buildspec.yml** must be at root. Privileged mode for Docker. post_build runs even if build fails.
+- **imagedefinitions.json** (rolling) vs. **imageDetail.json** (blue/green) for ECS.
+- **CodeDeploy Agent** required on EC2. Not needed for Lambda/ECS.
+- **DeletionPolicy** defaults to Delete. Set Retain on S3, Snapshot on RDS.
+- **CreationPolicy + cfn-signal** = wait for EC2 bootstrap. Without signal, stack completes too early.
+- **Change Sets** preview but don't apply. Must execute separately.
+- **SAM AutoPublishAlias** creates version + updates alias on each deploy.
+- **sam local** requires Docker. Use --env-vars for environment variables.
+- **CDK bootstrap** once per account/region. Creates S3 + ECR + IAM roles.
+- **Beanstalk Immutable** = new ASG, validate, swap. Fast rollback (terminate new).
+- **leader_only: true** = run on one instance only (migrations).
+- **Beanstalk + RDS:** Create RDS separately to avoid lifecycle coupling.
+- **Cross-account pipeline:** IAM role + KMS key policy + S3 bucket policy.
+- **Lambda versions** are immutable. Aliases are mutable pointers.
+- **ECS 100/200:** Launch new first, then stop old (zero downtime, double capacity).
+- **CloudFormation exports** create dependencies. Can't delete exporting stack while imported.
+- **AppConfig:** Change config without redeploy. Instant rollback = disable flag.
+
+---
+
+## Summary
+
+This covers all objectives in DVA-C02 Domain 3:
+
+- **CodePipeline** - Stages, artifacts, manual approval, cross-account/region
+- **CodeBuild** - buildspec.yml, phases, privileged mode, caching, secrets
+- **CodeDeploy** - EC2/Lambda/ECS strategies, appspec, hooks, rollback
+- **CloudFormation** - Templates, functions, DeletionPolicy, Change Sets, nested stacks
+- **SAM** - Transform, local testing, safe deployment, policy templates
+- **CDK** - Constructs (L1/L2/L3), bootstrap, synth, deploy
+- **Elastic Beanstalk** - Deployment policies, .ebextensions, Blue/Green, RDS
+- **ECS/ECR** - Rolling vs. Blue/Green, imagedefinitions, lifecycle policies
+- **Lambda Deployment** - Versions, aliases, traffic shifting, CodeDeploy
+- **AppConfig** - Feature flags, safe deployment, validators, instant rollback"

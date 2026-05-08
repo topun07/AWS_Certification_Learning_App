@@ -1,0 +1,281 @@
+certCode,domain,title,content
+"SCS-C02","Domain 2: Security Logging & Monitoring","Security Logging & Monitoring","## SCS-C02 Domain 2: Security Logging & Monitoring
+
+**Weight:** ~18% of scored exam content
+**Exam Level:** Specialty
+
+This domain covers designing centralized logging architectures, monitoring security events, and ensuring log integrity.
+
+---
+
+## CloudTrail
+
+### Event Types
+
+| Type | Description | Default | Cost |
+|------|-------------|---------|------|
+| **Management Events** | Control plane (CreateBucket, RunInstances) | Yes (90 days) | Free (first trail) |
+| **Data Events** | Data plane (GetObject, PutItem, Invoke) | No | Per event |
+| **Insights Events** | Unusual API activity patterns | No | Per event analyzed |
+
+### Advanced Features
+
+| Feature | Purpose |
+|---------|---------|
+| **Organization Trail** | Capture all accounts in org to single S3 bucket |
+| **Log File Integrity** | SHA-256 digest files (detect tampering) |
+| **CloudWatch Logs Integration** | Real-time alerting on API calls |
+| **S3 Object Lock** | WORM protection for log files |
+| **Lake Formation Integration** | Query trails with Athena (structured) |
+| **Multi-Region** | Single trail captures all regions |
+
+### Log File Integrity Validation
+
+- Digest files created every hour
+- SHA-256 hash of each log file
+- Digest files are signed (public key from AWS)
+- Chain of digests (each references previous)
+- CLI: `aws cloudtrail validate-logs`
+- Detects: Deletion, modification, insertion of log files
+
+### CloudTrail + Athena
+
+```sql
+-- Find all root account API calls
+SELECT eventTime, eventName, sourceIPAddress, userAgent
+FROM cloudtrail_logs
+WHERE userIdentity.type = 'Root'
+ORDER BY eventTime DESC;
+
+-- Find all failed console logins
+SELECT eventTime, sourceIPAddress, errorMessage
+FROM cloudtrail_logs
+WHERE eventName = 'ConsoleLogin'
+AND responseElements LIKE '%Failure%';
+```
+
+---
+
+## VPC Flow Logs
+
+### Log Format
+
+```
+version account-id interface-id srcaddr dstaddr srcport dstport protocol packets bytes start end action log-status
+```
+
+| Field | Key Values |
+|-------|-----------|
+| **action** | ACCEPT or REJECT |
+| **protocol** | 6 (TCP), 17 (UDP), 1 (ICMP) |
+| **log-status** | OK, NODATA, SKIPDATA |
+
+### Custom Fields (v5+)
+
+- vpc-id, subnet-id, instance-id
+- tcp-flags (SYN, ACK, FIN)
+- type (IPv4, IPv6)
+- pkt-srcaddr, pkt-dstaddr (original IPs behind NAT)
+- flow-direction (ingress, egress)
+- traffic-path (through IGW, NAT, TGW, etc.)
+
+### What Flow Logs Do NOT Capture
+
+- DNS queries to Route 53 Resolver
+- DHCP traffic
+- Metadata service (169.254.169.254)
+- Amazon Time Sync (169.254.169.123)
+- License activation traffic
+- Traffic to/from VPC router
+- Mirrored traffic
+
+### Destinations
+
+| Destination | Use Case |
+|-------------|----------|
+| **CloudWatch Logs** | Real-time analysis, metric filters, alarms |
+| **S3** | Long-term storage, Athena queries, cost-effective |
+| **Kinesis Firehose** | Real-time delivery to OpenSearch, Splunk |
+
+---
+
+## Centralized Logging Architecture
+
+### Multi-Account Logging Pattern
+
+```
+Member Accounts (all regions)
+    |
+    +-- CloudTrail (Organization Trail) --> Log Archive S3 Bucket
+    +-- VPC Flow Logs --> Log Archive S3 Bucket
+    +-- Config --> Log Archive S3 Bucket
+    +-- GuardDuty --> Security Tooling Account
+    |
+Log Archive Account (restricted, immutable)
+    |
+    +-- S3 (Object Lock, versioning, lifecycle)
+    +-- Athena (query logs)
+    +-- OpenSearch (search and dashboards)
+    +-- Kinesis Firehose (real-time delivery)
+```
+
+### Log Protection
+
+| Mechanism | Purpose |
+|-----------|---------|
+| **S3 Object Lock (Compliance)** | Nobody can delete (not even root) |
+| **S3 Versioning** | Recover from overwrites |
+| **S3 Bucket Policy** | Restrict access to security team |
+| **KMS Encryption** | Encrypt logs at rest |
+| **CloudTrail Integrity** | Detect log tampering |
+| **Separate Account** | Blast radius isolation |
+| **SCPs** | Prevent disabling logging |
+
+### SCP to Prevent Log Tampering
+
+```json
+{
+  ""Effect"": ""Deny"",
+  ""Action"": [
+    ""cloudtrail:StopLogging"",
+    ""cloudtrail:DeleteTrail"",
+    ""cloudtrail:UpdateTrail"",
+    ""s3:DeleteObject"",
+    ""s3:PutBucketPolicy""
+  ],
+  ""Resource"": ""*"",
+  ""Condition"": {
+    ""StringNotEquals"": {
+      ""aws:PrincipalAccount"": ""LOG_ARCHIVE_ACCOUNT_ID""
+    }
+  }
+}
+```
+
+---
+
+## CloudWatch Security Monitoring
+
+### Metric Filters for Security
+
+| Pattern | Alert On |
+|---------|----------|
+| **Root account usage** | Any API call by root |
+| **Console login failures** | Brute force attempts |
+| **IAM policy changes** | Unauthorized permission changes |
+| **Security group changes** | Network exposure |
+| **NACL changes** | Network access modifications |
+| **CloudTrail changes** | Logging disabled/modified |
+| **S3 bucket policy changes** | Data exposure risk |
+| **KMS key deletion** | Encryption key compromise |
+| **VPC changes** | Network topology modifications |
+
+### CloudWatch Alarms for Security
+
+```
+Metric Filter (log pattern) -> CloudWatch Metric -> Alarm -> SNS -> Lambda/PagerDuty
+```
+
+- Use Composite Alarms to reduce noise
+- Cross-account alarms for centralized monitoring
+- Anomaly Detection for baseline deviations
+
+### CloudWatch Logs Insights Security Queries
+
+```
+-- Find unauthorized API calls
+fields @timestamp, userIdentity.arn, eventName, errorCode
+| filter errorCode = ""AccessDenied"" or errorCode = ""UnauthorizedOperation""
+| sort @timestamp desc
+| limit 50
+
+-- Find security group modifications
+fields @timestamp, userIdentity.arn, eventName, requestParameters
+| filter eventName like /SecurityGroup/
+| sort @timestamp desc
+```
+
+---
+
+## Additional Logging Services
+
+### S3 Access Logs
+
+- Server access logging (who accessed what)
+- Separate from CloudTrail data events
+- Delivered to target S3 bucket (same region)
+- Best-effort delivery (not guaranteed)
+- Use for: Audit, access patterns, security analysis
+
+### ELB Access Logs
+
+- Detailed request information (client IP, latency, status)
+- Delivered to S3 bucket
+- ALB: Detailed HTTP request info
+- NLB: TLS connection info
+- Use for: Troubleshooting, security analysis, compliance
+
+### AWS Config
+
+- Configuration history of all resources
+- Configuration snapshots (point-in-time)
+- Compliance timeline (when resource became non-compliant)
+- Delivery to S3 + SNS notifications
+- Use for: Audit trail of resource changes
+
+### DNS Query Logging (Route 53)
+
+- Log all DNS queries to Route 53 Resolver
+- Destination: CloudWatch Logs
+- Contains: Domain queried, source IP, response
+- Use for: Detect DNS exfiltration, malware C2 communication
+
+---
+
+## Key Exam Patterns
+
+**CloudTrail:**
+- **""Audit all API calls across organization""** -> Organization Trail
+- **""Detect log tampering""** -> Log file integrity validation
+- **""Prevent trail deletion""** -> SCP denying cloudtrail:DeleteTrail
+- **""Query CloudTrail logs""** -> Athena (S3) or CloudWatch Logs Insights
+- **""Real-time alerting on API calls""** -> CloudTrail -> CloudWatch Logs -> Metric Filter -> Alarm
+- **""S3 object-level logging""** -> CloudTrail Data Events (not S3 access logs)
+
+**Flow Logs:**
+- **""See rejected traffic""** -> VPC Flow Logs (REJECT action)
+- **""Real-time flow analysis""** -> Flow Logs -> Kinesis Firehose -> OpenSearch
+- **""Long-term flow storage""** -> Flow Logs -> S3 -> Athena
+- **""Original source IP behind NAT""** -> Custom format with pkt-srcaddr
+
+**Centralized Logging:**
+- **""Immutable log storage""** -> S3 Object Lock (Compliance mode)
+- **""Prevent member accounts from disabling logging""** -> SCP
+- **""Centralize logs from all accounts""** -> Organization Trail + dedicated Log Archive account
+- **""Search and visualize logs""** -> OpenSearch (Kibana dashboards)
+- **""Cost-effective log queries""** -> Athena on S3
+
+**Monitoring:**
+- **""Alert on root account usage""** -> CloudWatch Metric Filter + Alarm
+- **""Detect unusual API patterns""** -> CloudTrail Insights
+- **""Baseline deviation detection""** -> CloudWatch Anomaly Detection
+- **""DNS-based data exfiltration""** -> Route 53 DNS Query Logging + GuardDuty
+
+---
+
+## Quick Exam Tips
+
+- **Organization Trail** captures ALL accounts. Individual trails are per-account.
+- **Log file integrity** uses SHA-256 digest chain. Validate with CLI command.
+- **S3 Object Lock Compliance mode** = nobody can delete, not even root. Use for log protection.
+- **CloudTrail Data Events** are NOT enabled by default (extra cost). Needed for S3/Lambda/DynamoDB.
+- **CloudTrail Insights** detects unusual API call patterns (spikes, new APIs).
+- **VPC Flow Logs** capture metadata only (not packet content). Use Traffic Mirroring for packets.
+- **Flow Logs cannot be modified** after creation. Delete and recreate to change format.
+- **Metric Filters** extract metrics from CloudWatch Logs (e.g., count root logins).
+- **Athena** is the cheapest way to query CloudTrail/Flow Logs stored in S3.
+- **OpenSearch** (Kibana) for real-time dashboards and search across security logs.
+- **SCPs** prevent member accounts from disabling CloudTrail or deleting logs.
+- **Separate Log Archive account** isolates logs from workload account compromise.
+- **DNS Query Logging** helps detect data exfiltration via DNS tunneling.
+- **Config** records resource configuration changes (who changed what, when)."

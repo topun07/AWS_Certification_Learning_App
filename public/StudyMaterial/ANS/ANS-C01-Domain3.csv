@@ -1,0 +1,668 @@
+certCode,domain,title,content
+"ANS-C01","Domain 3: Network Management","Network Management and Operations","## ANS-C01 Domain 3: Network Management and Operations
+
+**Weight:** ~20% of scored exam content
+**Exam Level:** Specialty
+**Target Audience:** Network engineers preparing for the AWS Certified Advanced Networking - Specialty exam
+
+Domain 1 designed the network. Domain 2 built it. Domain 3 keeps it running. This domain covers monitoring, logging, analysis tools, automation, maintenance procedures, and troubleshooting methodologies. The exam expects you to select the right observability tool for each scenario and automate operational tasks.
+
+---
+
+## Objective 3.1: Network Monitoring and Observability
+
+### VPC Flow Logs
+
+VPC Flow Logs capture IP traffic metadata for network interfaces, subnets, or entire VPCs:
+
+**Flow Log Record Fields (v2 default):**
+
+```
+version account-id interface-id srcaddr dstaddr srcport dstport protocol packets bytes start end action log-status
+```
+
+**Enhanced Fields (v5 custom format):**
+
+- vpc-id, subnet-id, instance-id
+- tcp-flags (SYN, ACK, FIN, RST)
+- type (IPv4, IPv6)
+- pkt-srcaddr, pkt-dstaddr (original packet addresses - critical for NAT)
+- region, az-id
+- flow-direction (ingress/egress)
+- traffic-path (identifies path through AWS network)
+
+**Flow Log Destinations:**
+
+| Destination | Use Case | Query Method |
+|-------------|----------|-------------|
+| **CloudWatch Logs** | Real-time alerting; small-medium volume | CloudWatch Logs Insights |
+| **S3** | Long-term storage; large volume; cost-effective | Athena queries |
+| **Kinesis Data Firehose** | Real-time streaming to analytics tools | OpenSearch, Splunk, Datadog |
+
+**Key Limitations:**
+
+- Flow Logs do NOT capture: DNS traffic to Route 53 Resolver, DHCP traffic, traffic to instance metadata (169.254.169.254), Amazon Time Sync (169.254.169.123), Windows license activation.
+- Flow Logs are NOT real-time - there's a capture window (typically 1-10 minutes aggregation).
+- Flow Logs capture metadata only - NOT packet payloads (use Traffic Mirroring for that).
+
+**CloudWatch Logs Insights Query Examples:**
+
+```
+# Top 10 talkers (most bytes)
+stats sum(bytes) as totalBytes by srcAddr
+| sort totalBytes desc
+| limit 10
+
+# Rejected traffic (potential security issues)
+filter action = ""REJECT""
+| stats count(*) as rejectedFlows by srcAddr, dstPort
+| sort rejectedFlows desc
+
+# Traffic to specific port (e.g., SSH attempts)
+filter dstPort = 22 and action = ""REJECT""
+| stats count(*) by srcAddr
+| sort count(*) desc
+```
+
+**Athena Query (S3-based Flow Logs):**
+
+```sql
+SELECT srcaddr, dstaddr, dstport, sum(bytes) as total_bytes
+FROM vpc_flow_logs
+WHERE action = 'ACCEPT'
+  AND dstport = 443
+  AND day = '2026/05/07'
+GROUP BY srcaddr, dstaddr, dstport
+ORDER BY total_bytes DESC
+LIMIT 20;
+```
+
+### CloudWatch Metrics for Networking
+
+**Key Network Metrics:**
+
+| Service | Metric | What It Tells You |
+|---------|--------|------------------|
+| **NAT Gateway** | BytesOutToDestination | Outbound data volume |
+| **NAT Gateway** | ErrorPortAllocation | Port exhaustion (critical!) |
+| **NAT Gateway** | ConnectionAttemptCount | Connection volume |
+| **Transit Gateway** | BytesIn / BytesOut | Traffic per attachment |
+| **Transit Gateway** | PacketDropCountNoRoute | Routing misconfigurations |
+| **VPN** | TunnelState | Tunnel up (1) or down (0) |
+| **VPN** | TunnelDataIn / TunnelDataOut | VPN throughput |
+| **Direct Connect** | ConnectionState | DX connection health |
+| **Direct Connect** | VirtualInterfaceBpsEgress/Ingress | DX bandwidth utilization |
+| **NLB** | ActiveFlowCount | Current connections |
+
+**Critical Alarms to Configure:**
+
+| Alarm | Threshold | Action |
+|-------|-----------|--------|
+| NAT Gateway ErrorPortAllocation > 0 | Any occurrence | Investigate port exhaustion; add NAT GWs |
+| VPN TunnelState = 0 | Both tunnels down | Page on-call; check CGW |
+| DX ConnectionState != up | Connection down | Failover to backup; contact provider |
+| TGW PacketDropCountNoRoute > 0 | Sustained drops | Route table misconfiguration |
+| ALB UnHealthyHostCount > threshold | Targets failing | Investigate target health |
+
+### Traffic Mirroring
+
+Captures actual packet data (Layer 3+) for deep inspection:
+
+| Component | Description |
+|-----------|-------------|
+| **Mirror Source** | ENI to capture traffic from |
+| **Mirror Target** | ENI or NLB where mirrored traffic is sent |
+| **Mirror Filter** | Rules defining which traffic to capture (by protocol, port, CIDR) |
+| **Mirror Session** | Ties source, target, and filter together |
+
+**Use Cases:**
+
+- Deep packet inspection (DPI) with third-party tools.
+- Intrusion detection systems (IDS) - Suricata, Zeek, Snort.
+- Network forensics and incident response.
+- Application performance monitoring.
+- Compliance auditing (capture specific traffic patterns).
+
+**Key Constraints:**
+
+- Source and target must be in the same VPC (or connected via peering/TGW for NLB target).
+- Adds overhead - mirrored traffic counts toward bandwidth limits.
+- Not available on all instance types (check supported instances).
+- VXLAN encapsulation (port 4789) used for mirrored packets.
+
+### Amazon CloudWatch Internet Monitor
+
+Monitors internet-facing application availability and performance:
+
+- Tracks latency and availability from ISPs/geographies to your AWS resources.
+- Identifies internet issues affecting your users (ISP outages, routing problems).
+- Provides health events when performance degrades.
+- Integrates with CloudWatch dashboards and alarms.
+
+---
+
+## Objective 3.2: Network Analysis and Diagnostics
+
+### VPC Reachability Analyzer
+
+Tests network connectivity between two endpoints without sending traffic:
+
+**What It Analyzes:**
+
+- Route tables
+- Security groups
+- Network ACLs
+- VPC peering configurations
+- Transit Gateway route tables
+- VPN/DX connectivity
+- Load balancer configurations
+
+**How to Use:**
+
+1. Specify source and destination (ENI, IGW, VGW, TGW, VPC endpoint, etc.).
+2. Specify protocol and port.
+3. Analyzer traces the path through all network components.
+4. Returns: Reachable (with full path) or Not Reachable (with blocking component identified).
+
+**Example Output (blocked):**
+
+```
+Source: eni-abc123 (10.0.1.5)
+Destination: eni-def456 (10.0.2.10)
+Protocol: TCP, Port: 443
+
+Result: NOT REACHABLE
+Blocking Component: Security Group sg-789xyz
+Explanation: Inbound rule does not allow TCP/443 from 10.0.1.0/24
+```
+
+**When to Use:**
+
+- Troubleshooting connectivity issues without generating traffic.
+- Validating network changes before deployment.
+- Compliance verification (prove that certain paths are blocked).
+- Post-change validation.
+
+### Network Access Analyzer
+
+Identifies unintended network access across your VPC configurations:
+
+**What It Does:**
+
+- Analyzes security groups, NACLs, route tables, and VPC configurations.
+- Identifies resources accessible from the internet.
+- Finds overly permissive security group rules.
+- Detects paths that violate your network access requirements.
+
+**Network Access Scopes:**
+
+- Define what access patterns are expected (e.g., ""only ALBs should be internet-accessible"").
+- Analyzer identifies any resources that violate these scopes.
+- Continuous compliance monitoring.
+
+**Difference from Reachability Analyzer:**
+
+| Feature | Reachability Analyzer | Network Access Analyzer |
+|---------|----------------------|------------------------|
+| **Purpose** | ""Can A reach B?"" (specific path) | ""What can reach what?"" (broad analysis) |
+| **Input** | Two specific endpoints | Access scope (policy) |
+| **Output** | Single path analysis | All paths matching/violating scope |
+| **Use case** | Troubleshooting specific connectivity | Security audit; compliance |
+
+### Transit Gateway Route Analyzer
+
+Analyzes routing across your Transit Gateway:
+
+- Verifies that routes exist between source and destination attachments.
+- Identifies route table misconfigurations.
+- Tests multipath routing scenarios.
+- Validates that traffic will take the expected path through TGW.
+
+### AWS Network Manager (Cloud WAN)
+
+Centralized network management and monitoring:
+
+| Feature | Description |
+|---------|-------------|
+| **Global network view** | Visualize your entire network topology |
+| **Transit Gateway registration** | Register TGWs for centralized management |
+| **Route analysis** | Analyze routes across registered TGWs |
+| **Events** | Network change events and topology changes |
+| **Metrics** | Aggregated metrics across your global network |
+| **IP Monitor** | Track IP address usage across your network |
+
+---
+
+## Objective 3.3: Network Automation
+
+### Infrastructure as Code for Networking
+
+**AWS CloudFormation - Network Resources:**
+
+```yaml
+Resources:
+  VPC:
+    Type: AWS::EC2::VPC
+    Properties:
+      CidrBlock: 10.0.0.0/16
+      EnableDnsSupport: true
+      EnableDnsHostnames: true
+
+  PublicSubnet:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref VPC
+      CidrBlock: 10.0.1.0/24
+      AvailabilityZone: !Select [0, !GetAZs '']
+      MapPublicIpOnLaunch: true
+
+  PrivateSubnet:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref VPC
+      CidrBlock: 10.0.2.0/24
+      AvailabilityZone: !Select [0, !GetAZs '']
+
+  NATGateway:
+    Type: AWS::EC2::NatGateway
+    Properties:
+      AllocationId: !GetAtt EIP.AllocationId
+      SubnetId: !Ref PublicSubnet
+
+  PrivateRouteTable:
+    Type: AWS::EC2::RouteTable
+    Properties:
+      VpcId: !Ref VPC
+
+  PrivateRoute:
+    Type: AWS::EC2::Route
+    Properties:
+      RouteTableId: !Ref PrivateRouteTable
+      DestinationCidrBlock: 0.0.0.0/0
+      NatGatewayId: !Ref NATGateway
+```
+
+**Terraform vs. CloudFormation for Networking:**
+
+| Aspect | CloudFormation | Terraform |
+|--------|---------------|-----------|
+| **Multi-cloud** | AWS only | Multi-cloud |
+| **State management** | Managed by AWS | Self-managed (S3 backend) |
+| **Drift detection** | Built-in | terraform plan |
+| **Networking modules** | Nested stacks | Reusable modules |
+| **Cross-account** | StackSets | Provider aliases |
+| **Rollback** | Automatic on failure | Manual (no auto-rollback) |
+
+### Event-Driven Network Automation
+
+**Pattern: Auto-remediate network issues**
+
+```
++---------------+     +---------------+     +---------------+     +---------------+
+| CloudWatch    |---->| EventBridge   |---->|   Lambda      |---->| Remediation   |
+| Alarm         |     | Rule          |     | Function      |     | Action        |
++---------------+     +---------------+     +---------------+     +---------------+
+```
+
+**Example Automations:**
+
+| Trigger | Event | Lambda Action |
+|---------|-------|---------------|
+| VPN tunnel down | TunnelState = 0 for 5 min | Restart VPN; notify team |
+| NAT GW port exhaustion | ErrorPortAllocation > 0 | Add secondary NAT GW; update routes |
+| Unauthorized SG change | CloudTrail AuthorizeSecurityGroupIngress | Revert rule; alert security team |
+| DX connection down | ConnectionState change | Activate VPN backup; update DNS |
+| New VPC created | CloudTrail CreateVpc | Auto-attach to TGW; apply baseline routes |
+
+### AWS Config Rules for Network Compliance
+
+| Rule | What It Checks |
+|------|---------------|
+| **vpc-sg-open-only-to-authorized-ports** | SGs don't allow unrestricted access on unauthorized ports |
+| **restricted-ssh** | No SG allows 0.0.0.0/0 on port 22 |
+| **vpc-default-security-group-closed** | Default SG has no rules (forces explicit SG assignment) |
+| **subnet-auto-assign-public-ip-disabled** | Private subnets don't auto-assign public IPs |
+| **vpc-flow-logs-enabled** | All VPCs have flow logs enabled |
+| **internet-gateway-authorized-vpc-only** | IGWs only attached to approved VPCs |
+
+**Auto-Remediation with AWS Config:**
+
+```
+Config Rule violation detected
+    -> SSM Automation document triggered
+    -> Reverts non-compliant change
+    -> Logs remediation action
+    -> Notifies security team
+```
+
+### AWS Systems Manager for Network Operations
+
+| Feature | Network Use Case |
+|---------|-----------------|
+| **Session Manager** | SSH-less access to instances (no bastion needed) |
+| **Automation** | Run multi-step network maintenance runbooks |
+| **Parameter Store** | Store network configuration (CIDR allocations, endpoint IPs) |
+| **Change Manager** | Approve and track network changes |
+| **Patch Manager** | Patch network appliances (firewalls, routers) |
+| **Inventory** | Track network interface configurations across fleet |
+
+---
+
+## Objective 3.4: Network Maintenance and Change Management
+
+### Planned Maintenance Procedures
+
+**Direct Connect Maintenance:**
+
+- AWS schedules maintenance windows for DX connections.
+- Notifications via Personal Health Dashboard (PHD) and EventBridge.
+- Preparation: Ensure backup path (second DX or VPN) is active and tested.
+- During maintenance: Traffic fails over to backup path automatically (if BGP configured correctly).
+- Validation: Verify traffic returns to primary after maintenance.
+
+**Transit Gateway Changes:**
+
+- Route table changes take effect immediately (no propagation delay within TGW).
+- Attachment changes (add/remove VPC) may cause brief connectivity interruption.
+- Best practice: Test in non-production TGW route table first; use separate route tables for blue/green.
+
+**VPN Tunnel Maintenance:**
+
+- AWS may replace VPN endpoints during maintenance.
+- Both tunnels are never maintained simultaneously.
+- Ensure both tunnels are active - if only one tunnel is up, maintenance on that tunnel causes outage.
+
+### Change Management Best Practices
+
+**Network Change Workflow:**
+
+```
+1. PLAN
+   - Document current state (route tables, SGs, NACLs)
+   - Define desired state
+   - Identify blast radius
+   - Create rollback plan
+
+2. VALIDATE (pre-change)
+   - Run Reachability Analyzer for affected paths
+   - Verify backup connectivity is active
+   - Confirm monitoring/alerting is in place
+
+3. IMPLEMENT
+   - Apply changes during maintenance window
+   - Use IaC (CloudFormation/Terraform) for consistency
+   - Apply incrementally (not all at once)
+
+4. VERIFY (post-change)
+   - Run Reachability Analyzer again
+   - Check CloudWatch metrics for anomalies
+   - Verify Flow Logs show expected traffic patterns
+   - Test application connectivity end-to-end
+
+5. ROLLBACK (if needed)
+   - Revert IaC to previous version
+   - Or manually restore saved configuration
+   - Verify rollback successful
+```
+
+### Blue/Green Network Deployments
+
+For major network changes (e.g., migrating from VGW to TGW):
+
+```
+Phase 1: Build new (green) alongside existing (blue)
+  - Create TGW and attachments
+  - Configure route tables (but don't activate)
+  - Test with non-production traffic
+
+Phase 2: Gradual migration
+  - Move non-critical workloads first
+  - Update route tables incrementally
+  - Monitor for issues at each step
+
+Phase 3: Cutover
+  - Move remaining workloads
+  - Update DNS if needed
+  - Keep blue environment for rollback
+
+Phase 4: Cleanup
+  - After validation period (days/weeks)
+  - Remove old VGW/peering connections
+  - Delete unused route table entries
+```
+
+---
+
+## Objective 3.5: Troubleshooting Methodology
+
+### Systematic Network Troubleshooting Framework
+
+```
+LAYER-BY-LAYER APPROACH (bottom-up):
+
+Layer 1-2 (Physical/Data Link):
+  - DX: Connection state? Light levels? Cross-connect?
+  - VPN: Tunnel state? IKE negotiation?
+
+Layer 3 (Network/Routing):
+  - Route tables: Does a route exist for the destination?
+  - NACLs: Are they allowing the traffic (stateless - check BOTH directions)?
+  - TGW routes: Is the route propagated/static in the correct route table?
+  - BGP: Are prefixes being advertised/received?
+
+Layer 4 (Transport):
+  - Security Groups: Is the port/protocol allowed (stateful - check inbound only)?
+  - NLB/ALB: Health checks passing? Target registered?
+  - NAT Gateway: Port allocation? Bandwidth?
+
+Layer 7 (Application):
+  - DNS: Resolving correctly? Private hosted zone associated?
+  - TLS: Certificate valid? SNI correct?
+  - Application: Listening on correct port? Responding?
+```
+
+### Common Troubleshooting Scenarios
+
+**Scenario 1: Instance can't reach the internet**
+
+```
+Checklist:
+[ ] Is the instance in a private subnet with route to NAT GW?
+[ ] Is the NAT GW in a public subnet with route to IGW?
+[ ] Does the NAT GW's subnet route table have 0.0.0.0/0 -> IGW?
+[ ] Does the instance's security group allow outbound traffic?
+[ ] Does the NACL allow outbound AND inbound (return traffic)?
+[ ] Is the NAT GW in the same AZ? (cross-AZ NAT works but check routes)
+[ ] Is the NAT GW experiencing port exhaustion? (check ErrorPortAllocation)
+```
+
+**Scenario 2: On-premises can't reach VPC resources via DX**
+
+```
+Checklist:
+[ ] DX connection state = ""available""?
+[ ] VIF state = ""available""?
+[ ] BGP session established? (check BGP status)
+[ ] Are on-prem prefixes being advertised to AWS?
+[ ] Are VPC CIDRs being advertised to on-premises?
+[ ] VGW/TGW route table: Is route propagation enabled?
+[ ] VPC route table: Does it have a route to VGW/TGW for on-prem CIDRs?
+[ ] Security group: Allows traffic from on-prem CIDR?
+[ ] NACL: Allows traffic from on-prem CIDR (both directions)?
+[ ] Allowed prefixes on DX Gateway: Are the VPC CIDRs included?
+```
+
+**Scenario 3: VPC peering not working**
+
+```
+Checklist:
+[ ] Peering connection state = ""active""?
+[ ] Route table in VPC A: Has route to VPC B CIDR -> pcx-xxx?
+[ ] Route table in VPC B: Has route to VPC A CIDR -> pcx-xxx?
+[ ] Security groups: Allow traffic from peer CIDR?
+[ ] NACLs: Allow traffic from peer CIDR (both directions)?
+[ ] CIDRs overlapping? (peering won't work with overlaps)
+[ ] Trying to route through peer's IGW/NAT/VGW? (edge-to-edge not supported)
+[ ] DNS resolution: Is ""Allow DNS resolution from peer"" enabled?
+```
+
+**Scenario 4: TGW attachment not routing traffic**
+
+```
+Checklist:
+[ ] Attachment state = ""available""?
+[ ] Attachment associated with correct TGW route table?
+[ ] TGW route table: Has route to destination (propagated or static)?
+[ ] Source VPC route table: Has route pointing to TGW?
+[ ] Destination VPC route table: Has return route pointing to TGW?
+[ ] TGW subnet route table: Does it have appropriate routes?
+[ ] Security groups on destination: Allow traffic from source CIDR?
+[ ] Is the TGW attachment in the correct subnets (one per AZ)?
+```
+
+**Scenario 5: Intermittent connectivity / packet loss**
+
+```
+Diagnostic Steps:
+1. Check Flow Logs for REJECT entries at failure times
+2. Check CloudWatch metrics for NAT GW port exhaustion
+3. Check NLB/ALB health check failures (targets flapping?)
+4. Check TGW PacketDropCountNoRoute (routing black holes)
+5. Check MTU issues (Path MTU Discovery; jumbo frames misconfigured)
+6. Check bandwidth limits (DX utilization near capacity?)
+7. Check for asymmetric routing (stateful devices dropping return traffic)
+```
+
+### MTU and Path MTU Discovery
+
+A frequently tested troubleshooting topic:
+
+| Path | Maximum MTU |
+|------|-------------|
+| Within VPC (same AZ) | 9001 (jumbo frames) |
+| Within VPC (cross-AZ) | 9001 (jumbo frames) |
+| VPC Peering (same region) | 9001 |
+| VPC Peering (cross-region) | 1500 |
+| Transit Gateway | 8500 |
+| Direct Connect | 9001 (if jumbo enabled on VIF) |
+| VPN (IPsec) | 1399 (overhead from encapsulation) |
+| Internet (IGW) | 1500 |
+| Gateway Load Balancer | 8500 |
+
+**Troubleshooting MTU Issues:**
+
+- **Symptom:** Small packets work; large transfers hang or fail.
+- **Cause:** Intermediate device drops oversized packets; ICMP ""fragmentation needed"" blocked.
+- **Fix:** Set Don't Fragment (DF) bit; reduce MTU on source; ensure NACLs allow ICMP Type 3 Code 4.
+- **VPN trap:** VPN MTU is 1399 (not 1500). Applications sending 1500-byte packets over VPN will fail if Path MTU Discovery is blocked.
+
+---
+
+## Objective 3.6: Cost Optimization for Network Operations
+
+### Network Cost Drivers
+
+| Cost Component | What Drives It | Optimization |
+|---------------|---------------|-------------|
+| **NAT Gateway** | Per-hour + per-GB processed | Reduce internet-bound traffic; use VPC endpoints for AWS services |
+| **Data transfer (cross-AZ)** | $0.01/GB each direction | Keep traffic within AZ where possible; use AZ-aware routing |
+| **Data transfer (cross-region)** | $0.02/GB | Minimize cross-region replication; use CloudFront |
+| **Data transfer (internet)** | $0.09/GB (tiered) | Use CloudFront (cheaper egress); compress data |
+| **Transit Gateway** | Per-hour per attachment + per-GB | Consolidate attachments; avoid unnecessary TGW hops |
+| **VPC Endpoints** | Per-hour + per-GB (interface) | Consolidate endpoints in shared services VPC |
+| **Direct Connect** | Port-hour + data transfer out | Right-size connection; use DX for bulk transfers |
+| **VPN** | Per-hour per connection | Consolidate VPN connections where possible |
+
+### Cost Optimization Strategies
+
+**1. Replace NAT Gateway with VPC Endpoints:**
+
+```
+Before: Instance -> NAT GW ($0.045/hr + $0.045/GB) -> Internet -> S3
+After:  Instance -> Gateway Endpoint (FREE) -> S3
+
+Savings: 100% of NAT GW cost for S3/DynamoDB traffic
+```
+
+**2. Minimize Cross-AZ Traffic:**
+
+- Use NLB zonal DNS names for AZ-affinity.
+- Deploy read replicas in same AZ as application.
+- Use EBS (same-AZ) instead of EFS (cross-AZ) where possible.
+
+**3. Centralize VPC Endpoints:**
+
+- Instead of endpoints in every VPC (N x cost), deploy in shared services VPC (1 x cost).
+- Route through TGW (adds TGW data processing cost - compare to endpoint cost).
+
+**4. Use CloudFront for Egress:**
+
+- CloudFront data transfer to internet is cheaper than direct EC2/ALB egress.
+- First 1 TB/month free (from CloudFront to internet).
+
+---
+
+## Key Exam Patterns for ANS-C01 Domain 3
+
+- **""Need to capture packet payloads for forensic analysis""** - Traffic Mirroring (Flow Logs only capture metadata)
+- **""Verify connectivity without sending traffic""** - VPC Reachability Analyzer
+- **""Identify all resources accessible from the internet""** - Network Access Analyzer
+- **""NAT Gateway intermittent failures""** - Check ErrorPortAllocation metric (port exhaustion)
+- **""Automate response to VPN tunnel failure""** - CloudWatch Alarm -> EventBridge -> Lambda (restart/notify)
+- **""Detect unauthorized security group changes""** - AWS Config rule + auto-remediation via SSM Automation
+- **""Large transfers failing over VPN""** - MTU issue - VPN MTU is 1399; reduce application MTU or enable Path MTU Discovery
+- **""Reduce NAT Gateway costs""** - Replace with VPC Gateway Endpoints for S3/DynamoDB traffic
+- **""Monitor DX bandwidth utilization""** - CloudWatch metrics (VirtualInterfaceBpsEgress/Ingress)
+- **""Centrally monitor network across multiple regions""** - AWS Network Manager (register TGWs)
+- **""Query Flow Logs at scale cost-effectively""** - Send to S3 + query with Athena (cheaper than CloudWatch for large volumes)
+- **""Real-time alerting on rejected traffic""** - Flow Logs to CloudWatch Logs + metric filter + alarm
+- **""Packets dropped at TGW with no route""** - Check PacketDropCountNoRoute metric; fix TGW route table
+- **""Ensure all VPCs have flow logs enabled""** - AWS Config rule (vpc-flow-logs-enabled)
+- **""Access instances without bastion host or public IP""** - Systems Manager Session Manager (uses SSM endpoint)
+
+---
+
+## Quick Exam Tips for Domain 3
+
+- **Flow Logs vs. Traffic Mirroring:** Flow Logs = metadata (who talked to whom, accepted/rejected). Traffic Mirroring = actual packets (payload inspection). The exam will describe a scenario requiring one or the other - read carefully whether they need ""packet inspection"" or ""traffic analysis.""
+- **Reachability Analyzer vs. Network Access Analyzer:** Reachability = ""Can A reach B?"" (specific pair). Network Access = ""What can reach what?"" (broad audit). If the question says ""verify connectivity between two specific resources"" -> Reachability. If it says ""audit all internet-accessible resources"" -> Network Access.
+- **NAT Gateway port exhaustion** is a classic exam scenario. Each unique destination IP:port requires a source port. If you have thousands of connections to the same destination, you'll exhaust the 55,000 available ports. Fix: multiple NAT Gateways, or reduce connection count.
+- **MTU questions** almost always involve VPN (1399) or TGW (8500). If ""large file transfers fail but small requests work"" -> MTU issue.
+- **CloudWatch vs. Athena for Flow Logs:** CloudWatch Logs Insights = real-time, smaller datasets, more expensive at scale. Athena + S3 = large datasets, cost-effective, slight query delay. The exam tests which to choose based on volume and latency requirements.
+- **AWS Config** is the answer for continuous compliance monitoring of network configurations. It's NOT for real-time traffic monitoring (that's Flow Logs/CloudWatch).
+- **EventBridge + Lambda** is the standard pattern for automated network remediation. If the scenario describes ""automatically respond to a network event"" -> this pattern.
+- **Traffic Mirroring uses VXLAN (port 4789).** The target must be able to receive and decapsulate VXLAN. This is a detail the exam may test.
+- **Cross-AZ data transfer costs** are a frequent cost optimization question. The answer is usually ""deploy resources in the same AZ"" or ""use AZ-aware routing.""
+- **Systems Manager Session Manager** eliminates the need for bastion hosts, SSH keys, and open port 22 in security groups. If the scenario mentions ""secure access without bastion"" -> Session Manager.
+
+---
+
+## Monitoring Tools Quick Reference
+
+```
+WHAT DO YOU NEED TO KNOW?          -> USE THIS TOOL
+
+""Who is talking to whom?""          -> VPC Flow Logs
+""What's in the packets?""           -> Traffic Mirroring
+""Can A reach B?""                   -> Reachability Analyzer
+""What's exposed to the internet?""  -> Network Access Analyzer
+""Is my DX/VPN healthy?""            -> CloudWatch Metrics
+""Why is TGW dropping packets?""     -> TGW Route Analyzer + CloudWatch
+""What changed in my network?""      -> CloudTrail + AWS Config
+""How's my global network?""         -> AWS Network Manager
+""Are users experiencing issues?""   -> CloudWatch Internet Monitor
+""Is my network compliant?""         -> AWS Config Rules + Network Access Analyzer
+```
+
+---
+
+## Summary
+
+This covers all objectives in ANS-C01 Domain 3:
+
+- **Monitoring and observability** - VPC Flow Logs, CloudWatch metrics, Traffic Mirroring, Internet Monitor
+- **Network analysis and diagnostics** - Reachability Analyzer, Network Access Analyzer, TGW Route Analyzer
+- **Network automation** - CloudFormation/Terraform, EventBridge + Lambda, AWS Config, SSM
+- **Maintenance and change management** - DX maintenance, blue/green deployments, change workflows
+- **Troubleshooting methodology** - layer-by-layer approach, common scenarios, MTU issues
+- **Cost optimization** - NAT GW reduction, cross-AZ minimization, endpoint centralization"

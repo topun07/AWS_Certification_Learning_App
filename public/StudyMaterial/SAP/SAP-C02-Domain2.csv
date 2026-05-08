@@ -1,0 +1,263 @@
+certCode,domain,title,content
+"SAP-C02","Domain 2: Design for New Solutions","Design for New Solutions","## SAP-C02 Domain 2: Design for New Solutions
+
+**Weight:** ~29% of scored exam content (LARGEST DOMAIN)
+**Exam Level:** Professional
+
+This domain covers designing complex, highly scalable, enterprise-grade solutions using the full breadth of AWS services.
+
+---
+
+## Serverless at Scale
+
+### Event-Driven Architecture
+
+```
+Event Sources -> EventBridge -> Targets
+                     |
+    +----------------+----------------+
+    |                |                |
+  Lambda          Step Functions    SQS -> Workers
+    |                |
+  DynamoDB      Orchestration
+```
+
+### Lambda at Scale
+
+| Concern | Solution |
+|---------|----------|
+| **Concurrency limits** | Reserved Concurrency (guarantee) + Provisioned (no cold start) |
+| **15-min timeout** | Step Functions for orchestration |
+| **Payload size (6 MB sync)** | S3 for large payloads, pass reference |
+| **Cold starts** | Provisioned Concurrency, SnapStart (Java) |
+| **State management** | DynamoDB, Step Functions, ElastiCache |
+| **Fan-out** | SNS -> multiple Lambda, or SQS + Lambda |
+| **Throttling** | SQS buffer (decouple producer from consumer) |
+
+### Step Functions
+
+| Pattern | Use Case |
+|---------|----------|
+| **Standard** | Long-running (up to 1 year), exactly-once |
+| **Express** | High-volume, short (5 min), at-least-once |
+| **Map State** | Parallel processing of array items |
+| **Choice State** | Branching logic |
+| **Wait State** | Delay/pause execution |
+| **Parallel State** | Execute branches simultaneously |
+| **Callback Pattern** | Wait for external system (task token) |
+
+### API Patterns
+
+| Pattern | Service | Use Case |
+|---------|---------|----------|
+| **Synchronous** | API Gateway + Lambda | Real-time responses |
+| **Asynchronous** | API GW + SQS + Lambda | Long processing, decouple |
+| **WebSocket** | API Gateway WebSocket | Real-time bidirectional |
+| **GraphQL** | AppSync | Flexible queries, real-time subscriptions |
+| **Event-driven** | EventBridge | Loose coupling, multiple consumers |
+
+---
+
+## Container Architecture
+
+### ECS vs. EKS Decision
+
+| Factor | ECS | EKS |
+|--------|-----|-----|
+| **Complexity** | Simpler (AWS-native) | Complex (Kubernetes) |
+| **Portability** | AWS only | Multi-cloud, on-prem |
+| **Ecosystem** | AWS integrations | K8s ecosystem (Helm, Istio) |
+| **Team Skills** | AWS-focused | K8s expertise |
+| **Use Case** | Most AWS workloads | Multi-cloud, existing K8s |
+
+### Fargate vs. EC2 Launch Type
+
+| Factor | Fargate | EC2 |
+|--------|---------|-----|
+| **Management** | Serverless (no instances) | You manage instances |
+| **Cost** | Higher per-unit | Lower (especially with Spot/RI) |
+| **Scaling** | Per-task | Per-instance + per-task |
+| **GPU** | Not supported | Supported |
+| **Best For** | Variable workloads, simplicity | Steady, GPU, cost-sensitive |
+
+### Service Mesh & Networking
+
+| Service | Purpose |
+|---------|---------|
+| **App Mesh** | Service mesh (Envoy sidecar) - traffic management |
+| **Cloud Map** | Service discovery (DNS + API) |
+| **Service Connect** | Simplified service-to-service (ECS native) |
+| **ALB** | HTTP/HTTPS load balancing for containers |
+| **NLB** | TCP/UDP, static IP for containers |
+
+---
+
+## Data Architecture
+
+### Data Lake Pattern
+
+```
+Ingestion -> Storage -> Processing -> Consumption
+   |            |           |             |
+Kinesis      S3 (raw)    Glue ETL     Athena
+DMS          S3 (curated) EMR         QuickSight
+AppFlow      S3 (enriched) Lambda     Redshift
+                                      SageMaker
+```
+
+### Lake Formation
+
+- Centralized governance for data lakes
+- Fine-grained access control (column/row level)
+- Data Catalog (built on Glue Catalog)
+- Cross-account data sharing
+- Tag-based access control (LF-Tags)
+- Blueprints for common ingestion patterns
+
+### Analytics Services
+
+| Service | Use Case | Query Type |
+|---------|----------|-----------|
+| **Athena** | Ad-hoc SQL on S3 | Serverless, pay per scan |
+| **Redshift** | Data warehouse (complex analytics) | Provisioned or Serverless |
+| **EMR** | Big data (Spark, Hive, Presto) | Managed clusters |
+| **Kinesis Analytics** | Real-time stream processing | SQL or Flink on streams |
+| **QuickSight** | BI dashboards | Serverless visualization |
+| **OpenSearch** | Full-text search, log analytics | Near real-time |
+
+### Streaming Architecture
+
+| Service | Use Case | Retention |
+|---------|----------|-----------|
+| **Kinesis Data Streams** | Custom processing, multiple consumers | 1-365 days |
+| **Kinesis Firehose** | Delivery to S3/Redshift/OpenSearch | No retention (near real-time) |
+| **MSK (Kafka)** | High-throughput, existing Kafka workloads | Configurable |
+| **SQS** | Decoupling, single consumer | 1 min - 14 days |
+| **EventBridge** | Event routing, multiple targets | Archive (replay) |
+
+---
+
+## Machine Learning Integration
+
+### ML Services Spectrum
+
+| Service | Abstraction | Use Case |
+|---------|-------------|----------|
+| **SageMaker** | Build/train/deploy custom models | Data scientists |
+| **Bedrock** | Foundation models (API) | GenAI applications |
+| **Comprehend** | NLP (sentiment, entities, topics) | Text analysis |
+| **Rekognition** | Image/video analysis | Content moderation, faces |
+| **Textract** | Document extraction (OCR+) | Forms, tables, invoices |
+| **Transcribe** | Speech-to-text | Call centers, subtitles |
+| **Polly** | Text-to-speech | Voice interfaces |
+| **Translate** | Language translation | Multilingual apps |
+| **Forecast** | Time series forecasting | Demand planning |
+| **Personalize** | Recommendations | E-commerce, content |
+| **Kendra** | Intelligent search | Enterprise search |
+
+---
+
+## IoT & Edge
+
+### IoT Architecture
+
+```
+Devices -> IoT Core (MQTT) -> Rules Engine -> Actions
+                                    |
+                    +---------------+---------------+
+                    |               |               |
+                  Lambda         Kinesis          S3
+                    |               |
+                DynamoDB      Analytics/ML
+```
+
+### Edge Computing
+
+| Service | Use Case |
+|---------|----------|
+| **IoT Greengrass** | Local compute + ML on IoT devices |
+| **Outposts** | AWS infrastructure on-premises |
+| **Local Zones** | Low-latency in specific cities |
+| **Wavelength** | Ultra-low latency at 5G edge |
+| **Snow Family** | Edge compute in disconnected environments |
+
+---
+
+## High-Performance Computing
+
+### HPC on AWS
+
+| Component | Service |
+|-----------|---------|
+| **Compute** | EC2 (C/Hpc instances), Cluster Placement Group |
+| **Networking** | EFA (Elastic Fabric Adapter) - bypass OS kernel |
+| **Storage** | FSx for Lustre (sub-ms, 100s GB/s throughput) |
+| **Orchestration** | AWS Batch, ParallelCluster |
+| **Data Transfer** | DataSync, Snow Family |
+
+### Elastic Fabric Adapter (EFA)
+
+- Network interface for HPC
+- Bypasses OS kernel (OS-bypass)
+- Supports MPI (Message Passing Interface)
+- Only works with Cluster Placement Group
+- Use cases: Weather modeling, CFD, molecular dynamics
+
+---
+
+## Key Exam Patterns
+
+**Serverless:**
+- **""Orchestrate multiple Lambda functions""** -> Step Functions
+- **""Process millions of events""** -> Kinesis + Lambda (or EventBridge)
+- **""Long-running workflow (hours/days)""** -> Step Functions Standard
+- **""High-volume, short processing""** -> Step Functions Express
+- **""Decouple producer from consumer""** -> SQS + Lambda
+- **""Real-time bidirectional""** -> API Gateway WebSocket
+
+**Containers:**
+- **""Simplest container deployment""** -> ECS + Fargate
+- **""Multi-cloud portability""** -> EKS
+- **""GPU workloads in containers""** -> ECS/EKS on EC2 (not Fargate)
+- **""Service-to-service communication""** -> App Mesh or Service Connect
+- **""Service discovery""** -> Cloud Map
+
+**Data:**
+- **""Ad-hoc queries on S3""** -> Athena (serverless, pay per scan)
+- **""Complex analytics, joins, aggregations""** -> Redshift
+- **""Real-time stream processing""** -> Kinesis Data Streams + Analytics
+- **""Deliver streaming data to S3""** -> Kinesis Firehose
+- **""Fine-grained data lake access""** -> Lake Formation (column/row level)
+- **""Full-text search + log analytics""** -> OpenSearch
+
+**ML:**
+- **""GenAI application""** -> Bedrock (foundation models via API)
+- **""Custom ML model""** -> SageMaker
+- **""Sentiment analysis""** -> Comprehend
+- **""Document extraction""** -> Textract
+- **""Recommendations""** -> Personalize
+
+**Edge/HPC:**
+- **""AWS on-premises""** -> Outposts
+- **""Ultra-low latency at 5G""** -> Wavelength
+- **""HPC inter-node communication""** -> EFA + Cluster Placement Group
+- **""High-throughput file system for HPC""** -> FSx for Lustre
+
+---
+
+## Quick Exam Tips
+
+- **Step Functions** for orchestration. Standard = long-running. Express = high-volume.
+- **EventBridge** is the backbone of event-driven architecture (replaces CloudWatch Events).
+- **SQS** decouples and buffers. SNS fans out. EventBridge routes intelligently.
+- **Fargate** = serverless containers (simplest). EC2 launch type = more control, cheaper at scale.
+- **EKS** when you need Kubernetes portability. ECS for AWS-native simplicity.
+- **Athena** = serverless SQL on S3 (pay per TB scanned). Use Parquet + partitioning to reduce cost.
+- **Redshift Spectrum** queries S3 data from Redshift (extend warehouse to data lake).
+- **Lake Formation** provides fine-grained (column/row) access control on data lakes.
+- **Kinesis Data Streams** = custom processing, multiple consumers. Firehose = delivery only.
+- **Bedrock** = managed foundation models. SageMaker = build your own models.
+- **EFA** = HPC networking (OS-bypass). Only works in Cluster Placement Groups.
+- **FSx for Lustre** = HPC file system (sub-ms latency, integrates with S3).
+- **Outposts** = AWS hardware on-premises. Local Zones = AWS in specific cities.
+- **App Mesh** = Envoy-based service mesh for microservices traffic management."

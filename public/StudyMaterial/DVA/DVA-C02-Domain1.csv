@@ -1,0 +1,522 @@
+certCode,domain,title,content
+"DVA-C02","Domain 1: Development with AWS Services","Development with AWS Services","## DVA-C02 Domain 1: Development with AWS Services
+
+**Weight:** ~32% of scored exam content (largest domain)
+**Exam Level:** Associate
+**Format:** 65 questions, 130 minutes, passing score 720/1000
+
+This domain covers Lambda, API Gateway, DynamoDB, S3, SQS/SNS, Kinesis, Step Functions, and SDK patterns.
+
+---
+
+## AWS Lambda
+
+### Invocation Models
+
+| Model | Triggers | Behavior |
+|-------|----------|----------|
+| **Synchronous** | API Gateway, ALB, Cognito, Step Functions | Caller waits; errors returned directly |
+| **Asynchronous** | S3, SNS, EventBridge, CloudWatch Events | Retries 2x; DLQ or Destinations for failures |
+| **Event Source Mapping** | SQS, Kinesis, DynamoDB Streams, MSK | Lambda polls; batch processing; retry until expiry |
+
+### Lambda Configuration
+
+| Setting | Limits |
+|---------|--------|
+| **Memory** | 128 MB - 10,240 MB (CPU scales proportionally) |
+| **Timeout** | 1 sec - 15 min (default 3 sec) |
+| **Ephemeral storage** | 512 MB - 10,240 MB (/tmp) |
+| **Layers** | Up to 5; 250 MB unzipped total |
+| **Deployment package** | 50 MB zipped / 250 MB unzipped (or 10 GB container) |
+| **Concurrency** | 1,000 default per region (soft limit) |
+
+### Lambda Lifecycle
+
+```
+COLD START: Download code -> Start runtime -> Initialize (outside handler)
+  ""Init Duration"" in logs
+
+WARM INVOCATION: Execute handler only (SDK clients already initialized)
+
+BEST PRACTICES:
+- Initialize SDK clients OUTSIDE handler (reused across invocations)
+- Store DB connections OUTSIDE handler
+- Use /tmp for caching between invocations
+- Keep handler lean (just business logic)
+- Minimize package size (faster cold starts)
+```
+
+### Concurrency Models
+
+| Model | Description | Cost |
+|-------|-------------|------|
+| **Unreserved** | Shares account pool (1,000 default) | Free |
+| **Reserved** | Guarantees AND caps at N concurrent | Free |
+| **Provisioned** | Pre-initializes N environments (no cold starts) | Paid |
+
+**Formula:** Concurrency = (invocations/sec) x (avg duration in sec)
+
+**Throttling:** Sync = 429 error. Async = retries then DLQ. Event Source = retries until expiry.
+
+### Event Source Mapping Features
+
+- **BatchSize:** Max records per invocation (1-10,000)
+- **MaximumBatchingWindowInSeconds:** Wait for full batch
+- **BisectBatchOnFunctionError:** Split batch and retry halves
+- **ReportBatchItemFailures:** Only retry failed items (partial batch response)
+- **FilterCriteria:** Process only matching records (reduces invocations)
+- **ParallelizationFactor:** 1-10 batches per shard
+
+### Destinations vs. DLQ
+
+| Feature | Destinations | DLQ |
+|---------|-------------|-----|
+| **Success routing** | Yes | No |
+| **Failure routing** | Yes (SQS, SNS, Lambda, EventBridge) | Yes (SQS, SNS only) |
+| **Metadata** | Full invocation record | Only original payload |
+| **Recommendation** | Preferred (newer, flexible) | Legacy |
+
+### Versions and Aliases
+
+```
+$LATEST (mutable) -> Version 1, 2, 3, 4 (immutable snapshots)
+
+Aliases (pointers):
+  ""prod"" -> Version 3 (100%)
+  ""prod"" -> Version 3 (90%) + Version 4 (10%)  <- Canary deployment
+
+Use: API Gateway points to alias; CodeDeploy shifts traffic
+```
+
+---
+
+## Amazon API Gateway
+
+### API Types
+
+| Type | Use Case | Cost |
+|------|----------|------|
+| **REST API** | Full-featured (caching, WAF, usage plans) | Higher |
+| **HTTP API** | Simple proxy to Lambda/HTTP (faster, cheaper) | Lower |
+| **WebSocket API** | Real-time bidirectional | Per-message |
+
+### Integration Types
+
+| Type | Description |
+|------|-------------|
+| **Lambda Proxy** | Pass entire request to Lambda (most common) |
+| **Lambda Custom** | Transform with mapping templates (VTL) |
+| **HTTP Proxy** | Pass to HTTP endpoint |
+| **AWS Service** | Direct integration (S3, DynamoDB, SQS) |
+| **Mock** | Return response without backend |
+
+### Lambda Proxy Response Format
+
+```python
+return {
+    'statusCode': 200,
+    'headers': {
+        'Content-Type': 'application/json',
+        'Access-Control-Allow-Origin': '*'  # CORS
+    },
+    'body': json.dumps({'message': 'Success'})
+}
+```
+
+### Key Features
+
+- **Stages:** dev/staging/prod with stage variables
+- **Caching:** 0.5-237 GB; TTL 0-3600s; per-method
+- **Throttling:** Account (10K/s) -> Stage -> Method -> Usage Plan
+- **Usage Plans + API Keys:** Rate limit third-party consumers
+- **CORS:** Lambda must return headers + enable OPTIONS method
+
+---
+
+## Amazon DynamoDB
+
+### Core Concepts
+
+- **Partition Key (PK):** Required; determines partition placement
+- **Sort Key (SK):** Optional; enables range queries within partition
+- **Capacity:** On-Demand (pay per request) or Provisioned (set RCU/WCU)
+- **Consistency:** Eventually consistent (default, 2x throughput) or Strongly consistent
+
+### Capacity Units
+
+```
+RCU: 1 strongly consistent read/sec for item <= 4 KB
+     2 eventually consistent reads/sec for item <= 4 KB
+     Transactional = 2x RCU
+
+WCU: 1 write/sec for item <= 1 KB
+     Transactional = 2x WCU
+
+Formula: RCU = (reads/sec) x CEIL(item_size / 4 KB) / consistency_factor
+```
+
+### Query vs. Scan
+
+| Feature | Query | Scan |
+|---------|-------|------|
+| **Requires** | Partition key value | Nothing (reads everything) |
+| **Performance** | Efficient | Expensive (entire table) |
+| **Capacity** | Proportional to matches | Proportional to table size |
+| **Best practice** | Always prefer Query | Avoid in production |
+
+**Important:** FilterExpression does NOT reduce capacity - filters AFTER reading.
+
+### Secondary Indexes
+
+| Feature | LSI | GSI |
+|---------|-----|-----|
+| **Key** | Same PK, different SK | Different PK and/or SK |
+| **Creation** | At table creation only | Anytime |
+| **Throughput** | Shares with base table | Own RCU/WCU (separate) |
+| **Consistency** | Strongly or eventually | Eventually only |
+| **Limit** | 5 per table | 20 per table |
+
+**GSI Throttling:** If GSI WCU exhausted, base table writes throttled too.
+
+### DynamoDB Streams
+
+- **View types:** KEYS_ONLY, NEW_IMAGE, OLD_IMAGE, NEW_AND_OLD_IMAGES
+- **Retention:** 24 hours
+- **Consumers:** Lambda (event source mapping) or KCL
+- **Use cases:** Trigger Lambda on changes, cross-region replication, analytics
+
+### Conditional Writes & Optimistic Locking
+
+```python
+# Optimistic locking (version number)
+table.update_item(
+    Key={'order_id': 'ORD-001'},
+    UpdateExpression='SET #s = :new, version = version + :one',
+    ConditionExpression='version = :current_version',
+    ExpressionAttributeValues={':current_version': 3, ':new': 'CONFIRMED', ':one': 1}
+)
+# Raises ConditionalCheckFailedException if version != 3
+```
+
+### TTL
+
+- Automatically deletes expired items (epoch timestamp attribute)
+- Free (no WCU consumed); deletion within 48 hours
+- Deletions appear in DynamoDB Streams
+
+---
+
+## Amazon S3
+
+### Key Operations
+
+- **Pre-signed URL (GET):** Temporary download of private object
+- **Pre-signed URL (PUT):** Allow upload without AWS credentials
+- **Multipart Upload:** Required > 5 GB; recommended > 100 MB
+- **Event Notifications:** Trigger Lambda/SQS/SNS on object events
+- **EventBridge:** Advanced filtering on S3 events (metadata, size, tags)
+
+### Storage Classes
+
+| Class | Use Case |
+|-------|----------|
+| **Standard** | Frequently accessed |
+| **Intelligent-Tiering** | Unknown/changing patterns |
+| **Standard-IA** | Infrequent, rapid retrieval |
+| **Glacier Instant** | Archive, millisecond access |
+| **Glacier Flexible** | Archive, minutes-hours |
+| **Glacier Deep Archive** | Long-term, 12-48 hours |
+
+---
+
+## Amazon SQS
+
+### Queue Types
+
+| Feature | Standard | FIFO |
+|---------|----------|------|
+| **Throughput** | Unlimited | 300 msg/s (3,000 batched) |
+| **Ordering** | Best-effort | Strict (per message group) |
+| **Delivery** | At-least-once (duplicates possible) | Exactly-once |
+| **Use case** | High throughput | Order matters; no duplicates |
+
+### Key Settings
+
+| Setting | Default | Description |
+|---------|---------|-------------|
+| **Visibility Timeout** | 30 sec | Time hidden after receive |
+| **Message Retention** | 4 days | How long in queue (max 14 days) |
+| **Long Polling** | 0 (short) | WaitTimeSeconds: 1-20 (reduces empty responses) |
+| **Max Message Size** | 256 KB | Use Extended Client for larger |
+| **DLQ** | None | After maxReceiveCount failures |
+
+### SQS + Lambda (Partial Batch Response)
+
+```python
+def handler(event, context):
+    failures = []
+    for record in event['Records']:
+        try:
+            process(record)
+        except:
+            failures.append({'itemIdentifier': record['messageId']})
+    return {'batchItemFailures': failures}
+# Enable: FunctionResponseTypes: [""ReportBatchItemFailures""]
+```
+
+---
+
+## Amazon SNS
+
+### Fan-Out Pattern
+
+```
+Publisher -> SNS Topic -> SQS Queue A (service 1)
+                      -> SQS Queue B (service 2)
+                      -> Lambda (service 3)
+                      -> HTTPS (webhook)
+```
+
+- **Message Filtering:** Subscribers receive only matching messages (filter policy on attributes)
+- **FIFO Topics:** Ordered delivery to FIFO SQS queues
+
+---
+
+## AWS SDK Patterns
+
+### Retry and Backoff
+
+- **Retry modes:** legacy, standard (recommended), adaptive
+- **Exponential backoff with jitter:** wait = random(0, min(2^attempt, 30))
+- **Pagination:** Use paginators or LastEvaluatedKey
+- **Waiters:** Poll until resource reaches desired state
+
+---
+
+## Amazon Kinesis
+
+| Feature | Kinesis Data Streams | SQS |
+|---------|---------------------|-----|
+| **Pattern** | Streaming (multiple consumers) | Queue (single consumer group) |
+| **Ordering** | Per shard (partition key) | FIFO queue only |
+| **Replay** | Yes (re-read any position) | No (deleted after processing) |
+| **Retention** | 24h - 365 days | 1 min - 14 days |
+| **Consumers** | Multiple (fan-out) | Single (competing) |
+
+**Shard capacity:** 1 MB/s write, 2 MB/s read per shard.
+
+---
+
+## Step Functions
+
+### State Types
+
+| State | Purpose |
+|-------|---------|
+| **Task** | Execute work (Lambda, AWS SDK) |
+| **Choice** | Conditional branching |
+| **Wait** | Delay execution |
+| **Parallel** | Execute branches concurrently |
+| **Map** | Iterate over array |
+| **Pass** | Transform data |
+| **Succeed/Fail** | Terminal states |
+
+### Workflow Types
+
+| Feature | Standard | Express |
+|---------|----------|---------|
+| **Duration** | Up to 1 year | Up to 5 minutes |
+| **Execution** | Exactly-once | At-least-once |
+| **Pricing** | Per state transition | Per execution + duration |
+| **Use case** | Long-running, approvals | High-volume, short |
+
+### Error Handling
+
+- **Retry:** ErrorEquals, IntervalSeconds, MaxAttempts, BackoffRate
+- **Catch:** ErrorEquals, Next (fallback state), ResultPath
+
+---
+
+## Key Exam Patterns
+
+**Lambda:**
+- ""Reduce cold starts"" -> Provisioned Concurrency
+- ""Process SQS; one fails, batch retries"" -> ReportBatchItemFailures
+- ""Can't access internet from VPC"" -> NAT Gateway or VPC endpoints
+- ""Share code between functions"" -> Lambda Layers
+- ""Capture async failures"" -> Destinations (preferred) or DLQ
+
+**API Gateway:**
+- ""CORS errors"" -> Lambda returns CORS headers + OPTIONS method
+- ""Rate limit consumers"" -> Usage Plans + API Keys
+- ""Cheapest Lambda proxy"" -> HTTP API
+- ""Real-time bidirectional"" -> WebSocket API
+
+**DynamoDB:**
+- ""Calculate RCU"" -> reads/sec x CEIL(item/4KB)
+- ""Query non-key attribute"" -> Create GSI
+- ""Prevent concurrent overwrites"" -> Conditional write (optimistic locking)
+- ""Auto-delete expired items"" -> TTL
+- ""Trigger Lambda on changes"" -> DynamoDB Streams
+
+**S3:**
+- ""Upload without credentials"" -> Pre-signed URL (PUT)
+- ""File > 5 GB"" -> Multipart Upload
+- ""Trigger on upload"" -> S3 Event Notification
+
+**SQS:**
+- ""Decouple services"" -> Standard Queue
+- ""Process in order"" -> FIFO Queue
+- ""Reduce empty responses"" -> Long Polling
+- ""Messages failing"" -> DLQ (maxReceiveCount)
+
+---
+
+## Summary
+
+This covers all objectives in DVA-C02 Domain 1:
+
+- **Lambda** - Invocation models, lifecycle, concurrency, versions/aliases, layers, destinations
+- **API Gateway** - REST/HTTP/WebSocket, proxy integration, stages, caching, throttling, CORS
+- **DynamoDB** - Keys, capacity, Query vs. Scan, indexes, streams, conditional writes, TTL
+- **S3** - Pre-signed URLs, multipart upload, event notifications, storage classes
+- **SQS** - Standard vs. FIFO, visibility timeout, DLQ, long polling, partial batch
+- **SNS** - Fan-out, message filtering, FIFO topics
+- **Kinesis** - Streams vs. SQS, shards, partition keys, consumers
+- **Step Functions** - State types, Standard vs. Express, retry/catch
+- **SDK Patterns** - Retry, exponential backoff, pagination, waiters
+
+---
+
+## Domain 1 Concept Map
+
+```
+DEVELOPMENT WITH AWS SERVICES
+|
++-- AWS LAMBDA
+|   +-- Invocation: Synchronous, Asynchronous, Event Source Mapping
+|   +-- Lifecycle: Cold start (init) -> Warm invocation (handler only)
+|   +-- Concurrency: Unreserved, Reserved (cap), Provisioned (no cold start)
+|   +-- Versions & Aliases: Immutable versions; weighted aliases for deployment
+|   +-- Layers: Shared libraries (up to 5, 250 MB total unzipped)
+|   +-- Destinations: Success/failure routing (SQS, SNS, Lambda, EventBridge)
+|   +-- Environment Variables: Config + secrets (KMS encrypted)
+|   +-- Best Practices: Init outside handler; minimize package; use layers
+|
++-- API GATEWAY
+|   +-- Types: REST (full-featured), HTTP (simple/cheap), WebSocket (real-time)
+|   +-- Integration: Lambda Proxy (common), Custom, AWS Service, Mock
+|   +-- Stages: dev/staging/prod; stage variables for config
+|   +-- Caching: Per-stage/method; 0.5-237 GB; TTL 0-3600s
+|   +-- Throttling: Account (10K) -> Stage -> Method -> Usage Plan
+|   +-- CORS: Lambda returns headers (proxy); OPTIONS method (preflight)
+|   +-- Authorization: IAM, Cognito, Lambda Authorizer
+|   +-- Usage Plans + API Keys: Rate limiting third-party consumers
+|
++-- AMAZON DYNAMODB
+|   +-- Keys: Partition Key (hash) + optional Sort Key (range)
+|   +-- Capacity: On-Demand (pay-per-request) vs. Provisioned (RCU/WCU)
+|   +-- Reads: Eventually Consistent (2x) vs. Strongly Consistent
+|   +-- Indexes: GSI (any key, eventually consistent, own capacity)
+|   |            LSI (same PK, different SK, strongly consistent)
+|   +-- Operations: Query (efficient, by PK) vs. Scan (expensive, full table)
+|   +-- Streams: CDC (24h retention); trigger Lambda on changes
+|   +-- Expressions: Conditional writes, update expressions, filters
+|   +-- TTL: Auto-delete expired items (free, no WCU consumed)
+|   +-- Transactions: TransactWriteItems/GetItems (ACID, 2x cost)
+|   +-- Patterns: Optimistic locking, atomic counters, large objects->S3
+|
++-- AMAZON S3
+|   +-- Operations: PutObject, GetObject, DeleteObject, ListObjects
+|   +-- Pre-signed URLs: Temporary access without credentials
+|   +-- Multipart Upload: Required > 5 GB; recommended > 100 MB
+|   +-- Event Notifications: Lambda, SQS, SNS, EventBridge
+|   +-- Storage Classes: Standard -> IA -> Glacier (lifecycle rules)
+|   +-- Encryption: SSE-S3, SSE-KMS, SSE-C, client-side
+|   +-- Versioning: Keep all versions; MFA Delete for protection
+|   +-- Transfer Acceleration: CloudFront edge for fast upload
+|
++-- AMAZON SQS
+|   +-- Standard: Unlimited throughput, at-least-once, best-effort ordering
+|   +-- FIFO: 300-3000 msg/s, exactly-once, strict ordering per group
+|   +-- Visibility Timeout: Hide during processing (default 30s)
+|   +-- Long Polling: Reduce empty responses (WaitTimeSeconds: 1-20)
+|   +-- Dead Letter Queue: Capture failed messages (maxReceiveCount)
+|   +-- Delay Queue: Postpone visibility (0-15 min)
+|   +-- Extended Client: Large messages via S3 (> 256 KB)
+|   +-- Lambda: Batch processing, partial batch failures
+|
++-- AMAZON SNS
+|   +-- Pub/Sub: Push to multiple subscribers simultaneously
+|   +-- Protocols: Lambda, SQS, HTTP/S, Email, SMS, Firehose, Mobile
+|   +-- Fan-out: SNS -> multiple SQS queues (decouple consumers)
+|   +-- Message Filtering: Per-subscription filter policies
+|   +-- FIFO Topics: Ordered delivery to FIFO SQS queues
+|   +-- Cross-account: Subscribe from different accounts
+|
++-- AMAZON KINESIS
+|   +-- Data Streams: Real-time ingestion (shards, partition keys)
+|   +-- Firehose: Managed delivery to S3/Redshift/OpenSearch
+|   +-- Consumers: Shared (2 MB/s/shard) vs. Enhanced Fan-Out (per consumer)
+|   +-- Ordering: Per shard (same partition key -> same shard)
+|   +-- Retention: 24h default, up to 365 days
+|   +-- vs. SQS: Multiple consumers, replay, real-time analytics
+|
++-- AWS STEP FUNCTIONS
+|   +-- States: Task, Choice, Wait, Parallel, Map, Pass, Succeed, Fail
+|   +-- Workflows: Standard (1 year, exactly-once) vs. Express (5 min, high volume)
+|   +-- Error Handling: Retry (backoff) + Catch (fallback state)
+|   +-- Integration: Lambda, AWS SDK, Activity (human/external)
+|   +-- Map State: Process arrays (inline or distributed)
+|   +-- Callback Pattern: Wait for external completion (task token)
+|
++-- AWS APPSYNC
+|   +-- GraphQL: Managed API with schema-first design
+|   +-- Data Sources: DynamoDB, Lambda, RDS, HTTP, OpenSearch
+|   +-- Real-time: WebSocket subscriptions (automatic)
+|   +-- Offline: Client-side caching + conflict resolution
+|   +-- Auth: API Key, Cognito, IAM, OIDC, Lambda
+|
++-- AWS SDK PATTERNS
+    +-- Retry: Exponential backoff with jitter (standard/adaptive)
+    +-- Pagination: Paginators or manual (LastEvaluatedKey/NextToken)
+    +-- Waiters: Poll until resource reaches desired state
+    +-- Error Handling: ClientError, throttling, service exceptions
+    +-- Credentials: Environment vars -> IAM role -> config file (chain)
+```
+
+---
+
+## Additional Quick Tips
+
+- **Lambda init code** (outside handler) runs once per cold start, reused across warm invocations. #1 best practice.
+- **Lambda Proxy Integration** requires statusCode, headers, body in response. Wrong format = 502.
+- **DynamoDB FilterExpression** does NOT reduce RCU. Filters AFTER reading. Use Query + proper keys instead.
+- **GSI throttling** propagates to base table. Ensure GSI WCU >= base table WCU.
+- **SQS Visibility Timeout** must be > Lambda timeout. Otherwise messages reappear (duplicates).
+- **Long Polling** (WaitTimeSeconds: 1-20) reduces costs. Always enable unless immediate response needed.
+- **Pre-signed URLs** inherit creator's permissions. Revoked permissions = URL stops working.
+- **SNS + SQS fan-out** = standard pattern for one event to multiple consumers.
+- **Kinesis vs. SQS:** Multiple consumers + replay = Kinesis. Simple decoupling = SQS.
+- **Step Functions:** Standard = long-running, exactly-once. Express = high-volume, short, cheaper.
+- **HTTP API vs. REST API:** HTTP is 70% cheaper and faster. REST for caching, WAF, usage plans.
+- **DynamoDB Streams + Lambda** = event-driven pattern for table changes.
+- **FilterCriteria** on event source mapping reduces invocations (filter at source, not in code).
+- **ReportBatchItemFailures** prevents entire batch retries on single failure.
+- **S3 -> EventBridge** preferred over direct notifications for advanced filtering.
+
+---
+
+## Summary Table
+
+| Topic | Key Services | Critical Concepts |
+|-------|-------------|------------------|
+| **Serverless Compute** | Lambda | Invocation models, concurrency, cold starts, layers, aliases, destinations |
+| **API Management** | API Gateway | REST vs. HTTP, proxy integration, stages, caching, throttling, CORS |
+| **NoSQL Database** | DynamoDB | Keys, RCU/WCU calculations, GSI/LSI, Streams, TTL, conditional writes |
+| **Object Storage** | S3 | Pre-signed URLs, multipart upload, event notifications, encryption |
+| **Messaging** | SQS, SNS | Standard vs. FIFO, visibility timeout, DLQ, fan-out, message filtering |
+| **Streaming** | Kinesis | Shards, partition keys, consumers, Firehose, vs. SQS |
+| **Orchestration** | Step Functions | State types, Standard vs. Express, Retry/Catch, Map state |
+| **GraphQL** | AppSync | Real-time subscriptions, data sources, offline sync |
+| **SDK Patterns** | AWS SDK | Retry/backoff, pagination, waiters, credential chain |"

@@ -1,0 +1,345 @@
+certCode,domain,title,content
+"CLF-C02","Domain 4: Billing & Pricing","Billing, Pricing, and Support","## CLF-C02 Domain 4: Billing, Pricing, and Support
+
+**Weight:** ~12% of scored exam content (smallest domain)
+**Exam Level:** Foundational
+
+This domain tests your understanding of how AWS charges you, how to manage and optimize costs, and what support options are available.
+
+---
+
+## AWS Pricing Fundamentals
+
+### Core Pricing Principles
+
+| Principle | What It Means | Example |
+|-----------|--------------|---------|
+| **Pay as you go** | Pay only for what you consume; no upfront costs | EC2 billed per second; S3 per GB |
+| **Pay less when you reserve** | Commit for 1-3 years for discounts | Savings Plans, Reserved Instances (up to 72% off) |
+| **Pay less per unit at scale** | Volume discounts as usage increases | S3 storage tiers; data transfer tiers |
+| **No termination fees** | Stop using, stop paying (on-demand) | Shut down EC2 -> charges stop |
+| **No long-term contracts** | On-demand requires no commitment | Start/stop anytime |
+
+### What's Always Free
+
+| Item | Details |
+|------|---------|
+| **Inbound data transfer** | Data INTO AWS is always free |
+| **Same-AZ transfer (private IP)** | Free |
+| **VPC** | No charge for VPC itself |
+| **IAM** | No charge for users, groups, roles, policies |
+| **Consolidated Billing** | No charge for Organizations billing |
+| **Auto Scaling** | No charge for the service itself |
+| **CloudFormation** | No charge (you pay for resources created) |
+| **Elastic Beanstalk** | No charge (you pay for underlying resources) |
+
+### What Costs Money (Common Charges)
+
+| Cost Driver | How It's Charged | Optimization |
+|------------|-----------------|-------------|
+| **Compute (EC2)** | Per second/hour | Right-size; Savings Plans/Spot |
+| **Storage (S3)** | Per GB + per request | Appropriate storage class; lifecycle policies |
+| **Storage (EBS)** | Per GB provisioned (even if unused) | Delete unattached volumes |
+| **Data transfer OUT** | Per GB leaving AWS | Use CloudFront; compress data |
+| **Data transfer cross-AZ** | $0.01/GB each way | Keep resources in same AZ |
+| **NAT Gateway** | Per hour + per GB processed | Use VPC endpoints for AWS services |
+| **Elastic IP (unused)** | Charged when NOT attached | Release unused EIPs |
+| **Load Balancers** | Per hour + per capacity unit | Remove unused ALBs/NLBs |
+
+---
+
+## Compute Pricing Models
+
+### EC2 Pricing Options
+
+| Model | How It Works | Discount | Best For |
+|-------|-------------|----------|----------|
+| **On-Demand** | Pay per second; no commitment | 0% | Unpredictable; testing |
+| **Savings Plans (Compute)** | Commit $/hour for 1-3 years | Up to 66% | Flexible; steady-state |
+| **Savings Plans (EC2 Instance)** | Commit to instance family in region | Up to 72% | Predictable instance needs |
+| **Reserved Instances (Standard)** | Commit to specific instance for 1-3 years | Up to 72% | Predictable, steady workloads |
+| **Reserved Instances (Convertible)** | Same but can change instance type | Up to 66% | Steady but may need flexibility |
+| **Spot Instances** | Bid on unused capacity; 2-min interruption notice | Up to 90% | Fault-tolerant; batch processing |
+| **Dedicated Hosts** | Physical server dedicated to you | Varies | Licensing compliance |
+
+### Savings Plans vs. Reserved Instances
+
+| Feature | Savings Plans | Reserved Instances |
+|---------|--------------|-------------------|
+| **Flexibility** | Can change instance type, OS, region | Locked to specific attributes |
+| **Applies to** | EC2, Fargate, Lambda | EC2 only |
+| **Term** | 1 or 3 years | 1 or 3 years |
+| **Recommendation** | Preferred (more flexible) | Legacy; still valid |
+
+### Lambda Pricing
+
+| Charge | How It Works |
+|--------|-------------|
+| **Requests** | $0.20 per 1 million requests |
+| **Duration** | Per GB-second of compute time |
+| **Free Tier** | 1 million requests + 400,000 GB-seconds/month (always free) |
+| **Key insight** | Zero cost when not running (unlike EC2) |
+
+### S3 Pricing
+
+| Charge | How It Works |
+|--------|-------------|
+| **Storage** | Per GB per month (varies by class) |
+| **Requests** | Per 1,000 PUT/GET/LIST requests |
+| **Data transfer OUT** | Per GB leaving S3 to internet |
+| **Data transfer IN** | FREE |
+
+---
+
+## AWS Free Tier
+
+### Three Types of Free Tier Offers
+
+| Type | Duration | Examples |
+|------|----------|---------|
+| **Always Free** | Never expires | Lambda (1M requests/month); DynamoDB (25 GB); CloudWatch (10 metrics) |
+| **12 Months Free** | First 12 months after account creation | EC2 (750 hrs/month t2.micro); S3 (5 GB); RDS (750 hrs/month) |
+| **Trials** | Short-term from first use | SageMaker (2 months); Redshift (2 months); Inspector (15-day) |
+
+### Key Free Tier Limits (Most Tested)
+
+| Service | Free Tier Allowance | Duration |
+|---------|-------------------|----------|
+| **EC2** | 750 hours/month (t2.micro or t3.micro) | 12 months |
+| **S3** | 5 GB storage; 20,000 GET; 2,000 PUT | 12 months |
+| **RDS** | 750 hours/month (db.t2.micro); 20 GB | 12 months |
+| **Lambda** | 1 million requests; 400,000 GB-seconds | Always free |
+| **DynamoDB** | 25 GB storage; 25 RCU/WCU | Always free |
+| **CloudWatch** | 10 custom metrics; 10 alarms | Always free |
+| **SNS** | 1 million publishes | Always free |
+| **SQS** | 1 million requests | Always free |
+| **CloudFront** | 1 TB data transfer out/month | Always free |
+
+### Free Tier Alerts
+
+- AWS Budgets can alert when Free Tier usage approaches limits.
+- Automatic email at 85% of Free Tier limit.
+- Billing Dashboard shows current Free Tier usage.
+
+---
+
+## Cost Management Tools
+
+| Tool | What It Does | Key Use Case |
+|------|-------------|-------------|
+| **AWS Cost Explorer** | Visualize and forecast spending | ""Where is my money going?"" |
+| **AWS Budgets** | Set spending thresholds and alerts | ""Alert me if I exceed $500/month"" |
+| **AWS Cost and Usage Report (CUR)** | Most detailed billing data (line-item) | Deep analysis; chargeback |
+| **AWS Pricing Calculator** | Estimate costs before building | ""How much will this cost?"" |
+| **AWS Billing Dashboard** | Overview of current month charges | Quick glance at spending |
+| **AWS Cost Anomaly Detection** | ML-powered unusual spend detection | ""Something costs more than expected"" |
+| **AWS Compute Optimizer** | ML-powered right-sizing recommendations | Optimal instance/volume types |
+
+### AWS Cost Explorer - Key Features
+
+| Feature | What It Does |
+|---------|-------------|
+| **Historical analysis** | View spending over past 12 months |
+| **Forecasting** | Predict next 12 months |
+| **Filtering** | By service, account, region, tag |
+| **Savings Plans recommendations** | Suggests optimal plans based on usage |
+| **Right-sizing recommendations** | Identifies over-provisioned EC2 instances |
+
+### AWS Budgets - Types
+
+| Budget Type | What It Tracks |
+|-------------|---------------|
+| **Cost budget** | Total spending (""Don't exceed $1,000/month"") |
+| **Usage budget** | Resource usage (""Don't exceed 1,000 EC2 hours"") |
+| **Reservation budget** | RI/SP utilization and coverage |
+| **Savings Plans budget** | Savings Plans utilization |
+
+**Budget Actions:** Send email/SNS notification, apply IAM policy to restrict launches, stop instances when exceeded.
+
+---
+
+## Consolidated Billing and AWS Organizations
+
+### Consolidated Billing Benefits
+
+| Benefit | Description |
+|---------|-------------|
+| **Single bill** | One payment for all accounts |
+| **Volume discounts** | Combined usage qualifies for tier pricing |
+| **Shared Savings Plans/RIs** | Reserved capacity shared across all accounts |
+| **Simplified tracking** | All charges in one place |
+| **Free** | No additional charge |
+
+### How Volume Discounts Work
+
+```
+Account A: 40 TB S3 storage
+Account B: 35 TB S3 storage
+Account C: 25 TB S3 storage
+─────────────────────────────
+Combined: 100 TB -> qualifies for higher volume discount tier
+
+Without consolidation: Each pays individual (higher) rate
+With consolidation: All benefit from combined volume pricing
+```
+
+### Cost Allocation Tags
+
+| Tag Type | Description | Example |
+|----------|-------------|---------|
+| **AWS-generated** | Automatically applied | aws:createdBy |
+| **User-defined** | You create and apply | Environment:Production, Team:Marketing |
+
+- Filter costs in Cost Explorer by tag.
+- Create budgets per tag (per project or team).
+- **Must be activated in Billing Console** before appearing in reports.
+
+---
+
+## AWS Support Plans
+
+| Feature | Basic (Free) | Developer ($29/mo) | Business ($100/mo) | Enterprise On-Ramp ($5,500/mo) | Enterprise ($15,000/mo) |
+|---------|-------------|-------------------|-------------------|-------------------------------|------------------------|
+| **Trusted Advisor** | 7 core checks | 7 core checks | ALL checks | ALL checks | ALL checks |
+| **Technical support** | None | Business hours email | 24/7 phone/chat/email | 24/7 phone/chat/email | 24/7 phone/chat/email |
+| **Critical response** | N/A | N/A | < 1 hour | < 30 minutes | < 15 minutes |
+| **TAM** | No | No | No | Pool of TAMs | Designated TAM |
+| **Concierge** | No | No | No | No | Yes |
+| **IEM** | No | No | Extra fee | Yes | Yes |
+
+### Key Support Concepts
+
+| Concept | Description |
+|---------|-------------|
+| **TAM (Technical Account Manager)** | Designated AWS expert (Enterprise only) |
+| **Concierge Support Team** | Billing and account experts (Enterprise only) |
+| **Infrastructure Event Management** | AWS helps plan major events |
+| **Trusted Advisor** | Automated best-practice checks (full = Business+) |
+| **AWS re:Post** | Community Q&A forum (free) |
+| **Personal Health Dashboard** | Alerts about events affecting YOUR resources (free) |
+
+---
+
+## Cost Optimization Strategies
+
+| Strategy | Description | Savings |
+|----------|-------------|---------|
+| **Right-sizing** | Use smallest instance that meets requirements | 20-40% |
+| **Savings Plans** | Commit to steady-state usage | Up to 72% |
+| **Spot Instances** | Use for fault-tolerant workloads | Up to 90% |
+| **S3 Lifecycle Policies** | Auto-transition to cheaper storage | 40-90% on storage |
+| **Delete unused resources** | Remove unattached EBS, unused EIPs, idle instances | 100% of waste |
+| **Use serverless** | Pay only when code runs | Zero idle cost |
+| **Auto Scaling** | Scale down during low demand | Eliminate idle capacity |
+| **CloudFront** | Cheaper egress than direct EC2/S3 | Significant on egress |
+
+### Common Cost Wastes (Exam Scenarios)
+
+| Waste | How to Detect | How to Fix |
+|-------|--------------|-----------|
+| Idle EC2 instances | CloudWatch CPU < 5% | Stop/terminate; Auto Scaling |
+| Unattached EBS volumes | Trusted Advisor | Delete or snapshot and delete |
+| Unused Elastic IPs | Trusted Advisor | Release them |
+| Over-provisioned instances | Right-sizing recommendations | Downsize |
+| Old EBS snapshots | Age-based review | Delete unnecessary ones |
+
+---
+
+## Data Transfer Pricing Summary
+
+| Transfer Type | Cost |
+|--------------|------|
+| **Data IN to AWS (from internet)** | FREE |
+| **Data OUT to internet** | Charged per GB (tiered) |
+| **Between AZs (same region)** | $0.01/GB each direction |
+| **Between regions** | $0.02/GB (varies) |
+| **Within same AZ (private IP)** | FREE |
+| **To CloudFront** | FREE (origin to edge) |
+| **From CloudFront to internet** | Cheaper than direct EC2 egress |
+
+---
+
+## Key Exam Patterns for CLF-C02 Domain 4
+
+**Pricing:**
+- **""Pay only for what you use""** -> On-Demand pricing
+- **""Lowest cost for steady-state""** -> Savings Plans or Reserved Instances
+- **""Lowest cost for interruptible workloads""** -> Spot Instances (up to 90%)
+- **""No charge for data transfer""** -> Inbound (always free) or same-AZ private IP
+- **""Charged even when instance stopped""** -> EBS volumes (provisioned storage)
+- **""NOT charged""** -> IAM, VPC, Auto Scaling, CloudFormation, Beanstalk
+
+**Cost Management:**
+- **""Analyze past spending""** -> Cost Explorer
+- **""Set spending alerts""** -> AWS Budgets
+- **""Estimate costs before building""** -> Pricing Calculator
+- **""Most detailed billing data""** -> Cost and Usage Report (CUR)
+- **""Detect unusual spending""** -> Cost Anomaly Detection
+- **""Right-sizing recommendations""** -> Compute Optimizer / Cost Explorer
+- **""Track costs by team""** -> Cost Allocation Tags
+- **""Share RI savings across accounts""** -> Consolidated Billing
+
+**Support:**
+- **""24/7 phone support""** -> Business or higher
+- **""Designated TAM""** -> Enterprise only
+- **""All Trusted Advisor checks""** -> Business or higher
+- **""< 15 minute response""** -> Enterprise
+- **""Free support resources""** -> Documentation, re:Post, Health Dashboard
+- **""Billing questions""** -> Concierge (Enterprise)
+
+**Free Tier:**
+- **""750 hours/month EC2""** -> 12 months free (t2.micro)
+- **""1 million Lambda requests""** -> Always free
+- **""Avoid unexpected charges""** -> Budgets + Free Tier alerts
+
+---
+
+## Quick Exam Tips for Domain 4
+
+- **Data transfer IN is always free.** Data OUT costs money. Tested frequently.
+- **Savings Plans** are preferred over Reserved Instances (more flexible; apply to Lambda/Fargate too).
+- **Spot Instances = up to 90% off** BUT can be interrupted. Only for fault-tolerant workloads.
+- **Consolidated Billing** shares volume discounts AND RI/SP benefits across all accounts.
+- **Cost Explorer** = analyze past. **Budgets** = alert on future. **Pricing Calculator** = estimate before building.
+- **Trusted Advisor full checks** require Business support or higher.
+- **TAM** = Enterprise only. Enterprise On-Ramp = pool of TAMs (not designated).
+- **EBS volumes charged even when EC2 is stopped.** Common gotcha question.
+- **Unused Elastic IPs cost money.** Charged when NOT attached to running instance.
+- **Cost Allocation Tags must be activated** in Billing Console to appear in reports.
+- **CloudFront reduces costs** - cheaper egress rates than direct EC2/S3.
+- **Auto Scaling, CloudFormation, Beanstalk** are free services - you pay for resources they create.
+
+---
+
+## Billing Tools Quick Reference
+
+```
+WHAT DO YOU NEED?                          -> USE THIS
+
+See where money is going (past)            -> Cost Explorer
+Get alerts before overspending             -> AWS Budgets
+Estimate costs before building             -> AWS Pricing Calculator
+Most detailed billing data                 -> Cost and Usage Report (CUR)
+Detect unusual spending                    -> Cost Anomaly Detection
+Right-sizing recommendations               -> Compute Optimizer
+Track costs by team/project                -> Cost Allocation Tags
+Share discounts across accounts            -> Consolidated Billing
+Find wasted resources                      -> Trusted Advisor (Business+)
+Check Free Tier usage                      -> Billing Dashboard / Budgets
+Buy third-party software on AWS bill       -> AWS Marketplace
+```
+
+---
+
+## Summary
+
+This covers all objectives in CLF-C02 Domain 4:
+
+- **Pricing fundamentals** - Pay-as-you-go, volume discounts, no termination fees
+- **Compute pricing** - On-Demand, Savings Plans, Reserved, Spot, Dedicated
+- **Free Tier** - Always Free, 12 Months Free, Trials; key limits
+- **Cost management tools** - Cost Explorer, Budgets, Pricing Calculator, CUR
+- **Consolidated Billing** - Organizations, volume discounts, shared reservations, tags
+- **Support plans** - Basic through Enterprise; TAM, Concierge, response times
+- **Cost optimization** - Right-sizing, serverless, lifecycle policies, delete waste
+- **Billing management** - Dashboard, Marketplace, Service Quotas"

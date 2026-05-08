@@ -24,6 +24,9 @@ public class SecurityConfig {
 
     private final JwtAuthenticationFilter jwtAuthFilter;
 
+    @org.springframework.beans.factory.annotation.Value("${app.cors.allowed-origin:http://localhost:5173}")
+    private String corsOrigin;
+
     public SecurityConfig(JwtAuthenticationFilter jwtAuthFilter) {
         this.jwtAuthFilter = jwtAuthFilter;
     }
@@ -54,12 +57,21 @@ public class SecurityConfig {
                 // 4. OPEN THE FRONT DOORS
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers(org.springframework.http.HttpMethod.OPTIONS, "/**").permitAll()
+                        .requestMatchers("/api/questions/public/reviews").permitAll()
+                        .requestMatchers("/api/questions/random").permitAll()
+                        .requestMatchers("/api/questions/flashcards/game").permitAll()
+                        .requestMatchers("/api/questions/pipeline/random").permitAll()
                         .requestMatchers("/error").permitAll()
                         .requestMatchers("/api/users/login", "/api/users/register").permitAll()
                         .requestMatchers(org.springframework.http.HttpMethod.GET, "/api/questions/**").permitAll()
                         .requestMatchers("/api/auth/login", "/api/users/register").permitAll()
                         .requestMatchers("/api/questions/pipeline/upload").permitAll()
+                        .requestMatchers("/api/questions/upload").permitAll()
+                        .requestMatchers("/api/questions/flashcards/upload").permitAll()
                         .requestMatchers("/api/questions/public/reviews").permitAll()
+                        .requestMatchers("/api/auth/**", "/api/study/**").permitAll()
+                        .requestMatchers("/api/analytics/**").permitAll()
+                        .requestMatchers("/actuator/health").permitAll()
                         .anyRequest().authenticated()
                 )
 
@@ -72,7 +84,7 @@ public class SecurityConfig {
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
-        configuration.setAllowedOrigins(List.of("http://localhost:5173", "http://localhost:5174"));
+        configuration.setAllowedOrigins(List.of(corsOrigin, "http://localhost:5173", "http://localhost:5174"));
         configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
         configuration.setAllowedHeaders(List.of("*"));
         configuration.setAllowCredentials(true);

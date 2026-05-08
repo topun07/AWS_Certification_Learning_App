@@ -1,0 +1,440 @@
+certCode,domain,title,content
+"AIP-C01","Domain 3: AI Safety & Governance","AI Safety, Security, and Governance","## AIP-C01 Domain 3: AI Safety, Security, and Governance
+
+**Weight:** ~20% of scored exam content
+**Exam Level:** Professional
+**Target Audience:** Developers preparing for the AWS Certified Generative AI Developer - Professional exam
+
+This domain tests your ability to engineer safety into GenAI applications, implement defense-in-depth security, and build governance frameworks that satisfy enterprise compliance requirements. The Professional-level difference: you're designing and coding these controls, not just recognizing them.
+
+---
+
+## Objective 3.1: Implement AI Safety Controls
+
+### The GenAI Threat Landscape
+
+At the Professional level, you must understand attack vectors and implement mitigations:
+
+| Threat | Description | Attack Surface |
+|--------|-------------|---------------|
+| **Prompt injection (direct)** | User crafts input to override system instructions | User input field |
+| **Prompt injection (indirect)** | Malicious instructions hidden in retrieved documents, emails, or web pages | RAG data sources, tool outputs |
+| **Jailbreaking** | Bypassing safety training to produce harmful content | User input |
+| **Data exfiltration** | Tricking the model into revealing training data, system prompts, or PII | User input + model memory |
+| **Model poisoning** | Corrupting fine-tuning data to embed backdoors or biases | Training pipeline |
+| **Denial of service** | Overwhelming the model with expensive requests | API endpoint |
+| **Hallucination exploitation** | Relying on model-generated ""facts"" for critical decisions | Model output |
+| **Tool misuse** | Agent invokes tools in unintended or harmful ways | Agent action groups |
+
+### Amazon Bedrock Guardrails - Deep Implementation
+
+At the Professional level, you must configure Guardrails with precision:
+
+**Content Filters (configurable strength: NONE / LOW / MEDIUM / HIGH):**
+
+- **Hate** - Discriminatory content based on identity
+- **Insults** - Demeaning or belittling language
+- **Sexual** - Sexually explicit content
+- **Violence** - Content glorifying physical harm
+- **Misconduct** - Information facilitating illegal activities
+- **Prompt attacks** - Detect and block injection attempts
+
+Each filter applies independently to inputs and outputs with separate strength settings.
+
+**Denied Topics:**
+
+```json
+{
+  ""name"": ""investment-advice"",
+  ""definition"": ""Providing specific investment recommendations, stock picks, or financial planning advice"",
+  ""examples"": [
+    ""Should I buy Tesla stock?"",
+    ""What's the best mutual fund for retirement?""
+  ]
+}
+```
+
+- Define topics the model must refuse to engage with.
+- Provide examples to improve detection accuracy.
+- Critical for regulated industries (finance, healthcare, legal).
+
+**Word Filters:**
+
+- Block specific words/phrases in inputs or outputs.
+- Support exact match and regex patterns.
+- Use case: Block competitor names, profanity, or internal codenames.
+
+**PII Filters (configurable action: BLOCK or ANONYMIZE):**
+
+- Detect 30+ PII types: names, addresses, SSNs, credit cards, phone numbers, emails, etc.
+- BLOCK - Reject the entire request/response.
+- ANONYMIZE - Replace PII with placeholders ([NAME], [SSN]).
+- Apply to inputs, outputs, or both.
+
+**Contextual Grounding Checks:**
+
+- Verify that model responses are grounded in the provided source material.
+- Grounding threshold - Minimum percentage of the response that must be supported by retrieved context.
+- Relevance threshold - Minimum relevance score between the response and the source.
+- Reduces hallucination in RAG applications.
+
+**Code-related Safeguards:**
+
+- Detect harmful content within code elements.
+- Block malicious code injection attempts.
+- Prevent PII exposure in code structures.
+
+### Implementing Guardrails in Code
+
+```python
+# Apply guardrails to a Bedrock invocation
+response = bedrock_runtime.invoke_model(
+    modelId=""anthropic.claude-3-sonnet"",
+    guardrailIdentifier=""my-guardrail-id"",
+    guardrailVersion=""1"",
+    body=json.dumps({
+        ""messages"": [{""role"": ""user"", ""content"": user_input}],
+        ""system"": system_prompt
+    })
+)
+
+# Check if guardrail intervened
+if response['stopReason'] == 'guardrail_intervened':
+    # Handle blocked content
+    guardrail_output = response['guardrailOutput']
+    # Log the violation, return safe fallback message
+```
+
+### Prompt Injection Defense - Layered Approach
+
+**Layer 1: Input Validation**
+- Sanitize user inputs before they reach the model.
+- Strip known injection patterns (e.g., ""ignore previous instructions"").
+- Length limits to prevent context overflow attacks.
+
+**Layer 2: Prompt Architecture**
+- Separate system prompts from user content with clear delimiters.
+- Use the Bedrock Converse API (which structurally separates roles).
+- Never concatenate user input directly into system prompts.
+
+**Layer 3: Bedrock Guardrails**
+- Enable the prompt attack content filter at HIGH strength.
+- Catches injection attempts that bypass input validation.
+
+**Layer 4: Output Validation**
+- Check model outputs for leaked system prompts or PII.
+- Verify outputs match expected format/schema.
+- Apply Guardrails to outputs as well as inputs.
+
+**Layer 5: Least Privilege for Agents**
+- Agents should only have access to tools they absolutely need.
+- Action groups should validate parameters before execution.
+- Implement confirmation steps for destructive actions.
+
+### Agent Safety Controls
+
+For agentic AI systems, additional safety measures:
+
+- **Tool-level permissions** - Each action group has its own IAM permissions; scope them tightly.
+- **Confirmation prompts** - Require user confirmation before executing high-impact actions (delete, purchase, transfer).
+- **Rate limiting** - Prevent agents from making excessive tool calls in a single turn.
+- **Execution boundaries** - Define maximum iterations for the agent loop to prevent infinite loops.
+- **Output constraints** - Validate that agent-generated API parameters are within acceptable ranges.
+- **Human-in-the-loop** - Route high-stakes agent decisions to human reviewers (Amazon A2I integration).
+
+---
+
+## Objective 3.2: Implement Security for GenAI Workloads
+
+### Identity and Access Management - Professional Level
+
+Beyond basic IAM, the exam tests advanced patterns:
+
+**Fine-Grained Bedrock Permissions:**
+
+```json
+{
+  ""Effect"": ""Allow"",
+  ""Action"": ""bedrock:InvokeModel"",
+  ""Resource"": ""arn:aws:bedrock:us-east-1::foundation-model/anthropic.claude-3-sonnet*"",
+  ""Condition"": {
+    ""StringEquals"": {
+      ""bedrock:GuardrailIdentifier"": ""required-guardrail-id""
+    }
+  }
+}
+```
+
+- Restrict which models specific roles can invoke.
+- Enforce guardrail usage via IAM conditions.
+- Separate permissions for model invocation vs. model management.
+
+**Service Control Policies (SCPs) for AI:**
+
+- Organization-wide restrictions on AI service usage.
+- Example: Prevent any account from invoking models without guardrails attached.
+- Example: Restrict fine-tuning to specific accounts only.
+
+**Resource-Based Policies:**
+
+- Control cross-account access to custom models, knowledge bases, and agents.
+- Example: Share a fine-tuned model with a partner account without giving them full Bedrock access.
+
+### Data Protection Architecture
+
+**Encryption Strategy:**
+
+| Data State | Service | Key Management |
+|-----------|---------|---------------|
+| Training data at rest (S3) | SSE-KMS | Customer-managed CMK |
+| Model artifacts at rest | Bedrock-managed encryption | AWS-managed or CMK |
+| Vector store data | OpenSearch encryption | KMS |
+| Inference logs | CloudWatch Logs encryption | KMS |
+| Data in transit | TLS 1.2+ | AWS Certificate Manager |
+| Session data (DynamoDB) | DynamoDB encryption | AWS-managed or CMK |
+
+**Data Isolation:**
+
+- **VPC endpoints (PrivateLink)** - All Bedrock API calls stay within AWS network.
+- **S3 bucket policies** - Restrict access to training data by account, VPC, or IP.
+- **Network isolation** - SageMaker training in VPC with no internet access.
+- **Bedrock data privacy** - Inputs/outputs never shared with model providers; never used to train base models.
+
+### Secrets Management
+
+- **AWS Secrets Manager** - Store API keys for external tools that agents call.
+- **Parameter Store (SSM)** - Store configuration values (model IDs, guardrail IDs, thresholds).
+- **Never hardcode** - Credentials, API keys, or sensitive configuration in Lambda code or prompts.
+- **Rotation** - Automate secret rotation for external service credentials.
+
+### Network Security for GenAI
+
+```
++---------------------------------------------------+
+|                  YOUR VPC                           |
+|                                                    |
+|  +----------+    +----------------------------+   |
+|  | Lambda   |--->| VPC Endpoint (Bedrock)     |   |
+|  | (no IGW) |    | (PrivateLink)              |   |
+|  +----------+    +----------------------------+   |
+|       |                                            |
+|       v                                            |
+|  +--------------------------------------------+   |
+|  | Security Group: Allow 443 outbound only    |   |
+|  +--------------------------------------------+   |
+|                                                    |
++---------------------------------------------------+
+         |
+         X  No public internet access
+```
+
+- **No internet gateway** - GenAI compute has no path to the public internet.
+- **VPC endpoints** - Private connectivity to Bedrock, S3, DynamoDB, Secrets Manager.
+- **Security groups** - Allow only HTTPS (443) to VPC endpoints.
+- **WAF (Web Application Firewall)** - Protect API Gateway from DDoS and malicious payloads.
+
+---
+
+## Objective 3.3: Implement Governance Frameworks
+
+### Logging and Auditing for GenAI
+
+**Amazon Bedrock Invocation Logging:**
+
+- Log all model inputs and outputs to S3 or CloudWatch Logs.
+- Captures: model ID, input tokens, output tokens, latency, stop reason, guardrail actions.
+- Essential for compliance audits, debugging, and cost analysis.
+- **Important: Invocation logging must be explicitly enabled - it's off by default.**
+
+**AWS CloudTrail for Bedrock:**
+
+- Logs management events (create agent, update guardrail, deploy model) automatically.
+- Data events (InvokeModel calls) require explicit configuration.
+- Provides who/what/when/where for every API call.
+
+**CloudWatch Metrics for Bedrock:**
+
+- **InvocationCount** - Number of model calls
+- **InvocationLatency** - Time per invocation
+- **InvocationClientErrors (4xx)** - Client-side failures
+- **InvocationServerErrors (5xx)** - Service-side failures
+- **InvocationThrottles** - Rate limit hits
+- **GuardrailsIntervention** - How often guardrails block content
+
+**Alarm Strategy:**
+
+- High throttle rate -> Alert -> Consider Provisioned Throughput
+- High guardrail intervention rate -> Alert -> Investigate potential attack
+- Spike in 5xx errors -> Alert -> Check service health / fallback
+- Unusual invocation patterns -> Alert -> Potential model extraction attempt
+
+### Model Governance Lifecycle
+
+```
+1. DEVELOPMENT
+   - Version control for prompts and configurations
+   - Bedrock Prompt Management for template versioning
+   - Document model selection rationale
+        |
+2. EVALUATION
+   - Bedrock Model Evaluation (automatic + human)
+   - Test against safety benchmarks
+   - Red-team testing for adversarial inputs
+        |
+3. APPROVAL
+   - SageMaker Model Registry (approval workflows)
+   - Require sign-off before production deployment
+   - Document evaluation results
+        |
+4. DEPLOYMENT
+   - Guardrails attached (enforced via IAM)
+   - Invocation logging enabled
+   - Monitoring dashboards configured
+        |
+5. MONITORING
+   - CloudWatch metrics and alarms
+   - Drift detection (input distribution changes)
+   - Guardrail intervention rate tracking
+        |
+6. RETIREMENT
+   - Deprecation plan for model versions
+   - Data retention/deletion per policy
+   - Audit trail preserved
+```
+
+### Compliance Frameworks - Professional Depth
+
+| Framework | AI-Relevant Requirements | AWS Implementation |
+|-----------|------------------------|-------------------|
+| **GDPR** | Right to explanation; data minimization; right to erasure; consent | Clarify (explainability); Macie (PII detection); S3 lifecycle policies |
+| **HIPAA** | PHI protection; access controls; audit trails | KMS encryption; IAM; CloudTrail; BAA with AWS |
+| **SOC 2** | Security, availability, confidentiality controls | Config rules; CloudTrail; Audit Manager |
+| **ISO 42001** | AI management system; risk assessment; bias monitoring | Clarify; Model Monitor; governance documentation |
+| **EU AI Act** | Risk classification; transparency; human oversight | Guardrails; A2I; model cards; invocation logging |
+| **PCI DSS** | Cardholder data protection | KMS; VPC isolation; tokenization |
+
+### Data Governance for GenAI - Professional Patterns
+
+**Training Data Governance:**
+
+- **Provenance tracking** - Document where every piece of training data came from.
+- **License compliance** - Verify you have rights to use data for model training.
+- **PII scanning** - Run Macie on training data before fine-tuning.
+- **Version control** - Track which dataset version produced which model version.
+
+**Inference Data Governance:**
+
+- **Retention policies** - How long are prompts/responses stored? (Invocation logs in S3 with lifecycle rules.)
+- **Access controls** - Who can read inference logs? (S3 bucket policies + KMS key policies.)
+- **Right to erasure** - Can you delete a specific user's inference history? (Design for this upfront.)
+- **Cross-border data flows** - Do inference logs stay in the required region?
+
+**RAG Data Governance:**
+
+- **Source access controls** - Not all users should retrieve from all knowledge base sources.
+- **Metadata-based filtering** - Restrict retrieval by user role, department, or clearance level.
+- **PII in vector stores** - Embeddings derived from PII-containing documents may constitute personal data.
+- **Stale data management** - Remove outdated documents from knowledge bases to prevent incorrect answers.
+
+---
+
+## Objective 3.4: Responsible AI at the Professional Level
+
+### Red-Teaming GenAI Applications
+
+Red-teaming is systematic adversarial testing of your GenAI application:
+
+- **Prompt injection testing** - Try to override system instructions through various techniques.
+- **Jailbreak testing** - Attempt to bypass content filters with creative prompting.
+- **Data extraction** - Try to make the model reveal training data or system prompts.
+- **Bias probing** - Test for discriminatory outputs across demographic groups.
+- **Edge case testing** - Unusual inputs, extreme lengths, special characters, multilingual attacks.
+- **Tool misuse testing** - For agents, try to make them call tools with malicious parameters.
+
+Bedrock Model Evaluation supports automated evaluation including:
+- Toxicity scoring
+- Accuracy assessment
+- Robustness testing
+- Human evaluation workflows
+
+### Hallucination Mitigation - Engineering Approaches
+
+| Strategy | Implementation | Effectiveness |
+|----------|---------------|---------------|
+| **RAG grounding** | Provide source documents; instruct model to only use provided context | High |
+| **Guardrails grounding checks** | Set grounding threshold; block ungrounded responses | High |
+| **Temperature reduction** | Lower temperature (0.0-0.3) for factual tasks | Medium |
+| **Citation requirements** | Instruct model to cite specific sources for each claim | Medium |
+| **Confidence calibration** | Ask model to express uncertainty when unsure | Medium |
+| **Output validation** | Check generated facts against a knowledge base programmatically | High (but complex) |
+| **Multi-model verification** | Cross-check outputs between different models | High (but expensive) |
+
+### Responsible AI Monitoring in Production
+
+- **Bias drift** - Monitor whether model outputs become more biased over time as input distributions change.
+- **Toxicity monitoring** - Track guardrail intervention rates; investigate spikes.
+- **User feedback loops** - Collect thumbs-up/down signals; analyze patterns in negative feedback.
+- **Fairness audits** - Periodically test model responses across demographic groups.
+- **Incident response** - Define playbooks for when safety controls fail (who to notify, how to remediate, whether to shut down).
+
+---
+
+## Key Service-to-Concept Mapping (Domain 3)
+
+| Security/Safety Concept | AWS Service/Feature |
+|------------------------|-------------------|
+| Block harmful content (inputs + outputs) | Bedrock Guardrails (content filters) |
+| Prevent prompt injection | Bedrock Guardrails (prompt attack filter) + input validation |
+| Redact/block PII | Bedrock Guardrails (PII filters) |
+| Restrict model access by role | IAM policies (resource-level permissions) |
+| Enforce guardrail usage | IAM conditions on bedrock:InvokeModel |
+| Organization-wide AI restrictions | SCPs (Service Control Policies) |
+| Private API access (no internet) | VPC endpoints (PrivateLink) |
+| Encrypt data at rest | AWS KMS (customer-managed keys) |
+| Log all model invocations | Bedrock Invocation Logging (S3/CloudWatch) |
+| Audit API calls | AWS CloudTrail (data events) |
+
+---
+
+## Key Exam Patterns for AIP-C01 Domain 3
+
+- **""Prevent the model from revealing system prompts""** - Bedrock Guardrails (prompt attack filter) + output validation
+- **""Ensure all Bedrock calls use guardrails""** - IAM condition requiring bedrock:GuardrailIdentifier
+- **""Log every prompt and response for audit""** - Bedrock Invocation Logging to S3
+- **""Agent calls a tool it shouldn't""** - Least privilege IAM on action groups + confirmation steps
+- **""Detect if someone is trying to extract the model""** - CloudWatch alarms on unusual invocation patterns + rate limiting
+- **""Keep all GenAI traffic off the public internet""** - VPC + PrivateLink endpoints (no IGW)
+- **""Comply with GDPR right to erasure for chatbot users""** - Design inference log storage with per-user deletion capability
+- **""Model is hallucinating in production""** - Guardrails grounding checks + RAG + lower temperature
+- **""Restrict which accounts can fine-tune models""** - SCPs at the organization level
+- **""Protect API keys used by agent tools""** - AWS Secrets Manager with rotation
+- **""Chatbot suddenly producing toxic outputs""** - Check guardrail intervention metrics in CloudWatch; investigate input patterns
+- **""Need to prove compliance to auditors""** - CloudTrail + Invocation Logging + Audit Manager
+- **""Block specific topics in a regulated industry""** - Bedrock Guardrails denied topics
+- **""Test application for adversarial vulnerabilities""** - Red-teaming + Bedrock Model Evaluation
+- **""PII leaking into model responses""** - Guardrails PII filter (ANONYMIZE or BLOCK) on outputs
+
+---
+
+## Quick Exam Tips for Domain 3
+
+- **Guardrails** is the Swiss Army knife of this domain. Know every filter type (content, denied topics, word, PII, grounding, prompt attack) and when to use each.
+- **IAM conditions** are the Professional-level mechanism for enforcing guardrail usage. The exam will test whether you can prevent developers from invoking models without guardrails.
+- **Invocation logging is OFF by default.** If a scenario mentions ""audit"" or ""compliance"" and logging isn't configured, that's the gap.
+- **Prompt injection** is the #1 security threat for GenAI. Know the layered defense approach (input validation -> prompt architecture -> guardrails -> output validation -> least privilege).
+- **VPC + PrivateLink** = the answer whenever the question mentions ""private,"" ""no internet,"" or ""data must not leave the network.""
+- Don't confuse **CloudTrail** (who called what API) with **Invocation Logging** (what was the actual prompt/response content). Both are needed for full auditability.
+- **Agent security** is a new Professional-level topic. Expect scenarios about agents calling tools they shouldn't, or executing actions without user confirmation.
+- **Grounding checks** in Guardrails are the primary defense against hallucination in RAG applications. Know that you set a threshold and responses below it are blocked.
+- The exam tests **defense-in-depth** - the correct answer often involves multiple layers working together, not a single service.
+
+---
+
+## Summary
+
+This covers all objectives in AIP-C01 Domain 3:
+
+- **AI Safety controls** - Guardrails configuration, prompt injection defense, agent safety
+- **Security implementation** - IAM, encryption, network isolation, secrets management
+- **Governance frameworks** - logging, auditing, model lifecycle, compliance
+- **Responsible AI engineering** - red-teaming, hallucination mitigation, production monitoring"

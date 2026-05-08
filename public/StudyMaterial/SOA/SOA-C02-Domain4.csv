@@ -1,0 +1,268 @@
+certCode,domain,title,content
+"SOA-C02","Domain 4: Security & Compliance","Security & Compliance","## SOA-C02 Domain 4: Security & Compliance
+
+**Weight:** ~16% of scored exam content
+**Exam Level:** Associate
+
+This domain covers implementing and managing security policies, access controls, encryption, and compliance frameworks.
+
+---
+
+## IAM Operations
+
+### Policy Management
+
+| Policy Type | Scope | Managed By |
+|-------------|-------|-----------|
+| **AWS Managed** | Global | AWS (auto-updated) |
+| **Customer Managed** | Account | You (reusable) |
+| **Inline** | Single entity | You (one-off, not reusable) |
+
+### Permission Boundaries
+
+- Set maximum permissions for IAM users/roles
+- Effective permissions = Identity policy INTERSECT Boundary
+- Use case: Allow developers to create roles but limit what those roles can do
+- Does NOT grant permissions (only restricts)
+
+### IAM Access Analyzer
+
+| Feature | Purpose |
+|---------|---------|
+| **External Access** | Find resources shared outside your account |
+| **Unused Access** | Identify unused roles, permissions, access keys |
+| **Policy Validation** | Check policies for errors and best practices |
+| **Policy Generation** | Generate least-privilege policy from CloudTrail |
+
+### Credential Management
+
+| Credential | Rotation | Best Practice |
+|-----------|----------|---------------|
+| **Access Keys** | Manual (90-day recommendation) | Use roles instead |
+| **Console Password** | Policy-enforced | MFA required |
+| **SSH Keys (CodeCommit)** | Manual | Use HTTPS + credential helper |
+| **Signing Certificates** | Manual | Rare use case |
+
+### IAM Credential Report
+
+- Account-level report (all users)
+- Shows: Password age, MFA status, access key age, last used
+- Use for: Compliance audits, identify stale credentials
+- Generate via Console or CLI (aws iam generate-credential-report)
+
+---
+
+## AWS Organizations
+
+### Service Control Policies (SCPs)
+
+- Restrict maximum permissions for accounts/OUs
+- Do NOT grant permissions (only limit)
+- Do NOT affect management account
+- Explicit Deny always wins
+- Must have explicit Allow at every level
+
+### Common SCP Patterns
+
+```json
+// Deny all outside approved regions
+{
+  ""Effect"": ""Deny"",
+  ""Action"": ""*"",
+  ""Resource"": ""*"",
+  ""Condition"": {
+    ""StringNotEquals"": {
+      ""aws:RequestedRegion"": [""us-east-1"", ""us-west-2""]
+    }
+  }
+}
+```
+
+- Deny region usage (restrict to approved regions)
+- Deny service usage (block expensive services)
+- Require encryption (deny unencrypted operations)
+- Require tags (deny resource creation without tags)
+- Prevent leaving organization
+
+---
+
+## AWS Config for Compliance
+
+### Conformance Packs
+
+- Collection of Config rules + remediation actions
+- Pre-built packs: CIS Benchmarks, PCI DSS, HIPAA
+- Custom packs: Your organization's standards
+- Deploy via StackSets across accounts
+- Compliance score per pack
+
+### Multi-Account Compliance
+
+| Feature | Purpose |
+|---------|---------|
+| **Aggregator** | View compliance across accounts/regions |
+| **Organization Rules** | Deploy rules to all member accounts |
+| **Conformance Packs** | Compliance frameworks as code |
+| **Delegated Admin** | Non-management account manages Config |
+
+---
+
+## Encryption Operations
+
+### KMS Key Management
+
+| Operation | Description |
+|-----------|-------------|
+| **Create Key** | CMK with key policy |
+| **Enable/Disable** | Toggle key availability |
+| **Schedule Deletion** | 7-30 day waiting period |
+| **Rotate** | Annual automatic rotation (CMK only) |
+| **Import Key Material** | Bring your own key (BYOK) |
+| **Multi-Region Keys** | Same key in multiple regions |
+
+### Key Policies
+
+- Every KMS key must have a key policy
+- Default: Account root has full access
+- Grant: Temporary, programmatic access to a key
+- ViaService condition: Restrict key use to specific AWS services
+
+### Encryption Patterns
+
+| Scenario | Solution |
+|----------|----------|
+| **Encrypt existing EBS** | Snapshot -> Copy encrypted -> Restore |
+| **Encrypt existing RDS** | Snapshot -> Restore encrypted |
+| **Encrypt S3 bucket** | Bucket policy + default encryption |
+| **Cross-account encryption** | Key policy allows external account |
+| **Encrypt in transit** | TLS/ACM certificate on ALB/CloudFront |
+| **Encrypt EFS** | Enable at creation (KMS) |
+
+### Certificate Manager (ACM)
+
+- Free public TLS certificates
+- Auto-renewal (DNS validation recommended)
+- Attach to: ALB, CloudFront, API Gateway, NLB
+- Cannot attach directly to EC2
+- Regional: CloudFront requires us-east-1
+- Private CA: For internal services (paid)
+
+---
+
+## Security Services Operations
+
+### GuardDuty
+
+- Threat detection using ML
+- Sources: VPC Flow Logs, DNS Logs, CloudTrail, S3 Data Events, EKS Audit
+- Finding types: Recon, UnauthorizedAccess, Trojan, CryptoCurrency
+- Severity: Low (1-3), Medium (4-6), High (7-8.9)
+- Remediation: EventBridge -> Lambda (isolate instance, block IP)
+- Multi-account: Delegated administrator in Organizations
+
+### Inspector
+
+- Vulnerability scanning (CVE database)
+- Targets: EC2 instances, ECR container images, Lambda functions
+- Automatic scanning on: New instance launch, new image push, new Lambda deploy
+- Findings: CVE ID, severity, affected package, remediation
+- Integration: Security Hub, EventBridge
+
+### Macie
+
+- Discover and protect sensitive data in S3
+- Uses ML to identify PII, financial data, credentials
+- Automated discovery: Scans buckets on schedule
+- Findings: Sensitive data type, location, severity
+- Integration: Security Hub, EventBridge
+
+### Security Hub
+
+- Central security dashboard
+- Aggregates findings from: GuardDuty, Inspector, Macie, Firewall Manager, IAM Access Analyzer
+- Compliance checks: CIS Benchmarks, PCI DSS, AWS Foundational Security
+- Automated response: EventBridge -> Lambda/SSM
+- Cross-account: Organization-wide view
+
+---
+
+## Compliance Frameworks
+
+### Shared Responsibility Model
+
+| AWS Responsibility | Customer Responsibility |
+|-------------------|------------------------|
+| Physical security | IAM configuration |
+| Network infrastructure | Security group rules |
+| Hypervisor | OS patching (EC2) |
+| Managed service patching | Application security |
+| Hardware maintenance | Data encryption |
+| Global infrastructure | Firewall configuration |
+
+### Compliance Programs
+
+| Framework | Focus |
+|-----------|-------|
+| **SOC 1/2/3** | Security, availability, processing integrity |
+| **PCI DSS** | Payment card data |
+| **HIPAA** | Healthcare data |
+| **FedRAMP** | US government |
+| **ISO 27001** | Information security management |
+| **GDPR** | EU data protection |
+
+### AWS Artifact
+
+- Self-service portal for compliance reports
+- Download: SOC reports, PCI attestation, ISO certificates
+- Agreements: BAA (HIPAA), GDPR DPA
+- No cost to access
+
+---
+
+## Key Exam Patterns
+
+**IAM:**
+- **""Limit what roles developers can create""** -> Permission Boundaries
+- **""Find resources shared externally""** -> IAM Access Analyzer
+- **""Generate least-privilege policy""** -> Access Analyzer policy generation (from CloudTrail)
+- **""Audit all user credentials""** -> IAM Credential Report
+- **""Restrict accounts to specific regions""** -> SCP with region condition
+
+**Encryption:**
+- **""Encrypt existing unencrypted EBS""** -> Snapshot, copy encrypted, restore
+- **""Audit who used encryption key""** -> CloudTrail (KMS API calls)
+- **""Share encrypted resource cross-account""** -> KMS key policy allows external account
+- **""Auto-rotate encryption keys""** -> CMK with automatic rotation enabled
+- **""TLS certificate for ALB""** -> ACM (free, auto-renewal with DNS validation)
+
+**Compliance:**
+- **""Continuous compliance monitoring""** -> AWS Config rules
+- **""Compliance framework as code""** -> Conformance Packs
+- **""Multi-account compliance view""** -> Config Aggregator
+- **""Download compliance reports""** -> AWS Artifact
+- **""Central security findings""** -> Security Hub
+
+**Security Services:**
+- **""Detect compromised instance""** -> GuardDuty
+- **""Scan for vulnerabilities""** -> Inspector
+- **""Find PII in S3""** -> Macie
+- **""Auto-remediate security finding""** -> EventBridge -> Lambda/SSM
+- **""Organization-wide threat detection""** -> GuardDuty with delegated admin
+
+---
+
+## Quick Exam Tips
+
+- **Permission Boundaries** limit maximum permissions. Effective = Identity AND Boundary.
+- **IAM Access Analyzer** finds external access AND generates least-privilege policies from CloudTrail.
+- **SCPs** restrict but never grant. Management account is always exempt.
+- **KMS key deletion** has a mandatory 7-30 day waiting period (cannot be immediate).
+- **KMS automatic rotation** is annual and only for customer managed keys (not AWS managed).
+- **ACM certificates** are free for public use. DNS validation enables auto-renewal.
+- **GuardDuty** is the first answer for threat detection questions.
+- **Inspector** scans EC2, ECR images, and Lambda for known vulnerabilities (CVEs).
+- **Security Hub** aggregates findings from all security services into one dashboard.
+- **Config Conformance Packs** = compliance frameworks deployed as code (CIS, PCI, HIPAA).
+- **AWS Artifact** = download compliance reports and sign agreements (BAA, DPA).
+- **Credential Report** shows all IAM users, password age, MFA status, key rotation.
+- **Multi-Region KMS keys** replicate the same key material across regions (same key ID)."

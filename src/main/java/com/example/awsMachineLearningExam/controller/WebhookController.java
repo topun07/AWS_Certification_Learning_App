@@ -11,17 +11,16 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
-@RequestMapping("/api/webhook")
+@RequestMapping("/api/payment") // 🚨 Aligned with your payment ecosystem
 public class WebhookController {
 
-    // This is a special password just for Webhooks so hackers can't fake payment calls
     @Value("${stripe.webhook.secret}")
     private String endpointSecret;
 
     @Autowired
     private AppUserRepository userRepository;
 
-    @PostMapping("/stripe")
+    @PostMapping("/webhook") // 🚨 The final URL is now /api/payment/webhook
     public ResponseEntity<?> handleStripeWebhook(@RequestBody String payload, @RequestHeader("Stripe-Signature") String sigHeader) {
         try {
             Event event = Webhook.constructEvent(payload, sigHeader, endpointSecret);
@@ -29,11 +28,10 @@ public class WebhookController {
             if ("checkout.session.completed".equals(event.getType())) {
                 Session session = (Session) event.getDataObjectDeserializer().deserializeUnsafe();
 
-                // 🚨 1. READ THE BEACON (This is now the Email!)
+                // READ THE BEACON (The Email)
                 String emailBeacon = session.getClientReferenceId();
                 System.out.println("📡 [WEBHOOK] Received Stripe receipt for Email: " + emailBeacon);
 
-                // 🚨 2. SEARCH BY EMAIL, NOT USERNAME!
                 if (emailBeacon != null) {
                     AppUser user = userRepository.findByEmail(emailBeacon).orElse(null);
 

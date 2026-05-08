@@ -1,0 +1,298 @@
+certCode,domain,title,content
+"SAP-C02","Domain 4: Accelerate Workload Migration","Accelerate Workload Migration","## SAP-C02 Domain 4: Accelerate Workload Migration
+
+**Weight:** ~20% of scored exam content
+**Exam Level:** Professional
+
+This domain covers planning and executing large-scale migrations, data transfer strategies, and application modernization.
+
+---
+
+## Migration Strategies (7 Rs)
+
+### The 7 Rs Framework
+
+| Strategy | Description | Effort | Value |
+|----------|-------------|--------|-------|
+| **Retire** | Decommission (no longer needed) | None | Reduce cost/complexity |
+| **Retain** | Keep on-premises (not ready to migrate) | None | Defer decision |
+| **Rehost (Lift & Shift)** | Move as-is to EC2 | Low | Quick migration |
+| **Relocate** | Move to VMware Cloud on AWS | Low | Minimal changes |
+| **Repurchase** | Replace with SaaS (e.g., Salesforce) | Medium | Reduce ops burden |
+| **Replatform (Lift & Tinker)** | Minor optimizations during migration | Medium | Some cloud benefits |
+| **Refactor (Re-architect)** | Redesign for cloud-native | High | Maximum cloud benefits |
+
+### When to Use Each
+
+| Strategy | Example |
+|----------|---------|
+| **Retire** | Legacy app with 5 users, no business value |
+| **Retain** | Mainframe with complex dependencies (migrate later) |
+| **Rehost** | Web server to EC2 (fastest path to cloud) |
+| **Relocate** | VMware VMs to VMware Cloud on AWS |
+| **Repurchase** | On-prem CRM to Salesforce, email to O365 |
+| **Replatform** | MySQL on EC2 to RDS, .NET to Elastic Beanstalk |
+| **Refactor** | Monolith to microservices (Lambda, ECS, DynamoDB) |
+
+---
+
+## Migration Tools
+
+### Discovery & Planning
+
+| Tool | Purpose |
+|------|---------|
+| **Migration Hub** | Central tracking for all migrations |
+| **Application Discovery Service** | Discover on-prem servers (agent/agentless) |
+| **Migration Evaluator** | Build business case (TCO analysis) |
+| **CloudEndure** | Continuous replication for migration |
+
+### Server Migration
+
+| Tool | Use Case | Method |
+|------|----------|--------|
+| **AWS MGN (Application Migration Service)** | Lift-and-shift servers | Continuous block-level replication |
+| **VM Import/Export** | Import VM images as AMIs | One-time import |
+| **CloudEndure Migration** | Minimal downtime migration | Continuous replication |
+
+### AWS MGN (Application Migration Service)
+
+- Continuous block-level replication (no snapshots)
+- Minimal downtime (cutover in minutes)
+- Supports: Physical, VMware, Hyper-V, Azure, other clouds
+- Process: Install agent -> Replicate -> Test -> Cutover
+- Non-disruptive testing (launch test instances anytime)
+- Automatic conversion to boot on AWS
+
+---
+
+## Database Migration
+
+### AWS DMS (Database Migration Service)
+
+| Feature | Description |
+|---------|-------------|
+| **Homogeneous** | Same engine (Oracle to Oracle) - direct |
+| **Heterogeneous** | Different engine (Oracle to Aurora) - needs SCT |
+| **CDC (Change Data Capture)** | Continuous replication after initial load |
+| **Multi-AZ** | HA for replication instance |
+| **Validation** | Verify data integrity after migration |
+
+### Schema Conversion Tool (SCT)
+
+- Converts schema from one engine to another
+- Assessment report: Identifies conversion issues
+- Supports: Oracle/SQL Server -> Aurora/PostgreSQL/MySQL
+- Handles: Stored procedures, functions, triggers, views
+- Action items: Manual conversion needed for complex code
+
+### Migration Patterns
+
+| Source | Target | Strategy |
+|--------|--------|----------|
+| **Oracle** | Aurora PostgreSQL | SCT + DMS (heterogeneous) |
+| **SQL Server** | Aurora MySQL | SCT + DMS |
+| **Oracle** | Oracle on RDS | DMS only (homogeneous) |
+| **MongoDB** | DocumentDB | DMS (MongoDB-compatible) |
+| **Cassandra** | Keyspaces | DMS or custom migration |
+| **On-prem Redis** | ElastiCache | DMS or backup/restore |
+
+### Zero-Downtime Database Migration
+
+```
+1. Set up DMS replication (full load + CDC)
+2. SCT converts schema (if heterogeneous)
+3. Validate data integrity
+4. Test application against new database
+5. Cutover: Point application to new DB
+6. Monitor for issues
+7. Decommission source after validation period
+```
+
+---
+
+## Large-Scale Data Transfer
+
+### Transfer Decision Matrix
+
+| Data Size | Timeline | Method |
+|-----------|----------|--------|
+| **< 100 GB** | Hours | Internet transfer (S3 CLI, DataSync) |
+| **100 GB - 10 TB** | Days | DataSync, Direct Connect |
+| **10 TB - 80 TB** | Days-Week | Snowball Edge |
+| **80 TB - 1 PB** | Weeks | Multiple Snowball Edge devices |
+| **> 1 PB** | Weeks | Snowmobile (100 PB truck) |
+
+### AWS DataSync
+
+- Automated data transfer (on-prem to AWS or between AWS services)
+- Protocols: NFS, SMB, HDFS, S3, EFS, FSx
+- Bandwidth throttling and scheduling
+- Incremental transfers (only changed data)
+- Data integrity verification
+- Up to 10 Gbps throughput
+- Use cases: Migration, replication, archiving
+
+### Snow Family
+
+| Device | Storage | Compute | Use Case |
+|--------|---------|---------|----------|
+| **Snowcone** | 8-14 TB | 2 vCPU, 4 GB | Edge, small transfers |
+| **Snowball Edge Storage** | 80 TB | 40 vCPU | Large migrations |
+| **Snowball Edge Compute** | 42 TB | 52 vCPU, GPU | Edge computing |
+| **Snowmobile** | 100 PB | N/A | Exabyte-scale |
+
+### Transfer Acceleration
+
+| Service | Method | Best For |
+|---------|--------|----------|
+| **S3 Transfer Acceleration** | CloudFront edge -> S3 | Global uploads to S3 |
+| **DataSync** | Agent-based, scheduled | Recurring transfers |
+| **Direct Connect** | Dedicated link | Consistent high-bandwidth |
+| **Snow Family** | Physical device | Massive offline transfers |
+
+---
+
+## Application Modernization
+
+### Modernization Spectrum
+
+```
+Least Change                                    Most Change
+|                                                        |
+Rehost -> Replatform -> Refactor -> Rebuild -> Replace
+(EC2)    (RDS, Beanstalk) (Containers) (Serverless) (SaaS)
+```
+
+### Strangler Fig Pattern
+
+- Gradually replace monolith components with microservices
+- Route traffic to new service as each component is ready
+- Old and new coexist during transition
+- Use ALB path-based routing or API Gateway
+
+```
+Phase 1: Monolith handles everything
+Phase 2: New microservice handles /orders, monolith handles rest
+Phase 3: More services extracted (/users, /payments)
+Phase 4: Monolith fully decomposed
+```
+
+### Container Modernization
+
+| From | To | Tool |
+|------|-----|------|
+| **VM-based app** | ECS/Fargate | App2Container (A2C) |
+| **Java/.NET on EC2** | Containers | App2Container |
+| **On-prem containers** | ECS/EKS | ECR + task definitions |
+| **Windows containers** | ECS on Windows | Windows task definitions |
+
+### Serverless Modernization
+
+| From | To | Benefit |
+|------|-----|---------|
+| **Web server** | Lambda + API Gateway | No server management |
+| **Cron jobs** | EventBridge + Lambda | No idle compute |
+| **Message processing** | SQS + Lambda | Auto-scaling |
+| **File processing** | S3 event + Lambda | Event-driven |
+| **Relational DB** | DynamoDB | Serverless scaling |
+| **ETL jobs** | Glue (serverless) | No cluster management |
+
+---
+
+## Migration Governance
+
+### AWS Migration Hub
+
+- Central dashboard for all migration projects
+- Track progress across multiple tools (MGN, DMS, etc.)
+- Application grouping (map servers to applications)
+- Strategy recommendations
+- Refactor Spaces: Manage incremental refactoring
+
+### Landing Zone Setup
+
+| Component | Tool |
+|-----------|------|
+| **Multi-account structure** | Control Tower |
+| **Network foundation** | Transit Gateway, VPC templates |
+| **Security baseline** | GuardDuty, Config, CloudTrail |
+| **Identity** | IAM Identity Center |
+| **Logging** | Centralized log archive |
+| **Governance** | SCPs, tag policies |
+
+### Migration Phases
+
+```
+1. ASSESS
+   - Discovery (Application Discovery Service)
+   - Business case (Migration Evaluator)
+   - Portfolio analysis (group by migration strategy)
+
+2. MOBILIZE
+   - Landing zone setup (Control Tower)
+   - Skills development
+   - Migration playbooks
+   - Proof of concept
+
+3. MIGRATE & MODERNIZE
+   - Wave planning (group applications)
+   - Execute migrations (MGN, DMS, etc.)
+   - Validate and optimize
+   - Decommission source
+```
+
+---
+
+## Key Exam Patterns
+
+**Strategy:**
+- **""Fastest migration path""** -> Rehost (lift-and-shift with MGN)
+- **""Maximum cloud benefits""** -> Refactor (re-architect for cloud-native)
+- **""Minor optimization during migration""** -> Replatform (e.g., MySQL to RDS)
+- **""Replace with SaaS""** -> Repurchase
+- **""Decompose monolith gradually""** -> Strangler Fig pattern
+
+**Server Migration:**
+- **""Minimal downtime server migration""** -> MGN (continuous replication)
+- **""Migrate VMware VMs""** -> MGN or VMware Cloud on AWS (Relocate)
+- **""Track all migrations centrally""** -> Migration Hub
+
+**Database:**
+- **""Oracle to Aurora (different engine)""** -> SCT + DMS (heterogeneous)
+- **""Same engine migration""** -> DMS only (homogeneous)
+- **""Zero-downtime database migration""** -> DMS with CDC (continuous replication)
+- **""Assess conversion complexity""** -> SCT Assessment Report
+
+**Data Transfer:**
+- **""10 TB, need it in days""** -> Snowball Edge
+- **""Recurring data sync""** -> DataSync (scheduled, incremental)
+- **""100 PB migration""** -> Snowmobile
+- **""Fast uploads to S3 globally""** -> S3 Transfer Acceleration
+- **""Consistent high bandwidth""** -> Direct Connect
+
+**Modernization:**
+- **""Containerize existing app""** -> App2Container (A2C)
+- **""Gradual monolith decomposition""** -> Strangler Fig + ALB routing
+- **""Serverless migration""** -> Lambda + API GW + DynamoDB
+- **""Manage incremental refactoring""** -> Migration Hub Refactor Spaces
+
+---
+
+## Quick Exam Tips
+
+- **MGN** is the primary server migration tool (replaces CloudEndure Migration and SMS).
+- **DMS + SCT** for heterogeneous database migrations. DMS alone for homogeneous.
+- **CDC (Change Data Capture)** in DMS enables zero-downtime migration (continuous sync).
+- **Snowball Edge** for 10-80 TB. Multiple devices for larger. Snowmobile for 100 PB.
+- **DataSync** for recurring, scheduled transfers (incremental, up to 10 Gbps).
+- **Strangler Fig** is the standard pattern for gradual monolith decomposition.
+- **App2Container** converts Java/.NET apps to containers automatically.
+- **Control Tower** sets up the landing zone. Account Factory provisions standardized accounts.
+- **Migration Hub** tracks progress across all migration tools in one dashboard.
+- **Rehost** is fastest (weeks). Refactor takes longest (months) but gives most cloud benefits.
+- **SCT Assessment Report** shows what percentage of code can be auto-converted.
+- **S3 Transfer Acceleration** uses CloudFront edge locations for faster global uploads.
+- **Direct Connect** takes weeks to establish. Use VPN as interim connectivity.
+- **Migration waves** group applications by dependency and priority for phased migration.
+- **Refactor Spaces** in Migration Hub manages the routing for incremental app modernization."

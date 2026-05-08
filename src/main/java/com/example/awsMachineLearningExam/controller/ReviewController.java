@@ -4,10 +4,7 @@ import com.example.awsMachineLearningExam.model.Review;
 import com.example.awsMachineLearningExam.repository.ReviewRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.CrossOrigin;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 import java.util.Map;
@@ -36,6 +33,19 @@ public class ReviewController {
                     "error", "The backend crashed while looking for the Reviews table.",
                     "reason", e.getMessage() != null ? e.getMessage() : "Unknown Exception"
             ));
+        }
+    }
+
+    // 🚨 THE IN-HOUSE SUBMISSION ENDPOINT
+    @PostMapping("/reviews")
+    public ResponseEntity<?> submitReview(@RequestBody Review newReview) {
+        try {
+            // The Review.java entity automatically sets the CreatedAt timestamp,
+            // so all we have to do is save the text, rating, and author name!
+            reviewRepository.save(newReview);
+            return ResponseEntity.ok(java.util.Map.of("message", "Review successfully forged."));
+        } catch (Exception e) {
+            return ResponseEntity.status(500).body(java.util.Map.of("error", "Failed to save review."));
         }
     }
 }
