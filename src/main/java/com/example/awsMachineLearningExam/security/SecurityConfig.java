@@ -71,6 +71,7 @@ public class SecurityConfig {
                         .requestMatchers("/api/questions/public/reviews").permitAll()
                         .requestMatchers("/api/auth/**", "/api/study/**").permitAll()
                         .requestMatchers("/api/analytics/**").permitAll()
+                        .requestMatchers("/api/ai/**").permitAll()
                         .requestMatchers("/actuator/health").permitAll()
                         .anyRequest().authenticated()
                 )
