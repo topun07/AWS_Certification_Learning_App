@@ -55,9 +55,9 @@ public class PaymentController {
             System.out.println("📡 CHECKOUT REQUEST - Plan Type: [" + planType + "]");
 
             // Stripe Price IDs
-            final String PRICE_ANNUAL = "price_1TUuaf9cwza92vUtR93URo4b";   // $79.99/year
-            final String PRICE_MONTHLY = "price_1TUucy9cwza92vUtiTlV9gHV";  // $9.99/month
-            final String PRICE_TRIAL = "price_1TUuZh9cwza92vUtMxRZMOca";    // $1 trial
+            final String PRICE_ANNUAL = "price_1TWzs19z0vfxVeWeJFAJIN4S";    // $79.99/year
+            final String PRICE_MONTHLY = "price_1TWzqK9z0vfxVeWeixarvNVE";   // $9.99/month
+            final String PRICE_TRIAL = "price_1TWzoX9z0vfxVeWeF1Ym4Ajr";     // $1 trial
 
             SessionCreateParams params;
 
