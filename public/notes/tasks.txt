@@ -1,5 +1,3 @@
-"gehafgdsffdfgdf"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"fdgasagdsgga"   
-
 git init
 
 git add .
