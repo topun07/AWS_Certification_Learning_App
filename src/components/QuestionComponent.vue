@@ -632,9 +632,9 @@
 
           <div class="flex flex-col sm:flex-row w-full gap-4 2xl:gap-8 justify-center">
 
-            <a href="mailto:test@test.com" class="inline-flex justify-center items-center gap-3 2xl:gap-5 bg-white text-indigo-600 hover:text-indigo-700 hover:bg-indigo-50 px-6 py-4 2xl:px-10 2xl:py-6 rounded-2xl 2xl:rounded-3xl font-black text-sm 2xl:text-xl uppercase tracking-widest transition-all border border-slate-200 hover:border-indigo-200 shadow-sm hover:shadow-md group flex-1">
+            <a href="mailto:admin@knowledgeforgeacademy.com" class="inline-flex justify-center items-center gap-3 2xl:gap-5 bg-white text-indigo-600 hover:text-indigo-700 hover:bg-indigo-50 px-6 py-4 2xl:px-10 2xl:py-6 rounded-2xl 2xl:rounded-3xl font-black text-sm 2xl:text-xl uppercase tracking-widest transition-all border border-slate-200 hover:border-indigo-200 shadow-sm hover:shadow-md group flex-1">
               <span class="text-xl 2xl:text-3xl group-hover:animate-pulse">✉️</span>
-              test@test.com
+              admin@knowledgeforgeacademy.com
             </a>
           </div>
 
@@ -2211,12 +2211,10 @@ const askAiTutor = async () => {
     .join(', ');
 
   try {
-    const token = localStorage.getItem('aws_jwt');
-    const response = await fetch(`${API_BASE_URL}/api/ai/tutor`, {
+    const response = await fetch('https://2zm5xtvh2l.execute-api.us-east-1.amazonaws.com/tutor', {
       method: 'POST',
       headers: {
-        'Content-Type': 'application/json',
-        'Authorization': token ? `Bearer ${token}` : ''
+        'Content-Type': 'application/json'
       },
       body: JSON.stringify({
         questionText: question.value.questionText,

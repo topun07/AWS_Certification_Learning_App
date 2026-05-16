@@ -6,6 +6,7 @@ import com.stripe.model.checkout.Session;
 import com.stripe.param.checkout.SessionCreateParams;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.stripe.Stripe;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -21,6 +22,10 @@ public class PaymentController {
 
     @org.springframework.beans.factory.annotation.Value("${app.cors.allowed-origin:http://localhost:5173}")
     private String appOrigin;
+
+    // The colon at the end prevents Spring Boot from crashing on startup if the variable is missing
+    @org.springframework.beans.factory.annotation.Value("${stripe.api.key:}")
+    private String stripeApiKey;
 
     public PaymentController(AppUserRepository userRepository) {
         this.userRepository = userRepository;
@@ -41,6 +46,15 @@ public class PaymentController {
                         .body(Map.of("error", "User is already a Premium member."));
             }
 
+            // 3. Set your Stripe Secret Key to authenticate the request
+            if (stripeApiKey == null || stripeApiKey.isBlank()) {
+                System.out.println("🚨 SERVER ERROR: Stripe API Key is missing from AWS Environment Variables!");
+                return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                        .body(Map.of("error", "Server misconfiguration. Payment gateway offline."));
+            }
+
+            Stripe.apiKey = stripeApiKey;
+
             // Parse planType from JSON body
             String planType = "trial";
             if (rawBody != null && !rawBody.isBlank()) {
@@ -55,9 +69,9 @@ public class PaymentController {
             System.out.println("📡 CHECKOUT REQUEST - Plan Type: [" + planType + "]");
 
             // Stripe Price IDs
-            final String PRICE_ANNUAL = "price_1TUuaf9cwza92vUtR93URo4b";   // $79.99/year
-            final String PRICE_MONTHLY = "price_1TUucy9cwza92vUtiTlV9gHV";  // $9.99/month
-            final String PRICE_TRIAL = "price_1TUuZh9cwza92vUtMxRZMOca";    // $1 trial
+            final String PRICE_ANNUAL = "price_1TWzs19z0vfxVeWeJFAJIN4S";    // $79.99/year
+            final String PRICE_MONTHLY = "price_1TWzqK9z0vfxVeWeixarvNVE";   // $9.99/month
+            final String PRICE_TRIAL = "price_1TWzoX9z0vfxVeWeF1Ym4Ajr";     // $1 trial
 
             SessionCreateParams params;
 

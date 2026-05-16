@@ -1,0 +1,5 @@
+{
+    "events": [],
+    "searchedLogStreams": [],
+    "nextToken": "Bxkq6kVGFtq2y_MoigeqscPOdhXVbhiVtLoAmXb5jCraSwAyUG0hwd0r4WvktTMW1a8tIZ2ZSMr1GpZ-2WPy04lkEuQwEeVmUoYrXF5K53Z1PJg7Okl5vF6KWn2V2G8fH2lX5NImHvOOiORyEHLFtXw0edoM-DRKGq_RUMP5R2z6rcxn89T8t1M3mMMrfU5L-3VwwrNFTw6fs-tv-M91218sCqIeITYoRBl5pBvqYNz31owvTrA5haLeKWfUY5Y0FyoSYfsVyHd-VLT2ugtV7_qcnwaCMqnxnIi0MRiCaBQ"
+}

@@ -29,7 +29,7 @@
         </div>
 
         <div
-            class="prose prose-slate prose-lg md:prose-xl prose-headings:font-black prose-h2:text-slate-900 prose-h3:text-slate-800 prose-a:text-indigo-600 prose-strong:text-indigo-700 prose-li:marker:text-indigo-500 max-w-none relative z-10"
+            class="prose prose-slate prose-lg md:prose-xl prose-headings:font-black prose-h2:text-slate-900 prose-h3:text-slate-800 prose-a:text-indigo-600 prose-strong:text-indigo-700 prose-li:marker:text-indigo-500 max-w-none relative z-10 [&_table]:block [&_table]:overflow-x-auto [&_table]:whitespace-nowrap"
             v-html="secureRenderedHtml"
         ></div>
 

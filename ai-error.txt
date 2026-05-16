@@ -1,0 +1,13 @@
+{
+    "events": [
+        {
+            "logStreamName": "ecs/knowledgeforge-api/e685539dfddb47b686b9cac8fac285bb",
+            "timestamp": 1778684034464,
+            "message": "AI Tutor Error: User: arn:aws:sts::774075997131:assumed-role/kf-ecs-task/e685539dfddb47b686b9cac8fac285bb is not authorized to perform: bedrock:InvokeModel on resource: arn:aws:bedrock:us-east-1::foundation-model/anthropic.claude-3-haiku-20240307-v1:0 because no identity-based policy allows the bedrock:InvokeModel action (Service: BedrockRuntime, Status Code: 403, Request ID: b2052695-45cb-4ba8-a4b2-f163146e35a9)",
+            "ingestionTime": 1778684036696,
+            "eventId": "39665979441276125416189010526852594760840355158913449984"
+        }
+    ],
+    "searchedLogStreams": [],
+    "nextToken": "Bxkq6kVGFtq2y_MoigeqscPOdhXVbhiVtLoAmXb5jCok69RENwKPgWh8EVY6_Z8OwCp858pyJiMrtccW-uob_7O4a_RQkvQV89AvOkM9EKEutLPzDXeLxrlwgMU-QTZLPjS5lD-dPo2gb9zGc-athDcpnGQFuz_UQP2igHDbtociF9ASJgF8V5EVRVJjbqTyOKBUv_lQCr7BPPyvKuI7pM-kJjTGJIdW1UvqfV7MBlv2VY45nySqy2WSEtjNs9Bsm9-owhg70JUX_xcjCpKtmUfpuM1n82TqiTk28gG_2Ie7EkjoVaW1rgX4Z4GqRm9-rspuf_6jEzyGdepCeNxefw"
+}

@@ -1,0 +1,20 @@
+{
+    "events": [
+        {
+            "logStreamName": "2026/05/13/[$LATEST]01b22be177354474949ad61d778944ab",
+            "timestamp": 1778693772294,
+            "message": "2026-05-13T17:36:12.294Z\t3cfdf493-e666-4ede-8107-ce400eac62cf\tERROR\tBedrock Error: ResourceNotFoundException: Model use case details have not been submitted for this account. Fill out the Anthropic use case details form before using the model. If you have already filled out the form, try again in 15 minutes.\n    at AwsRestJsonProtocol.handleError (/var/task/node_modules/@aws-sdk/core/dist-cjs/submodules/protocols/index.js:920:27)\n    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)\n    at async AwsRestJsonProtocol.deserializeResponse (/var/task/node_modules/@smithy/core/dist-cjs/submodules/protocols/index.js:424:13)\n    at async AwsRestJsonProtocol.deserializeResponse (/var/task/node_modules/@aws-sdk/core/dist-cjs/submodules/protocols/index.js:904:24)\n    at async /var/task/node_modules/@smithy/core/dist-cjs/submodules/schema/index.js:27:24\n    at async /var/task/node_modules/@smithy/core/dist-cjs/index.js:119:20\n    at async /var/task/node_modules/@smithy/core/dist-cjs/submodules/retry/index.js:172:50\n    at async /var/task/node_modules/@aws-sdk/middleware-logger/dist-cjs/index.js:5:26\n    at async exports.handler (/var/task/index.js:44:22) {\n  '$fault': 'client',\n  '$retryable': undefined,\n  '$metadata': {\n    httpStatusCode: 404,\n    requestId: '39bf0e39-1667-4325-bb19-31a5baee20bc',\n    extendedRequestId: undefined,\n    cfId: undefined,\n    attempts: 1,\n    totalRetryDelay: 0\n  }\n}\n",
+            "ingestionTime": 1778693775286,
+            "eventId": "39666196602141742023646968640849167466117942268463218691"
+        },
+        {
+            "logStreamName": "2026/05/13/[$LATEST]6d50071ddd4e443ca2196cd294b67f63",
+            "timestamp": 1778695342038,
+            "message": "2026-05-13T18:02:22.038Z\t8fb5381a-adf5-40b8-bdf1-d79f96bc7aaf\tERROR\tBedrock Error: ResourceNotFoundException: Access denied. This Model is marked by provider as Legacy and you have not been actively using the model in the last 30 days. Please upgrade to an active model on Amazon Bedrock\n    at AwsRestJsonProtocol.handleError (/var/task/node_modules/@aws-sdk/core/dist-cjs/submodules/protocols/index.js:920:27)\n    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)\n    at async AwsRestJsonProtocol.deserializeResponse (/var/task/node_modules/@smithy/core/dist-cjs/submodules/protocols/index.js:424:13)\n    at async AwsRestJsonProtocol.deserializeResponse (/var/task/node_modules/@aws-sdk/core/dist-cjs/submodules/protocols/index.js:904:24)\n    at async /var/task/node_modules/@smithy/core/dist-cjs/submodules/schema/index.js:27:24\n    at async /var/task/node_modules/@smithy/core/dist-cjs/index.js:119:20\n    at async /var/task/node_modules/@smithy/core/dist-cjs/submodules/retry/index.js:172:50\n    at async /var/task/node_modules/@aws-sdk/middleware-logger/dist-cjs/index.js:5:26\n    at async exports.handler (/var/task/index.js:44:22) {\n  '$fault': 'client',\n  '$retryable': undefined,\n  '$metadata': {\n    httpStatusCode: 404,\n    requestId: '79346da4-67af-4ec8-897c-018a4c099fda',\n    extendedRequestId: undefined,\n    cfId: undefined,\n    attempts: 1,\n    totalRetryDelay: 0\n  }\n}\n",
+            "ingestionTime": 1778695348591,
+            "eventId": "39666231608602712945901463229702630981059405693866606595"
+        }
+    ],
+    "searchedLogStreams": [],
+    "nextToken": "Bxkq6kVGFtq2y_MoigeqscPOdhXVbhiVtLoAmXb5jCrpP3aVbNaOj8VBX6Cdl3h8TKRnRn-MJGLEyDXNkzu-ixgo9DtlJug-cApzGUz9SBXGWMIV7lBmQANzDECQFgJgMv0xEPlnGjYdwtlr-2q52Gv5qofYztmn8A3jLaa-Eesq4FIfJ62tx6stYEeaz-1glJkOEUmH3UlHFqi6TUHLlSnWLXUI5VR84teEb0kC7w0wgxuFTBTamcM7EM9dMYULJbz-qh8cnC9c72JPLG4Zuu_cGXV_QhqM2RemI97eZIU"
+}
