@@ -33,14 +33,21 @@ public class WebhookController {
                 System.out.println("📡 [WEBHOOK] Received Stripe receipt for Email: " + emailBeacon);
 
                 if (emailBeacon != null) {
-                    AppUser user = userRepository.findByEmail(emailBeacon).orElse(null);
+                    AppUser user = userRepository.findByUsername(emailBeacon).orElse(null);
 
                     if (user != null) {
                         user.setPremium(true);
+                        // Save Stripe subscription and customer IDs for cancellation
+                        if (session.getSubscription() != null) {
+                            user.setStripeSubscriptionId(session.getSubscription());
+                        }
+                        if (session.getCustomer() != null) {
+                            user.setStripeCustomerId(session.getCustomer());
+                        }
                         userRepository.save(user);
                         System.out.println("✅ [WEBHOOK SECURE] UPGRADED USER TO PREMIUM: " + emailBeacon);
                     } else {
-                        System.out.println("❌ [WEBHOOK ERROR] Database rejected receipt. No user found with email: " + emailBeacon);
+                        System.out.println("❌ [WEBHOOK ERROR] Database rejected receipt. No user found with username: " + emailBeacon);
                     }
                 } else {
                     System.out.println("❌ [WEBHOOK ERROR] Stripe receipt arrived with a blank Tracking Beacon!");

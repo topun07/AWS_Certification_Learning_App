@@ -27,6 +27,12 @@ public class AppUser {
     @Column(name = "pending_cancellation")
     private boolean pendingCancellation = false;
 
+    @Column(name = "stripe_subscription_id")
+    private String stripeSubscriptionId;
+
+    @Column(name = "stripe_customer_id")
+    private String stripeCustomerId;
+
     @Column(name = "premium_expiration_date")
     private java.time.LocalDate premiumExpirationDate;
 
@@ -72,4 +78,8 @@ public class AppUser {
     public void setPendingCancellation(boolean pendingCancellation) { this.pendingCancellation = pendingCancellation; }
     public java.time.LocalDate getPremiumExpirationDate() { return premiumExpirationDate; }
     public void setPremiumExpirationDate(java.time.LocalDate premiumExpirationDate) { this.premiumExpirationDate = premiumExpirationDate; }
+    public String getStripeSubscriptionId() { return stripeSubscriptionId; }
+    public void setStripeSubscriptionId(String stripeSubscriptionId) { this.stripeSubscriptionId = stripeSubscriptionId; }
+    public String getStripeCustomerId() { return stripeCustomerId; }
+    public void setStripeCustomerId(String stripeCustomerId) { this.stripeCustomerId = stripeCustomerId; }
     }

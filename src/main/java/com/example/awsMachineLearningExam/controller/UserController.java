@@ -74,10 +74,26 @@ public class UserController {
         if (optionalUser.isPresent()) {
             AppUser user = optionalUser.get();
 
-            // 1. Mark them as pending cancellation
+            // 1. Cancel in Stripe at period end (user keeps access until billing period ends)
+            if (user.getStripeSubscriptionId() != null) {
+                try {
+                    com.stripe.model.Subscription subscription =
+                        com.stripe.model.Subscription.retrieve(user.getStripeSubscriptionId());
+                    com.stripe.param.SubscriptionUpdateParams params =
+                        com.stripe.param.SubscriptionUpdateParams.builder()
+                            .setCancelAtPeriodEnd(true)
+                            .build();
+                    subscription.update(params);
+                    System.out.println("✅ Stripe subscription set to cancel at period end: " + user.getStripeSubscriptionId());
+                } catch (Exception e) {
+                    System.out.println("⚠️ Stripe cancellation error: " + e.getMessage());
+                }
+            }
+
+            // 2. Mark as pending cancellation in our DB
             user.setPendingCancellation(true);
 
-            // 2. Prototype Logic: If they don't have a real billing date yet, set it to the end of the current month
+            // 3. Set expiration date if not already set
             if (user.getPremiumExpirationDate() == null) {
                 user.setPremiumExpirationDate(java.time.LocalDate.now().with(java.time.temporal.TemporalAdjusters.lastDayOfMonth()));
             }
@@ -85,11 +101,11 @@ public class UserController {
             userRepository.save(user);
 
             return ResponseEntity.ok(Map.of(
-                    "message", "Cancellation scheduled.",
+                    "message", "Cancellation scheduled. Access remains active until end of billing period.",
                     "expirationDate", user.getPremiumExpirationDate().toString()
             ));
         } else {
-            return ResponseEntity.status(404).body(Map.of("error", "User not found in the Matrix."));
+            return ResponseEntity.status(404).body(Map.of("error", "User not found."));
         }
     }
 

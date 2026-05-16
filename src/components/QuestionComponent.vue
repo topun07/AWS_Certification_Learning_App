@@ -5777,7 +5777,7 @@ const processCancellation = async () => {
       const response = await fetch(`${API_BASE_URL}/api/users/cancel-premium`, {
         method: 'POST',
         headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
+          'Authorization': `Bearer ${localStorage.getItem('aws_jwt')}`
         }
       });
 
