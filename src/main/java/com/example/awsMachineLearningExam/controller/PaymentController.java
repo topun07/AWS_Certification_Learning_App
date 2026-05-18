@@ -6,6 +6,7 @@ import com.stripe.model.checkout.Session;
 import com.stripe.param.checkout.SessionCreateParams;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.stripe.Stripe;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -21,6 +22,10 @@ public class PaymentController {
 
     @org.springframework.beans.factory.annotation.Value("${app.cors.allowed-origin:http://localhost:5173}")
     private String appOrigin;
+
+    // The colon at the end prevents Spring Boot from crashing on startup if the variable is missing
+    @org.springframework.beans.factory.annotation.Value("${stripe.api.key:}")
+    private String stripeApiKey;
 
     public PaymentController(AppUserRepository userRepository) {
         this.userRepository = userRepository;
@@ -40,6 +45,15 @@ public class PaymentController {
                 return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                         .body(Map.of("error", "User is already a Premium member."));
             }
+
+            // 3. Set your Stripe Secret Key to authenticate the request
+            if (stripeApiKey == null || stripeApiKey.isBlank()) {
+                System.out.println("🚨 SERVER ERROR: Stripe API Key is missing from AWS Environment Variables!");
+                return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                        .body(Map.of("error", "Server misconfiguration. Payment gateway offline."));
+            }
+
+            Stripe.apiKey = stripeApiKey;
 
             // Parse planType from JSON body
             String planType = "trial";

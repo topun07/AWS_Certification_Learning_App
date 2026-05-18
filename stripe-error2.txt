@@ -1,0 +1,27 @@
+{
+    "events": [
+        {
+            "logStreamName": "ecs/knowledgeforge-api/e685539dfddb47b686b9cac8fac285bb",
+            "timestamp": 1778679141596,
+            "message": "2026-05-13T13:32:21.595Z  WARN 1 --- [           main] org.hibernate.orm.jdbc.warn              : HHH000247: ErrorCode: 0, SQLState: 00000",
+            "ingestionTime": 1778679141688,
+            "eventId": "39665870326673567372056015329564387099660430497467072513"
+        },
+        {
+            "logStreamName": "ecs/knowledgeforge-api/e685539dfddb47b686b9cac8fac285bb",
+            "timestamp": 1778679141602,
+            "message": "2026-05-13T13:32:21.602Z  WARN 1 --- [           main] org.hibernate.orm.jdbc.warn              : HHH000247: ErrorCode: 0, SQLState: 00000",
+            "ingestionTime": 1778679141688,
+            "eventId": "39665870326807371843247199068413601409296320666502955011"
+        },
+        {
+            "logStreamName": "ecs/knowledgeforge-api/e685539dfddb47b686b9cac8fac285bb",
+            "timestamp": 1778684034464,
+            "message": "AI Tutor Error: User: arn:aws:sts::774075997131:assumed-role/kf-ecs-task/e685539dfddb47b686b9cac8fac285bb is not authorized to perform: bedrock:InvokeModel on resource: arn:aws:bedrock:us-east-1::foundation-model/anthropic.claude-3-haiku-20240307-v1:0 because no identity-based policy allows the bedrock:InvokeModel action (Service: BedrockRuntime, Status Code: 403, Request ID: b2052695-45cb-4ba8-a4b2-f163146e35a9)",
+            "ingestionTime": 1778684036696,
+            "eventId": "39665979441276125416189010526852594760840355158913449984"
+        }
+    ],
+    "searchedLogStreams": [],
+    "nextToken": "Bxkq6kVGFtq2y_MoigeqscPOdhXVbhiVtLoAmXb5jCok69RENwKPgWh8EVY6_Z8OwCp858pyJiMrtccW-uob_7O4a_RQkvQV89AvOkM9EKEutLPzDXeLxrlwgMU-QTZLPjS5lD-dPo2gb9zGc-athCgxU7KGSUfRPe3HCTpWkX9Mw41vMQFYkWpGM8wdjXm-3CPn0T_eukTKDCCb-mD99R7EuKiIO8KjZvbPe-DsFyp7Ntw03Oeuo0nRJyK4ajFpz2g5jxwEI6c8PLK5w525LOlwclNSwOyBbwI2XKcxMPc"
+}

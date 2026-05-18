@@ -1,6 +1,3 @@
-
-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   git hub token
-
 git init
 
 git add .

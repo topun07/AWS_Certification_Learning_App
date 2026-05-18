@@ -1,0 +1,13 @@
+{
+    "events": [
+        {
+            "logStreamName": "ecs/knowledgeforge-api/81e6c747dde945759252418f25e691e6",
+            "timestamp": 1778761077167,
+            "message": "2026-05-14T12:17:57.167Z  INFO 1 --- [           main] b.w.c.s.WebApplicationContextInitializer : Root WebApplicationContext: initialization completed in 15000 ms",
+            "ingestionTime": 1778761081096,
+            "eventId": "39667697550965134487024201931123938592062496306804686851"
+        }
+    ],
+    "searchedLogStreams": [],
+    "nextToken": "Bxkq6kVGFtq2y_MoigeqscPOdhXVbhiVtLoAmXb5jCq2rpvxiZR7RQn7tkl5Pp8v1MAIyWMw6VwcEPiYrU9xKh9VFPsucJMosKO9kUswK6DTW2pGZjB6C4bX5V8516j6a7UILtGX6XL4AuLvhEum5koVjOZrw6jya_3X314hI77nT6_-eqxKR8jNAaO0aARHmpd0KED2Hg39Bn9LQiX0uBWjgNIQcPzmrJLomE9LqdxWUvLfrNSUvSB8RYrzx62ZCJYt0lxNW7VWg392mCKoHZTWJAD--No-rpz_eSYNTDA"
+}
