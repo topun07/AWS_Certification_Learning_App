@@ -4,8 +4,7 @@
 
     <!-- 🔔 TOAST NOTIFICATION -->
     <Transition name="toast-slide">
-      <div v-if="toastVisible" class="fixed top-6 left-1/2 -translate-x-1/2 z-[9999] animate-pulse-once">
-        <div class="flex items-center gap-3 px-6 py-4 rounded-2xl shadow-2xl border backdrop-blur-md"
+      <div v-if="toastVisible" class="fixed top-6 left-1/2 -translate-x-1/2 z-[9999] animate-pulse-once">        <div class="flex items-center gap-3 px-6 py-4 rounded-2xl shadow-2xl border backdrop-blur-md"
              :class="{
                'bg-red-950/90 border-red-500/50 text-red-200': toastType === 'error',
                'bg-amber-950/90 border-amber-500/50 text-amber-200': toastType === 'warning',
@@ -17,6 +16,24 @@
           </span>
           <span class="text-sm font-bold tracking-wide">{{ toastMessage }}</span>
           <button @click="toastVisible = false" class="ml-2 opacity-60 hover:opacity-100 text-lg leading-none">&times;</button>
+        </div>
+      </div>
+    </Transition>
+
+    <!-- 🏆 FOUNDER DISCOUNT BANNER -->
+    <Transition name="toast-slide">
+      <div v-if="founderSpotsActive && currentView === 'landing'" class="fixed bottom-6 left-1/2 -translate-x-1/2 z-[9998] w-full max-w-2xl px-4">
+        <div class="bg-gradient-to-r from-amber-500 via-orange-500 to-red-500 rounded-2xl p-4 shadow-2xl flex items-center justify-between gap-4 text-white">
+          <div class="flex items-center gap-3">
+            <span class="text-2xl">🔥</span>
+            <div>
+              <p class="font-black text-sm uppercase tracking-widest">Founding Member Offer</p>
+              <p class="text-xs font-medium opacity-90">Only <span class="font-black text-white">{{ founderSpotsRemaining }}</span> spots left — 30% off monthly, 50% off annual. Forever.</p>
+            </div>
+          </div>
+          <button @click="showFounderBanner = false; showPremiumModal = true" class="bg-white text-orange-600 font-black text-xs uppercase tracking-widest px-4 py-2 rounded-xl hover:bg-orange-50 transition-colors whitespace-nowrap flex-shrink-0">
+            Claim Now
+          </button>
         </div>
       </div>
     </Transition>
@@ -1687,6 +1704,11 @@
             <li class="flex items-center gap-3 2xl:gap-5"><span class="flex h-6 w-6 2xl:h-8 2xl:w-8 rounded-full bg-emerald-500/20 text-emerald-400 items-center justify-center text-xs 2xl:text-sm">✓</span> All Game Modes (AMRAP, Flashcards)</li>
             <li class="flex items-center gap-3 2xl:gap-5"><span class="flex h-6 w-6 2xl:h-8 2xl:w-8 rounded-full bg-emerald-500/20 text-emerald-400 items-center justify-center text-xs 2xl:text-sm">✓</span> Full Study Material Library</li>
           </ul>
+          <div v-if="founderSpotsActive" class="mt-6 bg-amber-500/20 border border-amber-500/40 rounded-xl p-4 text-center">
+            <p class="text-amber-300 font-black text-xs uppercase tracking-widest mb-1">🔥 Founding Member Offer</p>
+            <p class="text-white font-black text-2xl">{{ founderSpotsRemaining }} <span class="text-sm font-normal opacity-70">spots remaining</span></p>
+            <p class="text-amber-200 text-xs mt-1 opacity-80">Lock in your discount forever</p>
+          </div>
         </div>
 
         <div class="p-6 md:p-8 2xl:p-12 pt-[5.5rem] md:pt-24 2xl:pt-28 md:w-3/5 bg-slate-50 flex flex-col justify-center gap-4 2xl:gap-6 overflow-visible rounded-r-3xl 2xl:rounded-r-[3rem]">
@@ -1723,10 +1745,18 @@
             <div class="flex justify-between items-end mb-2 2xl:mb-4">
               <h3 class="text-lg 2xl:text-3xl font-bold text-slate-700">Monthly Pro</h3>
               <div class="text-right">
-                <span class="text-2xl 2xl:text-4xl font-black text-slate-800">$9.99</span>
-                <span class="text-xs 2xl:text-lg text-slate-400 font-bold">/mo</span>
+                <div v-if="founderSpotsActive">
+                  <span class="text-sm line-through text-slate-400 mr-1">$9.99</span>
+                  <span class="text-2xl 2xl:text-4xl font-black text-slate-800">$6.99</span>
+                  <span class="text-xs 2xl:text-lg text-slate-400 font-bold">/mo</span>
+                </div>
+                <div v-else>
+                  <span class="text-2xl 2xl:text-4xl font-black text-slate-800">$9.99</span>
+                  <span class="text-xs 2xl:text-lg text-slate-400 font-bold">/mo</span>
+                </div>
               </div>
             </div>
+            <p v-if="founderSpotsActive" class="text-sm 2xl:text-xl text-orange-500 font-bold mb-1">🔥 Founding Member — 30% off forever!</p>
             <p class="text-sm 2xl:text-xl text-slate-500 font-medium mb-4 2xl:mb-6">Jump straight into the deep end. Cancel anytime.</p>
 
             <button
@@ -1742,18 +1772,26 @@
             </button>
           </div>
 
-          <div class="bg-white rounded-2xl 2xl:rounded-3xl p-6 2xl:p-10 border border-emerald-200 transition-all relative" :class="isCheckoutLoading ? 'opacity-50 pointer-events-none' : 'hover:-translate-y-1 hover:border-emerald-400 hover:shadow-lg'">
+          <div class="relative bg-white rounded-2xl 2xl:rounded-3xl p-6 2xl:p-10 border border-emerald-200 transition-all relative" :class="isCheckoutLoading ? 'opacity-50 pointer-events-none' : 'hover:-translate-y-1 hover:border-emerald-400 hover:shadow-lg'">
             <div class="absolute -top-3 2xl:-top-4 right-4 2xl:right-6 bg-emerald-500 text-white text-[10px] 2xl:text-sm font-black uppercase tracking-widest px-3 py-1 2xl:px-5 2xl:py-2 rounded-full">
               Save 33%
             </div>
             <div class="flex justify-between items-end mb-2 2xl:mb-4">
               <h3 class="text-lg 2xl:text-3xl font-bold text-slate-700">Annual Plan</h3>
               <div class="text-right">
-                <span class="text-2xl 2xl:text-4xl font-black text-emerald-600">$79.99</span>
-                <span class="text-xs 2xl:text-lg text-slate-400 font-bold">/yr</span>
+                <div v-if="founderSpotsActive">
+                  <span class="text-sm line-through text-slate-400 mr-1">$79.99</span>
+                  <span class="text-2xl 2xl:text-4xl font-black text-emerald-600">$39.99</span>
+                  <span class="text-xs 2xl:text-lg text-slate-400 font-bold">/yr</span>
+                </div>
+                <div v-else>
+                  <span class="text-2xl 2xl:text-4xl font-black text-emerald-600">$79.99</span>
+                  <span class="text-xs 2xl:text-lg text-slate-400 font-bold">/yr</span>
+                </div>
               </div>
             </div>
-            <p class="text-sm 2xl:text-xl text-slate-500 font-medium mb-4 2xl:mb-6">Best value. That's just $6.67/mo. Cancel anytime.</p>
+            <p v-if="founderSpotsActive" class="text-sm 2xl:text-xl text-emerald-600 font-bold mb-1">🔥 Founding Member — 50% off forever!</p>
+            <p class="text-sm 2xl:text-xl text-slate-500 font-medium mb-4 2xl:mb-6">Best value. Cancel anytime.</p>
 
             <button
                 @click="prepareCheckout('annual')"
@@ -2244,6 +2282,23 @@ const expandedDomain = ref(null); // Tracks which accordion is currently open
 
 // --- 📊 USER ANALYTICS STATE ---
 const userStats = ref(null);
+
+// --- 🏆 FOUNDER DISCOUNT STATE ---
+const founderSpotsRemaining = ref(100);
+const founderSpotsActive = ref(true);
+const showFounderBanner = ref(false);
+
+const fetchFounderSpots = async () => {
+  try {
+    const response = await fetch(`${API_BASE_URL}/api/payment/founder-spots`);
+    if (response.ok) {
+      const data = await response.json();
+      founderSpotsRemaining.value = data.spotsRemaining;
+      founderSpotsActive.value = data.active;
+      showFounderBanner.value = data.active;
+    }
+  } catch (e) { /* silent fail */ }
+};
 
 // --- 📊 ADMIN ANALYTICS STATE ---
 const adminAnalytics = ref({});
@@ -4392,7 +4447,8 @@ onMounted(() => {
     // 2. Fetch the Social Proof Reviews
     fetchReviews();
 
-    // (If you have any other functions that need to run on load, put them inside this single block too!)
+    // 3. Check founder spots
+    fetchFounderSpots();
   });
 
 // 🚨 THE SUBMISSION FUNCTION
@@ -5420,8 +5476,7 @@ const proceedToStripe = async () => {
       const response = await fetch(`${API_BASE_URL}/api/payment/checkout`, {
         method: 'POST',
         headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
-        // 🚨 Inject the plan they selected during the prepareCheckout phase!
-        body: JSON.stringify({ planType: pendingPlanType.value })
+        body: JSON.stringify({ planType: pendingPlanType.value, useFounderDiscount: founderSpotsActive.value && pendingPlanType.value !== 'trial' })
       });
 
       if (response.ok) {

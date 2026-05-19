@@ -55,8 +55,9 @@ public class PaymentController {
 
             Stripe.apiKey = stripeApiKey;
 
-            // Parse planType from JSON body
+            // Parse planType and useFounderDiscount from JSON body
             String planType = "trial";
+            boolean useFounderDiscount = false;
             if (rawBody != null && !rawBody.isBlank()) {
                 try {
                     ObjectMapper mapper = new ObjectMapper();
@@ -64,20 +65,26 @@ public class PaymentController {
                     if (node.has("planType") && !node.get("planType").isNull()) {
                         planType = node.get("planType").asText();
                     }
+                    if (node.has("useFounderDiscount") && node.get("useFounderDiscount").asBoolean()) {
+                        useFounderDiscount = true;
+                    }
                 } catch (Exception ignored) {}
             }
-            System.out.println("📡 CHECKOUT REQUEST - Plan Type: [" + planType + "]");
+            System.out.println("📡 CHECKOUT REQUEST - Plan Type: [" + planType + "] | Founder Discount: " + useFounderDiscount);
 
             // Stripe Price IDs
             final String PRICE_ANNUAL = "price_1TWzs19z0vfxVeWeJFAJIN4S";    // $79.99/year
             final String PRICE_MONTHLY = "price_1TWzqK9z0vfxVeWeixarvNVE";   // $9.99/month
             final String PRICE_TRIAL = "price_1TWzoX9z0vfxVeWeF1Ym4Ajr";     // $1 trial
 
+            // Founder Promo Code IDs
+            final String PROMO_MONTHLY = "promo_1TYqmm9z0vfxVeWeMOnqAqEp";  // 30% off monthly
+            final String PROMO_ANNUAL = "promo_1TYqq09z0vfxVeWeNMYW76Pg";   // 50% off annual
+
             SessionCreateParams params;
 
             if ("annual".equals(planType)) {
-                // ANNUAL PLAN: $79.99/year
-                params = SessionCreateParams.builder()
+                SessionCreateParams.Builder builder = SessionCreateParams.builder()
                         .setMode(SessionCreateParams.Mode.SUBSCRIPTION)
                         .setSuccessUrl(appOrigin + "/?success=true")
                         .setCancelUrl(appOrigin + "/?canceled=true")
@@ -86,12 +93,16 @@ public class PaymentController {
                         .addLineItem(SessionCreateParams.LineItem.builder()
                                 .setPrice(PRICE_ANNUAL)
                                 .setQuantity(1L)
-                                .build())
-                        .build();
+                                .build());
+                if (useFounderDiscount) {
+                    builder.addDiscount(SessionCreateParams.Discount.builder()
+                            .setPromotionCode(PROMO_ANNUAL)
+                            .build());
+                }
+                params = builder.build();
 
             } else if ("monthly".equals(planType)) {
-                // MONTHLY PLAN: $9.99/mo
-                params = SessionCreateParams.builder()
+                SessionCreateParams.Builder builder = SessionCreateParams.builder()
                         .setMode(SessionCreateParams.Mode.SUBSCRIPTION)
                         .setSuccessUrl(appOrigin + "/?success=true")
                         .setCancelUrl(appOrigin + "/?canceled=true")
@@ -100,11 +111,16 @@ public class PaymentController {
                         .addLineItem(SessionCreateParams.LineItem.builder()
                                 .setPrice(PRICE_MONTHLY)
                                 .setQuantity(1L)
-                                .build())
-                        .build();
+                                .build());
+                if (useFounderDiscount) {
+                    builder.addDiscount(SessionCreateParams.Discount.builder()
+                            .setPromotionCode(PROMO_MONTHLY)
+                            .build());
+                }
+                params = builder.build();
 
             } else {
-                // TRIAL PLAN: $1 today + $9.99/mo after 7 days
+                // TRIAL PLAN: $1 today + $9.99/mo after 7 days (no founder discount on trial)
                 params = SessionCreateParams.builder()
                         .setMode(SessionCreateParams.Mode.SUBSCRIPTION)
                         .setSuccessUrl(appOrigin + "/?success=true")
@@ -135,6 +151,23 @@ public class PaymentController {
             System.out.println("Checkout Error: " + e.getMessage());
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body(Map.of("error", "Failed to initialize secure checkout."));
+        }
+    }
+
+    // Check founder spots remaining
+    @GetMapping("/founder-spots")
+    public ResponseEntity<?> getFounderSpots() {
+        try {
+            Stripe.apiKey = stripeApiKey;
+            com.stripe.model.PromotionCode promoMonthly = com.stripe.model.PromotionCode.retrieve("promo_1TYqmm9z0vfxVeWeMOnqAqEp");
+            com.stripe.model.PromotionCode promoAnnual = com.stripe.model.PromotionCode.retrieve("promo_1TYqq09z0vfxVeWeNMYW76Pg");
+            long monthlyUsed = promoMonthly.getTimesRedeemed() != null ? promoMonthly.getTimesRedeemed() : 0;
+            long annualUsed = promoAnnual.getTimesRedeemed() != null ? promoAnnual.getTimesRedeemed() : 0;
+            long totalUsed = monthlyUsed + annualUsed;
+            long spotsRemaining = Math.max(0, 100 - totalUsed);
+            return ResponseEntity.ok(Map.of("spotsRemaining", spotsRemaining, "totalSpots", 100, "active", spotsRemaining > 0));
+        } catch (Exception e) {
+            return ResponseEntity.ok(Map.of("spotsRemaining", 100, "totalSpots", 100, "active", true));
         }
     }
 }
