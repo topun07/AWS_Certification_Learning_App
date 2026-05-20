@@ -46,22 +46,7 @@ public class PaymentController {
                         .body(Map.of("error", "User is already a Premium member."));
             }
 
-            // 3. Prevent trial abuse - one trial per account ever
-            if ("trial".equals(planType) && user.isHasUsedTrial()) {
-                return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                        .body(Map.of("error", "Trial already used. Please choose Monthly or Annual."));
-            }
-
-            // 3. Set your Stripe Secret Key to authenticate the request
-            if (stripeApiKey == null || stripeApiKey.isBlank()) {
-                System.out.println("🚨 SERVER ERROR: Stripe API Key is missing from AWS Environment Variables!");
-                return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                        .body(Map.of("error", "Server misconfiguration. Payment gateway offline."));
-            }
-
-            Stripe.apiKey = stripeApiKey;
-
-            // Parse planType and useFounderDiscount from JSON body
+            // Parse planType and useFounderDiscount from JSON body FIRST
             String planType = "trial";
             boolean useFounderDiscount = false;
             if (rawBody != null && !rawBody.isBlank()) {
@@ -76,6 +61,21 @@ public class PaymentController {
                     }
                 } catch (Exception ignored) {}
             }
+
+            // 3. Prevent trial abuse - one trial per account ever
+            if ("trial".equals(planType) && user.isHasUsedTrial()) {
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                        .body(Map.of("error", "Trial already used. Please choose Monthly or Annual."));
+            }
+
+            // 4. Set your Stripe Secret Key
+            if (stripeApiKey == null || stripeApiKey.isBlank()) {
+                System.out.println("🚨 SERVER ERROR: Stripe API Key is missing from AWS Environment Variables!");
+                return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                        .body(Map.of("error", "Server misconfiguration. Payment gateway offline."));
+            }
+
+            Stripe.apiKey = stripeApiKey;
             System.out.println("📡 CHECKOUT REQUEST - Plan Type: [" + planType + "] | Founder Discount: " + useFounderDiscount);
 
             // Stripe Price IDs
