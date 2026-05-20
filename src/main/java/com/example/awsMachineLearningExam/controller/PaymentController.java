@@ -46,6 +46,12 @@ public class PaymentController {
                         .body(Map.of("error", "User is already a Premium member."));
             }
 
+            // 3. Prevent trial abuse - one trial per account ever
+            if ("trial".equals(planType) && user.isHasUsedTrial()) {
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                        .body(Map.of("error", "Trial already used. Please choose Monthly or Annual."));
+            }
+
             // 3. Set your Stripe Secret Key to authenticate the request
             if (stripeApiKey == null || stripeApiKey.isBlank()) {
                 System.out.println("🚨 SERVER ERROR: Stripe API Key is missing from AWS Environment Variables!");

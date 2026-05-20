@@ -37,6 +37,8 @@ public class WebhookController {
 
                     if (user != null) {
                         user.setPremium(true);
+                        // Mark trial as used
+                        user.setHasUsedTrial(true);
                         // Save Stripe subscription and customer IDs for cancellation
                         if (session.getSubscription() != null) {
                             user.setStripeSubscriptionId(session.getSubscription());

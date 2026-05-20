@@ -27,6 +27,12 @@ public class AppUser {
     @Column(name = "pending_cancellation")
     private boolean pendingCancellation = false;
 
+    @Column(name = "has_used_trial")
+    private boolean hasUsedTrial = false;
+
+    @Column(name = "had_trial")
+    private boolean hadTrial = false;
+
     @Column(name = "stripe_subscription_id")
     private String stripeSubscriptionId;
 
@@ -76,10 +82,14 @@ public class AppUser {
     public void setPremium(boolean premium) { isPremium = premium; }
     public boolean isPendingCancellation() { return pendingCancellation; }
     public void setPendingCancellation(boolean pendingCancellation) { this.pendingCancellation = pendingCancellation; }
+    public boolean isHadTrial() { return hadTrial; }
+    public void setHadTrial(boolean hadTrial) { this.hadTrial = hadTrial; }
     public java.time.LocalDate getPremiumExpirationDate() { return premiumExpirationDate; }
     public void setPremiumExpirationDate(java.time.LocalDate premiumExpirationDate) { this.premiumExpirationDate = premiumExpirationDate; }
     public String getStripeSubscriptionId() { return stripeSubscriptionId; }
     public void setStripeSubscriptionId(String stripeSubscriptionId) { this.stripeSubscriptionId = stripeSubscriptionId; }
     public String getStripeCustomerId() { return stripeCustomerId; }
     public void setStripeCustomerId(String stripeCustomerId) { this.stripeCustomerId = stripeCustomerId; }
+    public boolean isHasUsedTrial() { return hasUsedTrial; }
+    public void setHasUsedTrial(boolean hasUsedTrial) { this.hasUsedTrial = hasUsedTrial; }
     }

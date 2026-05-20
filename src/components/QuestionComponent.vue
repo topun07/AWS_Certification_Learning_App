@@ -22,21 +22,23 @@
 
     <!-- 🏆 FOUNDER DISCOUNT BANNER -->
     <Transition name="toast-slide">
-      <div v-if="founderSpotsActive && currentView === 'landing'" class="fixed bottom-6 left-1/2 -translate-x-1/2 z-[9998] w-full max-w-2xl px-4">
-        <div class="bg-gradient-to-r from-amber-500 via-orange-500 to-red-500 rounded-2xl p-4 shadow-2xl flex items-center justify-between gap-4 text-white">
-          <div class="flex items-center gap-3">
-            <span class="text-2xl">🔥</span>
-            <div>
-              <p class="font-black text-sm uppercase tracking-widest">Founding Member Offer</p>
-              <p class="text-xs font-medium opacity-90">Only <span class="font-black text-white">{{ founderSpotsRemaining }}</span> spots left — 30% off monthly, 50% off annual. Forever.</p>
-            </div>
+      <div v-if="founderSpotsActive && currentView === 'landing'" class="fixed top-0 left-0 right-0 z-[9998] w-full">
+        <div class="bg-gradient-to-r from-amber-500 via-orange-500 to-red-500 px-4 py-2 shadow-lg flex items-center justify-between gap-3 text-white">
+          <div class="flex items-center gap-2 min-w-0">
+            <span class="text-lg flex-shrink-0">🔥</span>
+            <p class="text-xs font-bold truncate">Founding Member — <span class="font-black">{{ founderSpotsRemaining }}</span> spots left. 30% off monthly, 50% off annual. Forever.</p>
           </div>
-          <button @click="showFounderBanner = false; showPremiumModal = true" class="bg-white text-orange-600 font-black text-xs uppercase tracking-widest px-4 py-2 rounded-xl hover:bg-orange-50 transition-colors whitespace-nowrap flex-shrink-0">
-            Claim Now
+          <button @click="showFounderBanner = false; showPremiumModal = true" class="bg-white text-orange-600 font-black text-[10px] uppercase tracking-widest px-3 py-1 rounded-lg hover:bg-orange-50 transition-colors whitespace-nowrap flex-shrink-0">
+            Claim
           </button>
         </div>
       </div>
     </Transition>
+
+    <!-- 📱 PWA INSTALL BUTTON (small, bottom-right) -->
+    <button v-if="showPwaButton" @click="installPwa" class="fixed bottom-6 right-4 z-[9997] w-12 h-12 bg-indigo-600 hover:bg-indigo-500 text-white rounded-full shadow-lg flex items-center justify-center transition-all hover:scale-110" title="Install App">
+      📲
+    </button>
 
     <div v-if="showAuthModal" class="fixed inset-0 bg-slate-900/80 backdrop-blur-md flex items-center justify-center z-[200] p-4">
       <div class="bg-gray-900 border border-blue-500 rounded-2xl 2xl:rounded-[2rem] p-8 2xl:p-16 w-full max-w-md 2xl:max-w-2xl text-white shadow-[0_0_30px_rgba(59,130,246,0.3)] relative">
@@ -483,23 +485,23 @@
             </div>
             <select
                 v-model="selectedRadarCert"
-                class="bg-slate-50 border border-slate-200 text-slate-700 text-sm 2xl:text-xl font-bold rounded-xl 2xl:rounded-2xl px-4 py-2 2xl:px-6 2xl:py-4 focus:outline-none focus:ring-2 focus:ring-indigo-500 cursor-pointer shadow-sm"
+                class="bg-slate-50 border border-slate-200 text-slate-700 text-xs md:text-sm 2xl:text-xl font-bold rounded-xl 2xl:rounded-2xl px-2 py-2 md:px-4 2xl:px-6 2xl:py-4 focus:outline-none focus:ring-2 focus:ring-indigo-500 cursor-pointer shadow-sm max-w-[160px] md:max-w-none"
             >
               <optgroup label="Foundational & Associate">
-                <option value="CLF-C02">Cloud Practitioner (CLF-C02)</option>
-                <option value="AIF-C01">AI Practioner (AIF-C01)</option>
-                <option value="SAA-C03">Solutions Architect (SAA-C03)</option>
-                <option value="DVA-C02">Developer (DVA-C02)</option>
-                <option value="SOA-C02">SysOps Admin (SOA-C02)</option>
-                <option value="DEA-C01">Data Engineer (DEA-C01)</option>
-                <option value="AIP-C01">AI Practitioner (AIP-C01)</option>
-                <option value="MLA-C01">ML Engineer (MLA-C01)</option>
+                <option value="CLF-C02">CLF-C02</option>
+                <option value="AIF-C01">AIF-C01</option>
+                <option value="SAA-C03">SAA-C03</option>
+                <option value="DVA-C02">DVA-C02</option>
+                <option value="SOA-C02">SOA-C02</option>
+                <option value="DEA-C01">DEA-C01</option>
+                <option value="AIP-C01">AIP-C01</option>
+                <option value="MLA-C01">MLA-C01</option>
               </optgroup>
               <optgroup label="Professional & Specialty">
-                <option value="SAP-C02">Solutions Architect Pro (SAP-C02)</option>
-                <option value="DOP-C02">DevOps Pro (DOP-C02)</option>
-                <option value="SCS-C02">Security Specialty (SCS-C02)</option>
-                <option value="ANS-C01">Advanced Networking (ANS-C01)</option>
+                <option value="SAP-C02">SAP-C02</option>
+                <option value="DOP-C02">DOP-C02</option>
+                <option value="SCS-C02">SCS-C02</option>
+                <option value="ANS-C01">ANS-C01</option>
               </optgroup>
             </select>
           </div>
@@ -649,9 +651,9 @@
 
           <div class="flex flex-col sm:flex-row w-full gap-4 2xl:gap-8 justify-center">
 
-            <a href="mailto:admin@knowledgeforgeacademy.com" class="inline-flex justify-center items-center gap-3 2xl:gap-5 bg-white text-indigo-600 hover:text-indigo-700 hover:bg-indigo-50 px-6 py-4 2xl:px-10 2xl:py-6 rounded-2xl 2xl:rounded-3xl font-black text-sm 2xl:text-xl uppercase tracking-widest transition-all border border-slate-200 hover:border-indigo-200 shadow-sm hover:shadow-md group flex-1">
-              <span class="text-xl 2xl:text-3xl group-hover:animate-pulse">✉️</span>
-              admin@knowledgeforgeacademy.com
+            <a href="mailto:admin@knowledgeforgeacademy.com" class="inline-flex justify-center items-center gap-2 2xl:gap-5 bg-white text-indigo-600 hover:text-indigo-700 hover:bg-indigo-50 px-4 py-3 2xl:px-10 2xl:py-6 rounded-2xl 2xl:rounded-3xl font-black text-xs md:text-sm 2xl:text-xl uppercase tracking-widest transition-all border border-slate-200 hover:border-indigo-200 shadow-sm hover:shadow-md group flex-1 min-w-0">
+              <span class="text-lg 2xl:text-3xl group-hover:animate-pulse flex-shrink-0">✉️</span>
+              <span class="truncate">admin@knowledgeforgeacademy.com</span>
             </a>
           </div>
 
@@ -716,25 +718,24 @@
           <button @click="togglePause" class="mt-6 2xl:mt-10 bg-slate-800 text-white px-8 py-3 2xl:px-12 2xl:py-5 2xl:text-2xl rounded-2xl 2xl:rounded-3xl font-bold">Resume Exam</button>
         </div>
 
-        <div class="bg-blue-600 p-6 2xl:p-10 flex justify-between items-center text-white">
+        <div class="bg-blue-600 p-4 md:p-6 2xl:p-10 flex flex-wrap justify-between items-center gap-2 text-white">
           <div>
             <p class="text-[10px] 2xl:text-base font-black uppercase tracking-widest opacity-70">{{ question.category }}</p>
-            <h2 v-if="!isAmrapMode" class="text-lg 2xl:text-3xl font-bold">Question {{ sessionCount }} of {{ totalExamQuestions }}</h2>
-            <h2 v-else class="text-lg 2xl:text-3xl font-bold">Reps Completed: {{ amrapCorrectCount }}</h2>
+            <h2 v-if="!isAmrapMode" class="text-sm md:text-lg 2xl:text-3xl font-bold">Question {{ sessionCount }} of {{ totalExamQuestions }}</h2>
+            <h2 v-else class="text-sm md:text-lg 2xl:text-3xl font-bold">Reps: {{ amrapCorrectCount }}</h2>
           </div>
-          <div class="flex items-center gap-4 2xl:gap-8">
+          <div class="flex items-center gap-2 2xl:gap-8 flex-wrap">
             <div v-if="isSuddenDeath" class="flex items-center gap-1.5 2xl:gap-3 bg-slate-900/40 px-3 py-1.5 2xl:px-6 2xl:py-3 rounded-xl 2xl:rounded-2xl shadow-inner border border-white/10">
-              <span v-for="n in 3" :key="n" class="text-xl 2xl:text-3xl transition-all duration-500 ease-[cubic-bezier(0.34,1.56,0.64,1)]" :class="n <= healthPoints ? 'text-red-500 scale-100 drop-shadow-[0_0_8px_rgba(239,68,68,0.8)]' : 'opacity-20 scale-75 grayscale'">❤️</span>
+              <span v-for="n in 3" :key="n" class="text-lg 2xl:text-3xl transition-all duration-500 ease-[cubic-bezier(0.34,1.56,0.64,1)]" :class="n <= healthPoints ? 'text-red-500 scale-100 drop-shadow-[0_0_8px_rgba(239,68,68,0.8)]' : 'opacity-20 scale-75 grayscale'">❤️</span>
             </div>
-            <div v-else-if="isAmrapMode" class="flex items-center gap-2 2xl:gap-4 bg-red-600/20 px-4 py-1.5 2xl:px-8 2xl:py-3 rounded-xl 2xl:rounded-2xl border border-red-500/50 shadow-[0_0_15px_rgba(220,38,38,0.3)]">
+            <div v-else-if="isAmrapMode" class="flex items-center gap-2 2xl:gap-4 bg-red-600/20 px-3 py-1.5 2xl:px-8 2xl:py-3 rounded-xl 2xl:rounded-2xl border border-red-500/50 shadow-[0_0_15px_rgba(220,38,38,0.3)]">
               <span class="text-red-500 animate-pulse 2xl:text-3xl">⏱️</span>
-              <span class="font-mono font-black text-red-100 tracking-widest text-lg 2xl:text-3xl">{{ formattedAmrapTime }}</span>
+              <span class="font-mono font-black text-red-100 tracking-widest text-sm md:text-lg 2xl:text-3xl">{{ formattedAmrapTime }}</span>
             </div>
-            <span v-else class="font-mono font-bold 2xl:text-2xl bg-blue-500/50 px-3 py-1 2xl:px-6 2xl:py-2 rounded-lg 2xl:rounded-xl border border-blue-400/50">{{ formattedCurrentTime }}</span>
-
-            <button @click="togglePause" class="bg-white text-blue-600 px-3 py-1 2xl:px-6 2xl:py-3 rounded-lg 2xl:rounded-xl text-xs 2xl:text-xl font-black uppercase tracking-widest shadow-lg">{{ isPaused ? 'Resume' : 'Pause' }}</button>
-            <button @click="showGradeConfirmModal = true" class="bg-slate-900/40 hover:bg-slate-900/60 px-3 py-1 2xl:px-6 2xl:py-3 rounded-lg 2xl:rounded-xl text-xs 2xl:text-xl font-black uppercase tracking-widest shadow-lg transition-colors border border-white/10">🏁 Grade Now</button>
-            <button @click="abortQuiz" class="bg-red-500/20 hover:bg-red-500/40 text-red-100 px-3 py-1 2xl:px-6 2xl:py-3 rounded-lg 2xl:rounded-xl text-xs 2xl:text-xl font-black uppercase tracking-widest shadow-lg transition-colors border border-red-400/30">🚪 Exit</button>
+            <span v-else class="font-mono font-bold text-sm 2xl:text-2xl bg-blue-500/50 px-3 py-1 2xl:px-6 2xl:py-2 rounded-lg 2xl:rounded-xl border border-blue-400/50">{{ formattedCurrentTime }}</span>
+            <button @click="togglePause" class="bg-white text-blue-600 px-2 py-1 2xl:px-6 2xl:py-3 rounded-lg 2xl:rounded-xl text-[10px] md:text-xs 2xl:text-xl font-black uppercase tracking-widest shadow-lg">{{ isPaused ? 'Resume' : 'Pause' }}</button>
+            <button @click="showGradeConfirmModal = true" class="bg-slate-900/40 hover:bg-slate-900/60 px-2 py-1 2xl:px-6 2xl:py-3 rounded-lg 2xl:rounded-xl text-[10px] md:text-xs 2xl:text-xl font-black uppercase tracking-widest shadow-lg transition-colors border border-white/10">Grade</button>
+            <button @click="abortQuiz" class="bg-red-500/20 hover:bg-red-500/40 text-red-100 px-2 py-1 2xl:px-6 2xl:py-3 rounded-lg 2xl:rounded-xl text-[10px] md:text-xs 2xl:text-xl font-black uppercase tracking-widest shadow-lg transition-colors border border-red-400/30">Exit</button>
           </div>
         </div>
 
@@ -2105,6 +2106,12 @@ watch(currentUser, (newUser) => {
     // 📊 Fetch personal analytics when user logs in
     if (newUser && newUser.username) {
       fetchUserStats(newUser.username);
+      // Load streak from profile
+      fetch(`${API_BASE_URL}/api/users/profile`, {
+        headers: { 'Authorization': `Bearer ${localStorage.getItem('aws_jwt')}` }
+      }).then(r => r.ok ? r.json() : null).then(data => {
+        if (data && data.currentStreak !== undefined) userStreak.value = data.currentStreak;
+      }).catch(() => {});
     } else {
       userStats.value = null;
     }
@@ -2287,6 +2294,25 @@ const userStats = ref(null);
 const founderSpotsRemaining = ref(100);
 const founderSpotsActive = ref(true);
 const showFounderBanner = ref(false);
+
+// --- 📱 PWA INSTALL ---
+const pwaInstallPrompt = ref(null);
+const showPwaButton = ref(false);
+
+if (typeof window !== 'undefined') {
+  window.addEventListener('beforeinstallprompt', (e) => {
+    e.preventDefault();
+    pwaInstallPrompt.value = e;
+    showPwaButton.value = true;
+  });
+}
+
+const installPwa = async () => {
+  if (!pwaInstallPrompt.value) return;
+  pwaInstallPrompt.value.prompt();
+  const result = await pwaInstallPrompt.value.userChoice;
+  if (result.outcome === 'accepted') showPwaButton.value = false;
+};
 
 const fetchFounderSpots = async () => {
   try {
@@ -5493,6 +5519,9 @@ const proceedToStripe = async () => {
         const errorData = await response.json();
         if (errorData.error === "User is already a Premium member.") {
           showAlreadyPremiumModal.value = true;
+        } else if (errorData.error && errorData.error.includes("Trial already used")) {
+          showToast("You've already used your trial. Please choose Monthly or Annual.", "warning");
+          pendingPlanType.value = 'monthly';
         } else {
           showToast(errorData.error || "Payment error.", "error");
         }
