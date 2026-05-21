@@ -383,3 +383,112 @@ aws cloudfront create-invalidation --distribution-id <DIST_ID> --paths "/*"
 - [ ] Stripe webhook updated to production URL
 - [ ] Stripe keys switched from test to live
 - [ ] Test full flow: Register > Login > Take Quiz > Payment > Premium access
+
+---
+
+## EC2 Fallback Deployment (Alternative to Fargate)
+
+### Resources Created
+
+| Resource | ID/Name |
+|----------|---------|
+| EC2 Security Group | sg-036580671ea7b5373 (kf-ec2-sg) |
+| EC2 IAM Role | kf-ec2-role |
+| EC2 Instance Profile | kf-ec2-profile |
+| ALB Security Group (existing) | sg-0e29a56254836799f |
+| VPC | vpc-0639b9a185a1d0675 |
+| Public Subnet 1a | subnet-08e2e5f462de4cd31 |
+| Public Subnet 1b | subnet-0d2d8c6b111cb38d8 |
+| Target Group | arn:aws:elasticloadbalancing:us-east-1:774075997131:targetgroup/kf-api-tg/a6464a868239d07c |
+| ECR Repository | 774075997131.dkr.ecr.us-east-1.amazonaws.com/knowledgeforge-api:latest |
+| RDS Endpoint | knowledgeforge-db.cgzgia0ci4u8.us-east-1.rds.amazonaws.com |
+
+### Step 1: Create Key Pair (one time only)
+```bash
+aws ec2 create-key-pair --key-name kf-ec2-key --query "KeyMaterial" --output text --region us-east-1 > kf-ec2-key.pem
+```
+> Keep `kf-ec2-key.pem` safe — you cannot recover it. On Linux/Mac run `chmod 400 kf-ec2-key.pem`.
+
+### Step 2: Build and Push Docker Image to ECR
+```bash
+# Login to ECR
+aws ecr get-login-password --region us-east-1 | docker login --username AWS --password-stdin 774075997131.dkr.ecr.us-east-1.amazonaws.com
+
+# Build and push
+docker build -t knowledgeforge-api .
+docker tag knowledgeforge-api:latest 774075997131.dkr.ecr.us-east-1.amazonaws.com/knowledgeforge-api:latest
+docker push 774075997131.dkr.ecr.us-east-1.amazonaws.com/knowledgeforge-api:latest
+```
+
+### Step 3: Launch EC2 Instance (auto-configures itself on boot)
+```bash
+aws ec2 run-instances \
+  --image-id ami-0c02fb55956c7d316 \
+  --instance-type t3.small \
+  --subnet-id subnet-08e2e5f462de4cd31 \
+  --security-group-ids sg-036580671ea7b5373 \
+  --iam-instance-profile Name=kf-ec2-profile \
+  --key-name kf-ec2-key \
+  --associate-public-ip-address \
+  --user-data file://ec2-user-data.sh \
+  --tag-specifications "ResourceType=instance,Tags=[{Key=Name,Value=knowledgeforge-api}]" \
+  --region us-east-1
+```
+> The instance will install Docker, pull your image from ECR, and start the container automatically. No SSH required.
+> Setup takes ~3-5 minutes. Check progress at `/var/log/user-data.log` if you SSH in.
+
+### Step 4: Verify It's Running (optional SSH check)
+```bash
+# Get the public IP
+aws ec2 describe-instances \
+  --filters "Name=tag:Name,Values=knowledgeforge-api" "Name=instance-state-name,Values=running" \
+  --query "Reservations[0].Instances[0].PublicIpAddress" \
+  --output text \
+  --region us-east-1
+
+# SSH in (optional)
+ssh -i kf-ec2-key.pem ec2-user@<PUBLIC_IP>
+
+# Check setup log
+sudo cat /var/log/user-data.log
+
+# Check container is running
+docker ps
+```
+
+### EC2 Setup Commands (manual fallback — only needed if user-data fails)
+```bash
+# Install Docker
+sudo yum update -y
+sudo yum install -y docker
+sudo service docker start
+sudo usermod -a -G docker ec2-user
+
+# Login to ECR
+aws ecr get-login-password --region us-east-1 | docker login --username AWS --password-stdin 774075997131.dkr.ecr.us-east-1.amazonaws.com
+
+# Pull and run the container
+docker pull 774075997131.dkr.ecr.us-east-1.amazonaws.com/knowledgeforge-api:latest
+
+docker run -d \
+  --name knowledgeforge-api \
+  --restart always \
+  -p 8080:8080 \
+  -e SPRING_PROFILES_ACTIVE=prod \
+  -e DATABASE_URL=jdbc:postgresql://knowledgeforge-db.cgzgia0ci4u8.us-east-1.rds.amazonaws.com:5432/knowledgeforge \
+  -e DATABASE_USERNAME=kfadmin \
+  -e DATABASE_PASSWORD=KnowledgeForge2026! \
+  -e CORS_ORIGIN=https://knowledgeforgeacademy.com \
+  -e JWT_SECRET=3cfa76ef14937c1c0ea519f8fc057a80fcd04a7420f8e8bcd0a7567c272e007b \
+  -e STRIPE_API_KEY=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 \
+  -e STRIPE_WEBHOOK_SECRET=whsec_NLdY0SUbJKXzTUd8jQlWPHO7riY06KCM \
+  774075997131.dkr.ecr.us-east-1.amazonaws.com/knowledgeforge-api:latest
+```
+
+### To update the app on EC2
+```bash
+docker pull 774075997131.dkr.ecr.us-east-1.amazonaws.com/knowledgeforge-api:latest
+docker stop knowledgeforge-api
+docker rm knowledgeforge-api
+# Re-run the docker run command above
+```
