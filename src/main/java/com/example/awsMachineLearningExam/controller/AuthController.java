@@ -3,6 +3,7 @@ package com.example.awsMachineLearningExam.controller;
 import com.example.awsMachineLearningExam.model.AppUser;
 import com.example.awsMachineLearningExam.repository.AppUserRepository;
 import com.example.awsMachineLearningExam.security.JwtService;
+import com.example.awsMachineLearningExam.service.PasswordResetService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -22,12 +23,18 @@ public class AuthController {
     private final AppUserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
     private final JwtService jwtService;
+    private final PasswordResetService passwordResetService;
 
-    public AuthController(AuthenticationManager authenticationManager, AppUserRepository userRepository, PasswordEncoder passwordEncoder, JwtService jwtService) {
+    public AuthController(AuthenticationManager authenticationManager,
+                          AppUserRepository userRepository,
+                          PasswordEncoder passwordEncoder,
+                          JwtService jwtService,
+                          PasswordResetService passwordResetService) {
         this.authenticationManager = authenticationManager;
         this.userRepository = userRepository;
         this.passwordEncoder = passwordEncoder;
         this.jwtService = jwtService;
+        this.passwordResetService = passwordResetService;
     }
 
     @PostMapping("/login")
@@ -75,6 +82,34 @@ public class AuthController {
         // (Make sure you are still hashing their password here if you have Spring Security set up!)
         AppUser savedUser = userRepository.save(newUser);
         return ResponseEntity.ok(savedUser);
+    }
+
+    @PostMapping("/forgot-password")
+    public ResponseEntity<?> forgotPassword(@RequestBody Map<String, String> body) {
+        String email = body.get("email");
+        if (email == null || email.isBlank()) {
+            return ResponseEntity.badRequest().body("Email is required.");
+        }
+        // Always return 200 to prevent email enumeration
+        passwordResetService.requestPasswordReset(email);
+        return ResponseEntity.ok("If that email exists, a reset link has been sent.");
+    }
+
+    @PostMapping("/reset-password")
+    public ResponseEntity<?> resetPassword(@RequestBody Map<String, String> body) {
+        String token = body.get("token");
+        String newPassword = body.get("password");
+
+        if (token == null || newPassword == null || newPassword.length() < 8) {
+            return ResponseEntity.badRequest().body("Invalid request.");
+        }
+
+        boolean success = passwordResetService.resetPassword(token, newPassword);
+        if (success) {
+            return ResponseEntity.ok("Password reset successful. You can now log in.");
+        } else {
+            return ResponseEntity.badRequest().body("Reset link is invalid or has expired.");
+        }
     }
 
     public record RegisterRequest(String username, String email, String password) {}

@@ -77,15 +77,7 @@
             />
           </div>
 
-          <div v-if="!isLoginMode" class="mb-4 2xl:mb-6 animate-fade-in">
-            <input
-                type="email"
-                v-model="authForm.confirmEmail"
-                placeholder="Confirm Email Address"
-                class="w-full bg-slate-800/50 border border-slate-700 text-white rounded-xl 2xl:rounded-2xl px-4 py-3 2xl:px-6 2xl:py-5 2xl:text-xl focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all"
-                :required="!isLoginMode"
-            />
-          </div>
+
 
           <div class="mb-4 2xl:mb-6">
             <label class="block text-xs 2xl:text-base font-black uppercase tracking-widest text-slate-400 mb-2 2xl:mb-3">Password</label>
@@ -96,6 +88,7 @@
                 class="w-full bg-slate-800/50 border border-slate-700 text-white rounded-xl 2xl:rounded-2xl px-4 py-3 2xl:px-6 2xl:py-5 2xl:text-xl focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all"
                 required
             />
+            <p v-if="!isLoginMode" class="text-xs text-slate-500 mt-1 2xl:text-sm">Min. 8 characters with at least one letter and one number.</p>
           </div>
 
           <div v-if="!isLoginMode" class="mb-6 2xl:mb-8 animate-fade-in">
@@ -121,11 +114,93 @@
 
         </form>
 
-        <div class="text-center mt-6 2xl:mt-8">
-          <button @click="isLoginMode = !isLoginMode; authError = ''" class="text-sm 2xl:text-lg font-bold text-slate-400 hover:text-white transition-colors">
+        <div class="text-center mt-6 2xl:mt-8 space-y-3">
+          <button @click="isLoginMode = !isLoginMode; authError = ''" class="text-sm 2xl:text-lg font-bold text-slate-400 hover:text-white transition-colors block w-full">
             {{ isLoginMode ? 'Need an account? Register here.' : 'Already a recruit? Login here.' }}
           </button>
+          <button v-if="isLoginMode" @click="showForgotPassword = true; showAuthModal = false" class="text-sm 2xl:text-lg font-bold text-blue-400 hover:text-blue-300 transition-colors block w-full">
+            Forgot your password?
+          </button>
         </div>
+      </div>
+    </div>
+
+    <!-- FORGOT PASSWORD MODAL -->
+    <div v-if="showForgotPassword" class="fixed inset-0 bg-slate-900/80 backdrop-blur-md flex items-center justify-center z-[200] p-4">
+      <div class="bg-gray-900 border border-blue-500 rounded-2xl 2xl:rounded-[2rem] p-8 2xl:p-16 w-full max-w-md 2xl:max-w-2xl text-white shadow-[0_0_30px_rgba(59,130,246,0.3)] relative">
+        <button @click="showForgotPassword = false; forgotPasswordEmail = ''; forgotPasswordMessage = ''; forgotPasswordError = ''" class="absolute top-4 right-4 2xl:top-8 2xl:right-8 text-gray-400 hover:text-white text-3xl 2xl:text-5xl leading-none">&times;</button>
+        <h2 class="text-3xl 2xl:text-5xl font-black text-center mb-2 text-blue-400 tracking-tight">Reset Password</h2>
+        <p class="text-slate-400 text-sm 2xl:text-base text-center mb-6">Enter your email and we'll send you a reset link.</p>
+
+        <div v-if="forgotPasswordMessage" class="bg-green-900/50 border border-green-500 text-green-200 p-3 rounded-xl mb-6 text-sm text-center font-bold">
+          {{ forgotPasswordMessage }}
+        </div>
+        <div v-if="forgotPasswordError" class="bg-red-900/50 border border-red-500 text-red-200 p-3 rounded-xl mb-6 text-sm text-center font-bold animate-pulse">
+          {{ forgotPasswordError }}
+        </div>
+
+        <form v-if="!forgotPasswordMessage" @submit.prevent="submitForgotPassword">
+          <div class="mb-6">
+            <label class="block text-xs 2xl:text-base font-black uppercase tracking-widest text-slate-400 mb-2">Email Address</label>
+            <input
+              type="email"
+              v-model="forgotPasswordEmail"
+              placeholder="Enter your email"
+              class="w-full bg-slate-800/50 border border-slate-700 text-white rounded-xl px-4 py-3 2xl:px-6 2xl:py-5 2xl:text-xl focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all"
+              required
+            />
+          </div>
+          <button type="submit" class="w-full py-4 bg-blue-600 hover:bg-blue-500 text-white font-black rounded-xl uppercase tracking-widest transition-all shadow-lg shadow-blue-600/30 mb-4">
+            Send Reset Link
+          </button>
+        </form>
+
+        <div class="text-center mt-4">
+          <button @click="showForgotPassword = false; showAuthModal = true" class="text-sm font-bold text-slate-400 hover:text-white transition-colors">
+            Back to Login
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- RESET PASSWORD MODAL (triggered by email link) -->
+    <div v-if="showResetPasswordModal" class="fixed inset-0 bg-slate-900/80 backdrop-blur-md flex items-center justify-center z-[200] p-4">
+      <div class="bg-gray-900 border border-blue-500 rounded-2xl 2xl:rounded-[2rem] p-8 2xl:p-16 w-full max-w-md 2xl:max-w-2xl text-white shadow-[0_0_30px_rgba(59,130,246,0.3)] relative">
+        <h2 class="text-3xl 2xl:text-5xl font-black text-center mb-2 text-blue-400 tracking-tight">New Password</h2>
+        <p class="text-slate-400 text-sm text-center mb-6">Choose a strong password for your account.</p>
+
+        <div v-if="resetPasswordMessage" class="bg-green-900/50 border border-green-500 text-green-200 p-3 rounded-xl mb-6 text-sm text-center font-bold">
+          {{ resetPasswordMessage }}
+        </div>
+        <div v-if="resetPasswordError" class="bg-red-900/50 border border-red-500 text-red-200 p-3 rounded-xl mb-6 text-sm text-center font-bold animate-pulse">
+          {{ resetPasswordError }}
+        </div>
+
+        <form v-if="!resetPasswordMessage" @submit.prevent="submitResetPassword">
+          <div class="mb-4">
+            <label class="block text-xs font-black uppercase tracking-widest text-slate-400 mb-2">New Password</label>
+            <input
+              type="password"
+              v-model="resetPasswordNew"
+              placeholder="Min. 8 chars with letters and numbers"
+              class="w-full bg-slate-800/50 border border-slate-700 text-white rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all"
+              required
+            />
+          </div>
+          <div class="mb-6">
+            <label class="block text-xs font-black uppercase tracking-widest text-slate-400 mb-2">Confirm Password</label>
+            <input
+              type="password"
+              v-model="resetPasswordConfirm"
+              placeholder="Confirm new password"
+              class="w-full bg-slate-800/50 border border-slate-700 text-white rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all"
+              required
+            />
+          </div>
+          <button type="submit" class="w-full py-4 bg-blue-600 hover:bg-blue-500 text-white font-black rounded-xl uppercase tracking-widest transition-all shadow-lg shadow-blue-600/30">
+            Reset Password
+          </button>
+        </form>
       </div>
     </div>
 
@@ -2469,6 +2544,16 @@ const timer = ref(0);
 
 // JWT AUTHENTICATION ENGINE
 const showAuthModal = ref(false);
+const showForgotPassword = ref(false);
+const forgotPasswordEmail = ref('');
+const forgotPasswordMessage = ref('');
+const forgotPasswordError = ref('');
+const showResetPasswordModal = ref(false);
+const pendingResetToken = ref('');
+const resetPasswordNew = ref('');
+const resetPasswordConfirm = ref('');
+const resetPasswordMessage = ref('');
+const resetPasswordError = ref('');
 const liveUserScores = ref([0, 0, 0, 0]);
 const showPremiumModal = ref(false);
 const isLoginMode = ref(true); // Toggle between Login and Register
@@ -2957,7 +3042,7 @@ const arcadeConfig = {
     sudden_death: {
       name: 'Sudden Death',
       requiresPremium: false,
-      maxFreePlays: 3
+      maxFreePlays: null
     },
     library: {
       name: 'The Knowledge Forge',
@@ -5655,6 +5740,63 @@ const closeReview = () => {
   if (typeof fetchLeaderboard === 'function') fetchLeaderboard();
 };
 
+const submitForgotPassword = async () => {
+    forgotPasswordError.value = '';
+    forgotPasswordMessage.value = '';
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/auth/forgot-password`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: forgotPasswordEmail.value })
+      });
+      if (response.ok) {
+        forgotPasswordMessage.value = "Reset link sent! Check your inbox (and spam folder).";
+      } else {
+        forgotPasswordError.value = "No account found with that email address.";
+      }
+    } catch (error) {
+      forgotPasswordError.value = "Could not reach the server. Please try again.";
+    }
+  };
+
+const submitResetPassword = async () => {
+    resetPasswordError.value = '';
+    resetPasswordMessage.value = '';
+
+    const passwordRegex = /^(?=.*[A-Za-z])(?=.*\d).{8,}$/;
+    if (!passwordRegex.test(resetPasswordNew.value)) {
+      resetPasswordError.value = "Password must be at least 8 characters with letters and numbers.";
+      return;
+    }
+    if (resetPasswordNew.value !== resetPasswordConfirm.value) {
+      resetPasswordError.value = "Passwords do not match.";
+      return;
+    }
+
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/auth/reset-password`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ token: pendingResetToken.value, password: resetPasswordNew.value })
+      });
+      if (response.ok) {
+        resetPasswordMessage.value = "Password updated! You can now log in.";
+        setTimeout(() => {
+          showResetPasswordModal.value = false;
+          showAuthModal.value = true;
+          isLoginMode.value = true;
+          resetPasswordNew.value = '';
+          resetPasswordConfirm.value = '';
+          resetPasswordMessage.value = '';
+        }, 2000);
+      } else {
+        resetPasswordError.value = "Reset link is invalid or has expired. Please request a new one.";
+      }
+    } catch (error) {
+      resetPasswordError.value = "Could not reach the server. Please try again.";
+    }
+  };
+
 // --- AUTHENTICATION PIPELINE ---
 const submitAuth = async () => {
     // 1. Clear old errors
@@ -5663,9 +5805,11 @@ const submitAuth = async () => {
 
     // 🚨 THE INTERCEPTOR: Block the request BEFORE it goes to Java!
     if (!isLoginMode.value) {
-      if (authForm.value.email !== authForm.value.confirmEmail) {
-        authValidationMessage.value = "Emails do not match. Please verify.";
-        return; // Stops the function immediately
+      // Password strength: min 8 chars, at least one letter and one number
+      const passwordRegex = /^(?=.*[A-Za-z])(?=.*\d).{8,}$/;
+      if (!passwordRegex.test(authForm.value.password)) {
+        authValidationMessage.value = "Password must be at least 8 characters and include letters and numbers.";
+        return;
       }
       if (authForm.value.password !== authForm.value.confirmPassword) {
         authValidationMessage.value = "Passwords do not match. Please verify.";
@@ -5970,6 +6114,15 @@ onMounted(async () => {
 
     // 🚨 1. THE STRIPE INTERCEPTOR (Must run first!)
     const urlParams = new URLSearchParams(window.location.search);
+
+    // PASSWORD RESET INTERCEPTOR
+    const resetToken = urlParams.get('reset_token');
+    if (resetToken) {
+      pendingResetToken.value = resetToken;
+      showResetPasswordModal.value = true;
+      // Clean the token from the URL without reloading
+      window.history.replaceState({}, document.title, window.location.pathname);
+    }
 
     if (urlParams.get('success') === 'true') {
       const returnView = localStorage.getItem('aws_return_view');
