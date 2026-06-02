@@ -33,6 +33,19 @@ public class EmailService {
     }
 
     /**
+     * Sends a test email — used by EmailController for debugging.
+     */
+    @Async
+    public void sendTestEmail(String toEmail) {
+        SimpleMailMessage message = new SimpleMailMessage();
+        message.setFrom(fromEmail);
+        message.setTo(toEmail);
+        message.setSubject("Knowledge Forge Academy - Test Email");
+        message.setText("This is a test email from Knowledge Forge Academy. If you received this, SES is working correctly!");
+        mailSender.send(message);
+    }
+
+    /**
      * Sends a welcome email to the new user.
      */
     @Async
