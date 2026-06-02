@@ -868,7 +868,53 @@
                   <span class="text-lg 2xl:text-2xl">🤖</span>
                   <span class="text-purple-400 text-xs 2xl:text-sm font-black uppercase tracking-widest">AI Tutor</span>
                 </div>
-                <p class="text-slate-200 text-sm 2xl:text-xl leading-relaxed whitespace-pre-line">{{ aiTutorResponse }}</p>
+
+                <!-- Conversation thread -->
+                <div class="space-y-4 2xl:space-y-6 mb-4 2xl:mb-6">
+                  <div v-for="(msg, index) in aiTutorConversation" :key="index">
+                    <!-- AI message -->
+                    <div v-if="msg.role === 'ai'" class="flex gap-3">
+                      <span class="text-lg flex-shrink-0 mt-0.5">🤖</span>
+                      <p class="text-slate-200 text-sm 2xl:text-xl leading-relaxed whitespace-pre-line bg-slate-800/50 rounded-xl 2xl:rounded-2xl px-4 py-3 2xl:px-6 2xl:py-4">{{ msg.text }}</p>
+                    </div>
+                    <!-- User follow-up message -->
+                    <div v-if="msg.role === 'user'" class="flex gap-3 justify-end">
+                      <p class="text-slate-100 text-sm 2xl:text-xl leading-relaxed bg-indigo-600/40 border border-indigo-500/30 rounded-xl 2xl:rounded-2xl px-4 py-3 2xl:px-6 2xl:py-4 max-w-[85%]">{{ msg.text }}</p>
+                      <span class="text-lg flex-shrink-0 mt-0.5">👤</span>
+                    </div>
+                  </div>
+
+                  <!-- Follow-up loading indicator -->
+                  <div v-if="aiFollowUpLoading" class="flex gap-3">
+                    <span class="text-lg flex-shrink-0 mt-0.5">🤖</span>
+                    <div class="flex items-center gap-2 bg-slate-800/50 rounded-xl px-4 py-3">
+                      <div class="w-2 h-2 bg-purple-400 rounded-full animate-bounce"></div>
+                      <div class="w-2 h-2 bg-indigo-400 rounded-full animate-bounce" style="animation-delay: 0.1s"></div>
+                      <div class="w-2 h-2 bg-blue-400 rounded-full animate-bounce" style="animation-delay: 0.2s"></div>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Follow-up input (max 2 questions — tracked by conversation length) -->
+                <div v-if="aiTutorConversation.filter(m => m.role === 'user').length < 2" class="mt-4 2xl:mt-6">
+                  <div class="flex gap-2 2xl:gap-4">
+                    <input
+                      v-model="aiFollowUpInput"
+                      @keyup.enter="askAiFollowUp"
+                      type="text"
+                      placeholder="Ask a follow-up question..."
+                      class="flex-1 bg-slate-800 border border-slate-700 text-white text-sm 2xl:text-lg rounded-xl px-4 py-2.5 2xl:px-6 2xl:py-4 focus:outline-none focus:ring-2 focus:ring-purple-500 transition-all placeholder-slate-500"
+                      :disabled="aiFollowUpLoading"
+                    />
+                    <button
+                      @click="askAiFollowUp"
+                      :disabled="!aiFollowUpInput.trim() || aiFollowUpLoading"
+                      class="px-4 py-2.5 2xl:px-6 2xl:py-4 bg-purple-600 hover:bg-purple-500 disabled:opacity-40 disabled:cursor-not-allowed text-white font-black text-sm 2xl:text-lg rounded-xl transition-all flex-shrink-0"
+                    >Ask</button>
+                  </div>
+                  <p class="text-slate-600 text-xs 2xl:text-sm mt-2 text-right">{{ 2 - aiTutorConversation.filter(m => m.role === 'user').length }} follow-up{{ aiTutorConversation.filter(m => m.role === 'user').length === 1 ? '' : 's' }} remaining</p>
+                </div>
+                <p v-else class="text-slate-600 text-xs 2xl:text-sm mt-4 text-center">Follow-up limit reached. Move to the next question to continue.</p>
               </div>
             </div>
 
@@ -2240,6 +2286,9 @@ const feedbackClass = ref('');
 const showExplanation = ref(false);
 const aiTutorResponse = ref('');
 const aiTutorLoading = ref(false);
+const aiTutorConversation = ref([]); // Stores the full conversation [{role, text}]
+const aiFollowUpInput = ref('');
+const aiFollowUpLoading = ref(false);
 const currentQuestion = ref(null);
 const questions = ref([]);
 const reviewQuestions = ref([]);
@@ -2334,6 +2383,8 @@ const askAiTutor = async () => {
   if (!question.value) return;
   aiTutorLoading.value = true;
   aiTutorResponse.value = '';
+  aiTutorConversation.value = [];
+  aiFollowUpInput.value = '';
 
   const userAnswer = question.value.options
     .filter(o => selectedAnswers.value.includes(o.id))
@@ -2348,9 +2399,7 @@ const askAiTutor = async () => {
   try {
     const response = await fetch('https://2zm5xtvh2l.execute-api.us-east-1.amazonaws.com/tutor', {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json'
-      },
+      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         questionText: question.value.questionText,
         userAnswer: userAnswer,
@@ -2363,6 +2412,7 @@ const askAiTutor = async () => {
     if (response.ok) {
       const data = await response.json();
       aiTutorResponse.value = data.response;
+      aiTutorConversation.value = [{ role: 'ai', text: data.response }];
     } else {
       aiTutorResponse.value = 'AI Tutor is currently offline. Please review the explanation above.';
     }
@@ -2370,6 +2420,47 @@ const askAiTutor = async () => {
     aiTutorResponse.value = 'Connection failed. AI Tutor unavailable.';
   } finally {
     aiTutorLoading.value = false;
+  }
+};
+
+const askAiFollowUp = async () => {
+  const userQuestion = aiFollowUpInput.value.trim();
+  if (!userQuestion || aiFollowUpLoading.value) return;
+
+  aiTutorConversation.value.push({ role: 'user', text: userQuestion });
+  aiFollowUpInput.value = '';
+  aiFollowUpLoading.value = true;
+
+  const correctAnswer = question.value.options
+    .filter(o => o.isCorrect === true || o.correct === true)
+    .map(o => o.text || o.optionText || o.value)
+    .join(', ');
+
+  try {
+    const response = await fetch('https://2zm5xtvh2l.execute-api.us-east-1.amazonaws.com/tutor', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        questionText: question.value.questionText,
+        userAnswer: userQuestion,
+        correctAnswer: correctAnswer,
+        explanation: question.value.explanation,
+        certCode: selectedCert.value?.code || 'AWS',
+        followUp: true,
+        conversationContext: aiTutorConversation.value.map(m => `${m.role === 'user' ? 'Student' : 'Tutor'}: ${m.text}`).join('\n')
+      })
+    });
+
+    if (response.ok) {
+      const data = await response.json();
+      aiTutorConversation.value.push({ role: 'ai', text: data.response });
+    } else {
+      aiTutorConversation.value.push({ role: 'ai', text: 'AI Tutor is temporarily unavailable. Please try again.' });
+    }
+  } catch (error) {
+    aiTutorConversation.value.push({ role: 'ai', text: 'Connection failed. Please try again.' });
+  } finally {
+    aiFollowUpLoading.value = false;
   }
 };
 
@@ -3584,6 +3675,8 @@ const fetchQuestion = async () => {
     showExplanation.value = false;
     aiTutorResponse.value = '';
     aiTutorLoading.value = false;
+    aiTutorConversation.value = [];
+    aiFollowUpInput.value = '';
 
   } catch (error) {
     console.error(error);

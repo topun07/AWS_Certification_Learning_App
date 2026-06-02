@@ -17,9 +17,22 @@ exports.handler = async (event) => {
 
   try {
     const body = JSON.parse(event.body);
-    const { questionText, userAnswer, correctAnswer, explanation, certCode } = body;
+    const { questionText, userAnswer, correctAnswer, explanation, certCode, followUp, conversationContext } = body;
 
-    const prompt = `You are an AWS certification tutor helping a student who got a question wrong on the ${certCode} exam. Be concise, friendly, and educational. Use 3-5 sentences max.
+    let prompt;
+
+    if (followUp && conversationContext) {
+      prompt = `You are an AWS certification tutor. A student is asking a follow-up question about an exam question they got wrong on the ${certCode} exam. Be concise and educational. Use 3-4 sentences max.
+
+ORIGINAL QUESTION: ${questionText}
+CORRECT ANSWER: ${correctAnswer}
+
+PREVIOUS CONVERSATION:
+${conversationContext}
+
+Answer the student's latest follow-up question directly and clearly. Stay focused on the AWS concept.`;
+    } else {
+      prompt = `You are an AWS certification tutor helping a student who got a question wrong on the ${certCode} exam. Be concise, friendly, and educational. Use 3-5 sentences max.
 
 QUESTION: ${questionText}
 
@@ -30,6 +43,7 @@ CORRECT ANSWER: ${correctAnswer}
 EXISTING EXPLANATION: ${explanation}
 
 Explain WHY their answer is wrong and WHY the correct answer is right. Use a real-world analogy if helpful. Don't repeat the explanation verbatim - add new insight.`;
+    }
 
     const command = new InvokeModelCommand({
       modelId: "us.amazon.nova-micro-v1:0",
