@@ -2,6 +2,7 @@ package com.example.awsMachineLearningExam.controller;
 
 import com.example.awsMachineLearningExam.model.AppUser;
 import com.example.awsMachineLearningExam.repository.AppUserRepository;
+import com.example.awsMachineLearningExam.service.EmailService;
 import com.example.awsMachineLearningExam.service.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
@@ -20,12 +21,14 @@ public class UserController {
     @Autowired
     private UserService userService;
 
-    // 1. We inject the Repository so we can search the database directly
     @Autowired
     private AppUserRepository userRepository;
 
     @Autowired
     private org.springframework.security.crypto.password.PasswordEncoder passwordEncoder;
+
+    @Autowired
+    private EmailService emailService;
 
     // 🚨 THE REGISTRATION ENDPOINT & ECHO TEST
     @PostMapping("/register")
@@ -59,6 +62,12 @@ public class UserController {
 
         // 5. If they pass all checks, save them!
         AppUser savedUser = userRepository.save(newUser);
+
+        // 6. Fire emails and Mailchimp async (non-blocking)
+        emailService.sendWelcomeEmail(savedUser.getEmail(), savedUser.getUsername());
+        emailService.sendAdminSignupNotification(savedUser.getEmail(), savedUser.getUsername());
+        emailService.addToMailchimp(savedUser.getEmail(), savedUser.getUsername());
+
         return ResponseEntity.ok(savedUser);
     }
 

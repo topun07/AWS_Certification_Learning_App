@@ -21,7 +21,9 @@
         { "name": "DATABASE_URL", "value": "jdbc:postgresql://knowledgeforge-db.cgzgia0ci4u8.us-east-1.rds.amazonaws.com:5432/knowledgeforge" },
         { "name": "DATABASE_USERNAME", "value": "kfadmin" },
         { "name": "DATABASE_PASSWORD", "value": "KnowledgeForge2026!" },
-        { "name": "CORS_ORIGIN", "value": "https://knowledgeforgeacademy.com" }
+        { "name": "CORS_ORIGIN", "value": "https://knowledgeforgeacademy.com" },
+        { "name": "SES_SMTP_USERNAME", "value": "AKIA3IOUGLPF7UDBGNOA" },
+        { "name": "SES_SMTP_PASSWORD", "value": "BANQH+7EI80DZgQIQ8Az9JWkI857kTruTuDngpbg+6Z+" }
       ],
       "secrets": [
         { "name": "JWT_SECRET", "valueFrom": "arn:aws:secretsmanager:us-east-1:774075997131:secret:knowledgeforge/jwt-secret-X4xIOH" },
@@ -43,13 +45,6 @@
         "retries": 5,
         "startPeriod": 120
       }
-      },
-      { 
-        "name": "SES_SMTP_USERNAME", "value": "AKIA3IOUGLPF7UDBGNOA " 
-      },
-      { 
-        "name": "SES_SMTP_PASSWORD", "value": "BANQH+7EI80DZgQIQ8Az9JWkI857kTruTuDngpbg+6Z+" 
     }
-    
   ]
 }

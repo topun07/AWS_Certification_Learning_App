@@ -26,7 +26,7 @@ public class PasswordResetService {
     @Value("${app.cors.allowed-origin:https://knowledgeforgeacademy.com}")
     private String frontendUrl;
 
-    @Value("${spring.mail.username}")
+    @Value("${app.mail.from:noreply@knowledgeforgeacademy.com}")
     private String fromEmail;
 
     public PasswordResetService(AppUserRepository userRepository,
