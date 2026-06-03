@@ -553,39 +553,6 @@
       <div class="mt-12 2xl:mt-24 grid grid-cols-1 lg:grid-cols-2 gap-8 2xl:gap-16">
 
         <div class="bg-white rounded-[2rem] 2xl:rounded-[3rem] p-8 2xl:p-12 shadow-sm border border-slate-100 flex flex-col h-full">
-          <div class="mb-6 2xl:mb-10 flex justify-between items-start">
-            <div>
-              <h3 class="text-2xl 2xl:text-4xl font-black text-slate-800">Skill Radar</h3>
-              <p class="text-slate-500 text-sm 2xl:text-xl mt-1 2xl:mt-2">Your mastery across architectural domains.</p>
-            </div>
-            <select
-                v-model="selectedRadarCert"
-                class="bg-slate-50 border border-slate-200 text-slate-700 text-xs md:text-sm 2xl:text-xl font-bold rounded-xl 2xl:rounded-2xl px-2 py-2 md:px-4 2xl:px-6 2xl:py-4 focus:outline-none focus:ring-2 focus:ring-indigo-500 cursor-pointer shadow-sm max-w-[160px] md:max-w-none"
-            >
-              <optgroup label="Foundational & Associate">
-                <option value="CLF-C02">CLF-C02</option>
-                <option value="AIF-C01">AIF-C01</option>
-                <option value="SAA-C03">SAA-C03</option>
-                <option value="DVA-C02">DVA-C02</option>
-                <option value="SOA-C02">SOA-C02</option>
-                <option value="DEA-C01">DEA-C01</option>
-                <option value="AIP-C01">AIP-C01</option>
-                <option value="MLA-C01">MLA-C01</option>
-              </optgroup>
-              <optgroup label="Professional & Specialty">
-                <option value="SAP-C02">SAP-C02</option>
-                <option value="DOP-C02">DOP-C02</option>
-                <option value="SCS-C02">SCS-C02</option>
-                <option value="ANS-C01">ANS-C01</option>
-              </optgroup>
-            </select>
-          </div>
-          <div class="flex-grow relative min-h-[300px] 2xl:min-h-[600px] w-full flex justify-center items-center">
-            <Radar :key="chartViewCode" :data="dynamicRadarData" :options="radarOptions" />
-          </div>
-        </div>
-
-        <div class="bg-white rounded-[2rem] 2xl:rounded-[3rem] p-8 2xl:p-12 shadow-sm border border-slate-100 flex flex-col h-full">
           <div class="mb-6 2xl:mb-10">
             <h3 class="text-2xl 2xl:text-4xl font-black text-slate-800">Target Priorities</h3>
             <p class="text-slate-500 text-sm 2xl:text-xl mt-1 2xl:mt-2">Recommended focus areas based on recent telemetry.</p>
@@ -656,7 +623,7 @@
             <div class="text-xs 2xl:text-sm font-bold text-slate-500 uppercase tracking-widest mt-1 2xl:mt-2">Study Views</div>
           </div>
           <div class="bg-gradient-to-br from-purple-50 to-violet-50 p-5 2xl:p-8 rounded-2xl 2xl:rounded-3xl border border-purple-100 text-center">
-            <div class="text-3xl 2xl:text-5xl font-black text-purple-600">{{ userStats.topMode || '-' }}</div>
+            <div class="text-3xl 2xl:text-5xl font-black text-purple-600">{{ userStats.topMode ? { sudden_death: 'Sudden Death', standard: 'Simulated Exam', amrap: 'AMRAP Attack', flashcards: 'Flashcards' }[userStats.topMode] || userStats.topMode : '-' }}</div>
             <div class="text-xs 2xl:text-sm font-bold text-slate-500 uppercase tracking-widest mt-1 2xl:mt-2">Favorite Mode</div>
           </div>
           <div class="bg-gradient-to-br from-amber-50 to-orange-50 p-5 2xl:p-8 rounded-2xl 2xl:rounded-3xl border border-amber-100 text-center">
@@ -1742,6 +1709,11 @@
           <p class="text-slate-600 mt-1 2xl:mt-3 uppercase text-xs 2xl:text-xl font-bold tracking-widest">Analyzing Missed Concepts</p>
         </div>
         <div class="p-8 md:p-12 2xl:p-20 max-h-[75vh] 2xl:max-h-[80vh] overflow-y-auto space-y-12 2xl:space-y-20 custom-scrollbar">
+          <div v-if="reviewQuestions.length === 0" class="text-center py-16 2xl:py-24">
+            <div class="text-6xl 2xl:text-8xl mb-4">🏆</div>
+            <h3 class="text-2xl 2xl:text-4xl font-black text-slate-800 mb-2">Flawless Victory</h3>
+            <p class="text-slate-500 2xl:text-xl">No missed questions to review. Perfect score!</p>
+          </div>
           <div v-for="(q, index) in reviewQuestions" :key="q.id" class="relative pl-12 2xl:pl-20">
             <div class="flex justify-between items-center mb-6 2xl:mb-10">
               <div class="flex items-center gap-3 2xl:gap-6">
@@ -2990,7 +2962,9 @@ const openReviewRoom = async (attemptId) => {
 
   // If we have active questions AND we are currently on the Results screen, use the RAM!
   if (localData && localData.length > 0 && currentView.value === 'quiz') {
-    reviewQuestions.value = localData;
+    // Filter to only missed questions
+    const missedQuestions = localData.filter(q => userResults.value[q.id] === false);
+    reviewQuestions.value = missedQuestions.length > 0 ? missedQuestions : localData;
     showResults.value = false;
     showReviewModal.value = true;
     return;
