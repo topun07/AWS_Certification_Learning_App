@@ -34,3 +34,10 @@ build/
 node_modules
 node_modules
 node_modules
+
+### Secrets - NEVER commit these ###
+.env
+.env.*
+ecs-task-definition.json
+kf-ec2-key.pem
+ec2-user-data.sh

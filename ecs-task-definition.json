@@ -8,7 +8,7 @@
   "taskRoleArn": "arn:aws:iam::774075997131:role/kf-ecs-task",
   "containerDefinitions": [
     {
-      "name": "knowledgeforge-api",
+      "name": "KnowledgeForge_API",
       "image": "774075997131.dkr.ecr.us-east-1.amazonaws.com/knowledgeforge-api:latest",
       "portMappings": [
         {
@@ -24,7 +24,9 @@
         { "name": "CORS_ORIGIN", "value": "https://knowledgeforgeacademy.com" },
         { "name": "SES_SMTP_USERNAME", "value": "AKIA3IOUGLPF7UDBGNOA" },
         { "name": "SES_SMTP_PASSWORD", "value": "BANQH+7EI80DZgQIQ8Az9JWkI857kTruTuDngpbg+6Z+" },
-        { "name": "RESEND_API_KEY", "value": "re_F3QKudhX_LKyTzM3bvpxSMSAb7rszcKUq" }
+        { "name": "RESEND_API_KEY", "value": "re_F3QKudhX_LKyTzM3bvpxSMSAb7rszcKUq" },
+        { "name": "MAILCHIMP_API_KEY", "value": "4a45f114b1e94542135daab1f99de77-us2" },
+        { "name": "MAILCHIMP_AUDIENCE_ID", "value": "6040febd24" }
       ],
       "secrets": [
         { "name": "JWT_SECRET", "valueFrom": "arn:aws:secretsmanager:us-east-1:774075997131:secret:knowledgeforge/jwt-secret-X4xIOH" },
