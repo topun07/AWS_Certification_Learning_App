@@ -16,7 +16,7 @@ stripe listen --forward-to http://localhost:8080/api/payment/webhook
 
 stripe listen --print-secret
 
-whsec_f21a4eb11aa6924a39d48862bfb9e0b6de3485c9732b45d6f0cf0bbce0be78b8
+# webhook secret goes here - DO NOT commit actual values
 
 when promoting this site:
 
